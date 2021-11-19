@@ -13,7 +13,7 @@ public class RateLimiterFromMethodLevelAnnotations<R> extends RateLimiterFromReq
             RateSupplier rateSupplier,
             RateExceededHandler rateExceededHandler,
             List<Class<?>> classes,
-            AnnotatedElementIdProvider<Method, RequestPathPatterns<R>> annotatedElementIdProvider) {
+            AnnotatedElementIdProvider<Method, PathPatterns<R>> annotatedElementIdProvider) {
         super(rateSupplier, rateExceededHandler,
                 new RateFactoryForMethodLevelAnnotation<>(classes, annotatedElementIdProvider).getRates());
     }

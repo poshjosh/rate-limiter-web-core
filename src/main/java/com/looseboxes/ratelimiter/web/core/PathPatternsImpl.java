@@ -7,18 +7,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class RequestPathPatternsImpl implements RequestPathPatterns<String> {
+public class PathPatternsImpl implements PathPatterns<String> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RequestPathPatternsImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PathPatternsImpl.class);
 
     private final String [] pathPatterns;
 
-    public RequestPathPatternsImpl(String... pathPatterns) {
+    public PathPatternsImpl(String... pathPatterns) {
         this.pathPatterns = Objects.requireNonNull(pathPatterns);
         LOG.trace("Path patterns: {}", Arrays.toString(pathPatterns));
     }
 
-    public RequestPathPatterns<String> combine(RequestPathPatterns<String> other) {
+    public PathPatterns<String> combine(PathPatterns<String> other) {
         final List<String> uris = other.getPathPatterns();
         final int size = uris.size();
         final String [] all = new String[pathPatterns.length * size];
@@ -29,7 +29,7 @@ public class RequestPathPatternsImpl implements RequestPathPatterns<String> {
                 ++k;
             }
         }
-        return new RequestPathPatternsImpl(all);
+        return new PathPatternsImpl(all);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class RequestPathPatternsImpl implements RequestPathPatterns<String> {
 
     @Override
     public String toString() {
-        return "RequestPathPatternsImpl{" +
+        return "PathPatternsImpl{" +
                 "pathPatterns=" + Arrays.toString(pathPatterns) +
                 '}';
     }

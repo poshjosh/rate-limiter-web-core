@@ -12,30 +12,30 @@ public class RateLimiterFromRequestPathPatterns<R> implements RateLimiter<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateLimiterFromRequestPathPatterns.class);
 
-    private final RequestPathPatterns<R>[] requestPathPatternArray;
-    private final RateLimiter<RequestPathPatterns<R>> [] rateLimiterArray;
+    private final PathPatterns<R>[] requestPathPatternArray;
+    private final RateLimiter<PathPatterns<R>> [] rateLimiterArray;
 
     public RateLimiterFromRequestPathPatterns(
             RateSupplier rateSupplier,
             RateExceededHandler rateExceededHandler,
-            List<RateComposition<RequestPathPatterns<R>>> limits) {
+            List<RateComposition<PathPatterns<R>>> limits) {
 
         LOG.debug("Limits: {}", limits);
 
         final int size = limits.size();
 
-        this.requestPathPatternArray = new RequestPathPatterns[size];
+        this.requestPathPatternArray = new PathPatterns[size];
         this.rateLimiterArray = new RateLimiter[size];
 
         if(!limits.isEmpty()) {
 
             for(int i = 0; i < size; i++) {
 
-                RateComposition<RequestPathPatterns<R>> limit = limits.get(i);
-                RequestPathPatterns<R> requestPathPatterns = limit.getId();
-                this.requestPathPatternArray[i] = requestPathPatterns;
+                RateComposition<PathPatterns<R>> limit = limits.get(i);
+                PathPatterns<R> pathPatterns = limit.getId();
+                this.requestPathPatternArray[i] = pathPatterns;
                 this.rateLimiterArray[i] = new RateLimiterSingleton<>(
-                        requestPathPatterns, rateSupplier, limit.getLogic(), rateExceededHandler, limit.getRates()
+                        pathPatterns, rateSupplier, limit.getLogic(), rateExceededHandler, limit.getRates()
                 );
             }
         }
@@ -48,13 +48,13 @@ public class RateLimiterFromRequestPathPatterns<R> implements RateLimiter<R> {
 
         for(int i = 0; i< rateLimiterArray.length; i++) {
 
-            RequestPathPatterns<R> requestPathPatterns = requestPathPatternArray[i];
+            PathPatterns<R> pathPatterns = requestPathPatternArray[i];
 
-            if(requestPathPatterns.matches(request)) {
+            if(pathPatterns.matches(request)) {
 
-                final RateLimiter<RequestPathPatterns<R>> rateLimiter = rateLimiterArray[i];
+                final RateLimiter<PathPatterns<R>> rateLimiter = rateLimiterArray[i];
 
-                return rateLimiter.record(requestPathPatterns);
+                return rateLimiter.record(pathPatterns);
             }
         }
 

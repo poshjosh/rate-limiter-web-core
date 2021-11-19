@@ -3,11 +3,11 @@ package com.looseboxes.ratelimiter.web.core;
 import java.util.Collections;
 import java.util.List;
 
-public interface RequestPathPatterns<REQUEST> {
+public interface PathPatterns<REQUEST> {
 
-    RequestPathPatterns<Object> NONE = new RequestPathPatterns<Object>() {
+    PathPatterns<Object> NONE = new PathPatterns<Object>() {
         @Override
-        public RequestPathPatterns<Object> combine(RequestPathPatterns<Object> other) {
+        public PathPatterns<Object> combine(PathPatterns<Object> other) {
             return other;
         }
         @Override
@@ -20,11 +20,11 @@ public interface RequestPathPatterns<REQUEST> {
     };
 
     @SuppressWarnings("unchecked")
-    static <T> RequestPathPatterns<T> none() {
-        return (RequestPathPatterns<T>)NONE;
+    static <T> PathPatterns<T> none() {
+        return (PathPatterns<T>)NONE;
     }
 
-    RequestPathPatterns<REQUEST> combine(RequestPathPatterns<REQUEST> other);
+    PathPatterns<REQUEST> combine(PathPatterns<REQUEST> other);
 
     boolean matches(REQUEST request);
 
