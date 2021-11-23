@@ -40,16 +40,10 @@ public class RateLimiterFromProperties<R> implements RateLimiter<R> {
             Set<Map.Entry<String, List<Rate>>> entrySet = limitMap.entrySet();
             for(Map.Entry<String, List<Rate>> entry : entrySet) {
                 String name = entry.getKey();
-                RequestToIdConverter<R> requestToIdConverter = requestToIdConverterRegistry.getConverter(name);
-                if(requestToIdConverter == null) {
-                    throw new IllegalStateException(
-                            String.format("For key: %s, could not find any %s instance in registry %s",
-                                    name, RequestToIdConverter.class.getSimpleName(), RequestToIdConverterRegistry.class)
-                    );
-                }
+                RequestToIdConverter<R> requestToIdConverter = requestToIdConverterRegistry.getConverterOrDefault(name);
                 List<Rate> limits = entry.getValue();
                 Rates.Logic logic = properties.getRateLimitConfigs().get(name).getLogic();
-                RateLimiter<Object> rateLimiter = new com.looseboxes.ratelimiter.RateLimiterImpl<>(rateCache, rateSupplier, logic, rateExceededHandler, limits.toArray(new Rate[0]));
+                RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateCache, rateSupplier, logic, rateExceededHandler, limits.toArray(new Rate[0]));
                 LOG.debug("Request to id converter: {}, RateLimiter: {}", requestToIdConverter, rateLimiter);
 
                 this.requestToIdConverters.add(requestToIdConverter);

@@ -2,13 +2,19 @@ package com.looseboxes.ratelimiter.web.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class RequestToIdConverterRegistry<R> {
 
     private final Map<String, RequestToIdConverter<R>> converters;
 
-    public RequestToIdConverterRegistry(RateLimiterConfigurer<R> rateLimiterConfigurer) {
-        converters = new HashMap<>();
+    private final RequestToIdConverter<R> defaultRequestToIdConverter;
+
+    public RequestToIdConverterRegistry(
+            RequestToIdConverter<R> defaultRequestToIdConverter,
+            RateLimiterConfigurer<R> rateLimiterConfigurer) {
+        this.converters = new HashMap<>();
+        this.defaultRequestToIdConverter = Objects.requireNonNull(defaultRequestToIdConverter);
         if(rateLimiterConfigurer != null) {
             rateLimiterConfigurer.addConverters(this);
         }
@@ -16,6 +22,10 @@ public class RequestToIdConverterRegistry<R> {
 
     public void registerConverter(String rateLimiterName, RequestToIdConverter<R> requestToIdConverter) {
         converters.put(rateLimiterName, requestToIdConverter);
+    }
+
+    public RequestToIdConverter<R> getConverterOrDefault(String rateLimiterName) {
+        return converters.getOrDefault(rateLimiterName, defaultRequestToIdConverter);
     }
 
     public RequestToIdConverter<R> getConverter(String rateLimiterName) {

@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.looseboxes.ratelimiter.javaee" level="debug"/>
+    <logger name="com.looseboxes.ratelimiter.web.core" level="debug"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT"/>
