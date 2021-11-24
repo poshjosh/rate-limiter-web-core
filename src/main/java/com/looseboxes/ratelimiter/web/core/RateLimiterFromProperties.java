@@ -2,10 +2,9 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 import com.looseboxes.ratelimiter.rates.Rate;
-import com.looseboxes.ratelimiter.rates.Rates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,44 +29,24 @@ public class RateLimiterFromProperties<R> implements RateLimiter<R> {
             this.rateLimiters = Collections.emptyList();
         }else {
 
-            final Map<String, List<Rate>> limitMap = toRateLists(properties);
-
-            final int size = limitMap.size();
-
+            Map<String, RateLimitConfig> rateConfigGroupMap = properties.getRateLimitConfigs();
+            final int size = rateConfigGroupMap.size();
             this.requestToIdConverters = new ArrayList<>(size);
             this.rateLimiters = new ArrayList<>(size);
 
-            Set<Map.Entry<String, List<Rate>>> entrySet = limitMap.entrySet();
-            for(Map.Entry<String, List<Rate>> entry : entrySet) {
-                String name = entry.getKey();
-                RequestToIdConverter<R> requestToIdConverter = requestToIdConverterRegistry.getConverterOrDefault(name);
-                List<Rate> limits = entry.getValue();
-                Rates.Logic logic = properties.getRateLimitConfigs().get(name).getLogic();
-                RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateCache, rateSupplier, logic, rateExceededHandler, limits.toArray(new Rate[0]));
-                LOG.debug("Request to id converter: {}, RateLimiter: {}", requestToIdConverter, rateLimiter);
-
+            Set<Map.Entry<String, RateLimitConfig>> entrySet = rateConfigGroupMap.entrySet();
+            for(Map.Entry<String, RateLimitConfig> entry : entrySet) {
+                String groupName = entry.getKey();
+                RequestToIdConverter<R> requestToIdConverter = requestToIdConverterRegistry.getConverterOrDefault(groupName);
                 this.requestToIdConverters.add(requestToIdConverter);
+
+                final RateLimitConfig rateLimitConfig = entry.getValue();
+                RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(
+                        rateCache, rateSupplier, rateLimitConfig.getLogic(), rateExceededHandler, rateLimitConfig.toRateList().toArray(new Rate[0]));
                 this.rateLimiters.add(rateLimiter);
+                LOG.debug("Request to id converter: {}, RateLimiter: {}", requestToIdConverter, rateLimiter);
             }
         }
-    }
-
-    private Map<String, List<Rate>> toRateLists(RateLimitProperties properties) {
-        final Map<String, List<Rate>> rateMap;
-        final Map<String, RateConfigList> rateLimitConfigs = properties.getRateLimitConfigs();
-        if(isDisabled(properties)) {
-            rateMap = Collections.emptyMap();
-        }else if(rateLimitConfigs == null || rateLimitConfigs.isEmpty()) {
-            rateMap = Collections.emptyMap();
-        }else {
-            Map<String, List<Rate>> temp = new LinkedHashMap<>(rateLimitConfigs.size());
-            rateLimitConfigs.forEach((name, rateLimitConfigList) -> {
-                List<Rate> rateList = rateLimitConfigList.toRateList();
-                temp.put(name, rateList);
-            });
-            rateMap = Collections.unmodifiableMap(temp);
-        }
-        return rateMap;
     }
 
     private boolean isDisabled(RateLimitProperties properties) {

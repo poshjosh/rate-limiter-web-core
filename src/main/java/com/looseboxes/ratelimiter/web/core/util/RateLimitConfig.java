@@ -7,24 +7,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RateConfigList {
+public class RateLimitConfig {
 
     private Rates.Logic logic = Rates.Logic.OR;
 
     private List<RateConfig> limits;
 
-    public RateConfigList() { }
-
-    public Rate toRate() {
-        if(limits == null || limits.isEmpty()) {
-            return Rate.NONE;
-        }else if(limits.size() == 1) {
-            return limits.get(0).toRate();
-        }else {
-            List<Rate> rateLimits = limits.stream().map(limit -> limit.toRate()).collect(Collectors.toList());
-            return Rates.compose(logic, rateLimits.toArray(new Rate[0]));
-        }
-    }
+    public RateLimitConfig() { }
 
     public List<Rate> toRateList() {
         if(limits == null || limits.isEmpty()) {
@@ -32,7 +21,7 @@ public class RateConfigList {
         }else if(limits.size() == 1) {
             return Collections.singletonList(limits.get(0).toRate());
         }else {
-            return limits.stream().map(limit -> limit.toRate()).collect(Collectors.toList());
+            return limits.stream().map(RateConfig::toRate).collect(Collectors.toList());
         }
     }
 
@@ -54,7 +43,7 @@ public class RateConfigList {
 
     @Override
     public String toString() {
-        return "RateConfigList{" +
+        return "RateLimitConfig{" +
                 "logic=" + logic +
                 ", limits=" + limits +
                 '}';

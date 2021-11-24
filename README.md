@@ -59,8 +59,9 @@ package com.example.web;
 
 import com.looseboxes.ratelimiter.rates.Rates;
 import com.looseboxes.ratelimiter.web.core.util.RateConfig;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.util.Collections;
@@ -76,15 +77,15 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
     }
 
     @Override
-    public Map<String, RateConfigList> getRateLimitConfigs() {
+    public Map<String, RateLimitConfig> getRateLimitConfigs() {
         return Collections.singletonMap("default", getRateLimitConfigList());
     }
 
-    private RateConfigList getRateLimitConfigList() {
-        RateConfigList rateConfigList = new RateConfigList();
-        rateConfigList.setLimits(getRateLimits());
-        rateConfigList.setLogic(Rates.Logic.OR);
-        return rateConfigList;
+    private RateLimitConfig getRateLimitConfigList() {
+        RateLimitConfig rateLimitConfig = new RateLimitConfig();
+        rateLimitConfig.setLimits(getRateLimits());
+        rateLimitConfig.setLogic(Rates.Logic.OR);
+        return rateLimitConfig;
     }
 
     private List<RateConfig> getRateLimits() {

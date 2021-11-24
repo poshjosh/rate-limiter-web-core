@@ -20,15 +20,15 @@ public class RequestToIdConverterRegistry<R> {
         }
     }
 
-    public void registerConverter(String rateLimiterName, RequestToIdConverter<R> requestToIdConverter) {
-        converters.put(rateLimiterName, requestToIdConverter);
+    public void registerConverter(String name, RequestToIdConverter<R> requestToIdConverter) {
+        converters.put(name, requestToIdConverter);
     }
 
-    public RequestToIdConverter<R> getConverterOrDefault(String rateLimiterName) {
-        return converters.getOrDefault(rateLimiterName, defaultRequestToIdConverter);
+    public RequestToIdConverter<R> getConverterOrDefault(String name) {
+        return converters.getOrDefault(name, defaultRequestToIdConverter);
     }
 
-    public RequestToIdConverter<R> getConverter(String rateLimiterName) {
-        return converters.get(rateLimiterName);
+    public RequestToIdConverter<R> getConverter(String name) {
+        return converters.get(name);
     }
 }
