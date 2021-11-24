@@ -2,7 +2,7 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
+import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 import com.looseboxes.ratelimiter.rates.Rate;
 import com.looseboxes.ratelimiter.rates.Rates;
@@ -54,7 +54,7 @@ public class RateLimiterFromProperties<R> implements RateLimiter<R> {
 
     private Map<String, List<Rate>> toRateLists(RateLimitProperties properties) {
         final Map<String, List<Rate>> rateMap;
-        final Map<String, RateLimitConfigList> rateLimitConfigs = properties.getRateLimitConfigs();
+        final Map<String, RateConfigList> rateLimitConfigs = properties.getRateLimitConfigs();
         if(isDisabled(properties)) {
             rateMap = Collections.emptyMap();
         }else if(rateLimitConfigs == null || rateLimitConfigs.isEmpty()) {

@@ -5,7 +5,7 @@ import com.looseboxes.ratelimiter.rates.Rate;
 
 import java.util.concurrent.TimeUnit;
 
-public class RateLimitConfig {
+public class RateConfig {
 
     private int limit;
     private long duration;
@@ -41,7 +41,7 @@ public class RateLimitConfig {
 
     @Override
     public String toString() {
-        return "RateLimitConfig{" +
+        return "RateConfig{" +
                 "duration=" + duration +
                 ", limit=" + limit +
                 ", timeUnit=" + timeUnit +

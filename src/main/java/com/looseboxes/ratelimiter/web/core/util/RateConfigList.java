@@ -7,13 +7,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RateLimitConfigList {
+public class RateConfigList {
 
     private Rates.Logic logic = Rates.Logic.OR;
 
-    private List<RateLimitConfig> limits;
+    private List<RateConfig> limits;
 
-    public RateLimitConfigList() { }
+    public RateConfigList() { }
 
     public Rate toRate() {
         if(limits == null || limits.isEmpty()) {
@@ -44,17 +44,17 @@ public class RateLimitConfigList {
         this.logic = logic;
     }
 
-    public List<RateLimitConfig> getLimits() {
+    public List<RateConfig> getLimits() {
         return limits;
     }
 
-    public void setLimits(List<RateLimitConfig> limits) {
+    public void setLimits(List<RateConfig> limits) {
         this.limits = limits;
     }
 
     @Override
     public String toString() {
-        return "RateLimitConfigList{" +
+        return "RateConfigList{" +
                 "logic=" + logic +
                 ", limits=" + limits +
                 '}';

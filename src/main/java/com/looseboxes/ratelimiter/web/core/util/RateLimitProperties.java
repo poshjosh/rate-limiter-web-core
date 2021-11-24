@@ -43,5 +43,5 @@ public interface RateLimitProperties {
     /**
      * @return Configuration for building a customizable {@link com.looseboxes.ratelimiter.RateLimiter}
      */
-    Map<String, RateLimitConfigList> getRateLimitConfigs();
+    Map<String, RateConfigList> getRateLimitConfigs();
 }

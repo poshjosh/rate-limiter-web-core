@@ -58,7 +58,8 @@ Example class that implements the required properties.
 package com.example.web;
 
 import com.looseboxes.ratelimiter.rates.Rates;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.web.core.util.RateConfig;
+import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -69,23 +70,25 @@ import java.util.concurrent.TimeUnit;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-    @Override public List<String> getResourcePackages() { 
+    @Override
+    public List<String> getResourcePackages() {
         return Collections.singletonList("com.example.web.resources");
     }
 
-    @Override public Map<String, RateLimitConfigList> getRateLimitConfigs() {
+    @Override
+    public Map<String, RateConfigList> getRateLimitConfigs() {
         return Collections.singletonMap("default", getRateLimitConfigList());
     }
 
-    private RateLimitConfigList getRateLimitConfigList() {
-        RateLimitConfigList rateLimitConfigList = new RateLimitConfigList();
-        rateLimitConfigList.setLimits(getRateLimits());
-        rateLimitConfigList.setLogic(Rates.Logic.OR);
-        return rateLimitConfigList;
+    private RateConfigList getRateLimitConfigList() {
+        RateConfigList rateConfigList = new RateConfigList();
+        rateConfigList.setLimits(getRateLimits());
+        rateConfigList.setLogic(Rates.Logic.OR);
+        return rateConfigList;
     }
 
-    private List<RateLimitConfig> getRateLimits() {
-        RateLimitConfig config = new RateLimitConfig();
+    private List<RateConfig> getRateLimits() {
+        RateConfig config = new RateConfig();
         config.setLimit(2);
         config.setDuration(1);
         config.setTimeUnit(TimeUnit.MINUTES);
