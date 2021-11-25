@@ -29,7 +29,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
             RequestToIdConverter<R> defaultRequestToIdConverter,
             RateCache<Object> rateCache,
             RateSupplier rateSupplier,
-            RateExceededHandler rateExceededHandler,
+            RateRecordedListener rateRecordedListener,
             RateLimiterConfigurer<R> rateLimiterConfigurer) {
         this.converters = new HashMap<>();
         this.defaultRequestToIdConverter = Objects.requireNonNull(defaultRequestToIdConverter);
@@ -37,7 +37,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         this.defaultRateLimiterConfiguration = new RateLimiterConfiguration<>()
                 .rateCache(rateCache == null ? new InMemoryRateCache<>() : rateCache)
                 .rateSupplier(rateSupplier == null ? new LimitWithinDurationSupplier() : rateSupplier)
-                .rateExceededHandler(rateExceededHandler == null ? new RateExceededExceptionThrower() : rateExceededHandler);
+                .rateExceededHandler(rateRecordedListener == null ? new RateExceededExceptionThrower() : rateRecordedListener);
         if(rateLimiterConfigurer != null) {
             rateLimiterConfigurer.addRequestToIdConverters(this);
             rateLimiterConfigurer.addRateCaches(this);
@@ -93,16 +93,16 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         getOrCreateConfiguration(name).setRateSupplier(rateSupplier);
     }
 
-    @Override public void registerRateExceededHandler(Class<?> clazz, RateExceededHandler rateExceededHandler) {
-        registerRateExceededHandler(classNameProvider.getId(clazz), rateExceededHandler);
+    @Override public void registerRateExceededHandler(Class<?> clazz, RateRecordedListener rateRecordedListener) {
+        registerRateExceededHandler(classNameProvider.getId(clazz), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededHandler(Method method, RateExceededHandler rateExceededHandler) {
-        registerRateExceededHandler(methodNameProvider.getId(method), rateExceededHandler);
+    @Override public void registerRateExceededHandler(Method method, RateRecordedListener rateRecordedListener) {
+        registerRateExceededHandler(methodNameProvider.getId(method), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededHandler(String name, RateExceededHandler rateExceededHandler) {
-        getOrCreateConfiguration(name).setRateExceededHandler(rateExceededHandler);
+    @Override public void registerRateExceededHandler(String name, RateRecordedListener rateRecordedListener) {
+        getOrCreateConfiguration(name).setRateExceededHandler(rateRecordedListener);
     }
 
     public RateLimiterConfiguration<Object> copyConfigurationOrDefault(String name) {

@@ -1,8 +1,7 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.RateExceededHandler;
+import com.looseboxes.ratelimiter.RateRecordedListener;
 import com.looseboxes.ratelimiter.RateSupplier;
-import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
 
 import java.lang.reflect.Method;
@@ -27,9 +26,9 @@ public interface RateLimiterConfigurationRegistry<R> {
 
     void registerRateSupplier(String name, RateSupplier rateSupplier);
 
-    void registerRateExceededHandler(Class<?> clazz, RateExceededHandler rateExceededHandler);
+    void registerRateExceededHandler(Class<?> clazz, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededHandler(Method method, RateExceededHandler rateExceededHandler);
+    void registerRateExceededHandler(Method method, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededHandler(String name, RateExceededHandler rateExceededHandler);
+    void registerRateExceededHandler(String name, RateRecordedListener rateRecordedListener);
 }
