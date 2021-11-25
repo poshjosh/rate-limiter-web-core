@@ -1,61 +1,75 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.annotation.RateComposition;
+import com.looseboxes.ratelimiter.annotation.AnnotationCollector;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
+import com.looseboxes.ratelimiter.annotation.IdProvider;
+import com.looseboxes.ratelimiter.annotation.RateLimitGroupMembers;
+import com.looseboxes.ratelimiter.cache.SingletonRateCache;
 import com.looseboxes.ratelimiter.rates.Rate;
+import com.looseboxes.ratelimiter.util.RateLimitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.*;
 
-public class PathPatternsRateLimiter<R> implements RateLimiter<R> {
+public class PathPatternsRateLimiter<S, R, K> implements RateLimiter<K> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PathPatternsRateLimiter.class);
 
-    private final PathPatterns<R>[] requestPathPatternArray;
-    private final RateLimiter<PathPatterns<R>> [] rateLimiterArray;
+    private final List<PathPatterns<K>> requestPathPatterns;
+    private final List<RateLimiter<Object>> rateLimiters;
 
     public PathPatternsRateLimiter(
-            RateSupplier rateSupplier,
-            RateExceededHandler rateExceededHandler,
-            List<RateComposition<PathPatterns<R>>> limits) {
+            List<S> sources,
+            AnnotationProcessor<S> annotationProcessor,
+            AnnotationCollector<S, Map<RateLimitGroupMembers<S>, RateLimitConfig>> annotationCollector,
+            RateLimiterConfigurationRegistry<R> rateLimiterConfigurationRegistry,
+            IdProvider<S, PathPatterns<K>> idProvider){
 
-        LOG.debug("Limits: {}", limits);
+        this.requestPathPatterns = new ArrayList<>();
+        this.rateLimiters = new ArrayList<>();
 
-        final int size = limits.size();
+        sources.forEach(source -> annotationProcessor.process(source, annotationCollector));
+        Map<RateLimitGroupMembers<S>, RateLimitConfig> rateLimitConfigs = annotationCollector.getResult();
+        Set<Map.Entry<RateLimitGroupMembers<S>, RateLimitConfig>> entrySet = rateLimitConfigs.entrySet();
+        for(Map.Entry<RateLimitGroupMembers<S>, RateLimitConfig> entry : entrySet) {
+            RateLimitGroupMembers<S> group = entry.getKey();
+            String name = group.getName();
+            Collection<S> members = group.getMembers();
 
-        this.requestPathPatternArray = new PathPatterns[size];
-        this.rateLimiterArray = new RateLimiter[size];
+            if (!members.isEmpty()) {
 
-        if(!limits.isEmpty()) {
+                PathPatterns<K> pathPatterns = idProvider.getId(members.iterator().next());
+                this.requestPathPatterns.add(pathPatterns);
 
-            for(int i = 0; i < size; i++) {
-
-                RateComposition<PathPatterns<R>> limit = limits.get(i);
-                PathPatterns<R> pathPatterns = limit.getId();
-                this.requestPathPatternArray[i] = pathPatterns;
-                this.rateLimiterArray[i] = new SingletonRateLimiter<>(
-                        pathPatterns, rateSupplier, limit.getLogic(), rateExceededHandler, limit.getRates()
-                );
+                RateLimiterConfiguration<Object> rateLimiterConfiguration =
+                        rateLimiterConfigurationRegistry.copyConfigurationOrDefault(name)
+                                .rateCache(new SingletonRateCache<>(pathPatterns))
+                                .rateLimitConfig(entry.getValue());
+                RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateLimiterConfiguration);
+                this.rateLimiters.add(rateLimiter);
             }
         }
     }
 
     @Override
-    public Rate record(R request) throws RateLimitExceededException {
+    public Rate record(K request) throws RateLimitExceededException {
 
-        LOG.trace("Invoking {} rate limiters for {}", rateLimiterArray.length, request);
+        LOG.trace("Invoking {} rate limiters for {}", rateLimiters.size(), request);
 
         Rate result = Rate.NONE;
         RateLimitExceededException exception = null;
 
-        for(int i = 0; i< rateLimiterArray.length; i++) {
+        final int size = rateLimiters.size();
 
-            PathPatterns<R> pathPatterns = requestPathPatternArray[i];
+        for(int i = 0; i < size; i++) {
+
+            PathPatterns<K> pathPatterns = requestPathPatterns.get(i);
 
             if(pathPatterns.matches(request)) {
 
-                final RateLimiter<PathPatterns<R>> rateLimiter = rateLimiterArray[i];
+                final RateLimiter<Object> rateLimiter = rateLimiters.get(i);
 
                 try {
                     result = rateLimiter.record(pathPatterns);

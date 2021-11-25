@@ -1,17 +1,12 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.RateExceededHandler;
 import com.looseboxes.ratelimiter.RateLimitExceededException;
 import com.looseboxes.ratelimiter.RateLimiter;
-import com.looseboxes.ratelimiter.RateSupplier;
-import com.looseboxes.ratelimiter.annotation.AnnotatedElementIdProvider;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 public class RateLimitHandler<R> {
@@ -22,32 +17,6 @@ public class RateLimitHandler<R> {
     private final RateLimiter<R> rateLimiter;
     private final RequestToIdConverter<R> requestToIdConverter;
     private final RateLimiter<String>[] rateLimiters;
-
-    public RateLimitHandler(
-            RateLimitProperties properties,
-            RateSupplier rateSupplier,
-            RateExceededHandler rateExceededHandler,
-            RateLimiter<R> rateLimiter,
-            RequestToIdConverter<R> requestToIdConverter,
-            AnnotatedElementIdProvider<Class<?>, PathPatterns<String>> annotatedElementIdProviderForClass,
-            AnnotatedElementIdProvider<Method, PathPatterns<String>> annotatedElementIdProviderForMethod,
-            List<Class<?>> classes) {
-        this(
-                properties,
-                rateLimiter,
-                requestToIdConverter,
-                classes.isEmpty() ? RateLimiter.noop() :
-                        new ClassLevelAnnotationRateLimiter<>(
-                                rateSupplier, rateExceededHandler, classes,
-                                annotatedElementIdProviderForClass
-                        ),
-                classes.isEmpty() ? RateLimiter.noop() :
-                        new MethodLevelAnnotationsRateLimiter<>(
-                                rateSupplier, rateExceededHandler, classes,
-                                annotatedElementIdProviderForMethod
-                        )
-        );
-    }
 
     @SafeVarargs
     public RateLimitHandler(

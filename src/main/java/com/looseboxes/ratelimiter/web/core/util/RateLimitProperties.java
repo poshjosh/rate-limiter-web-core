@@ -1,5 +1,7 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
+import com.looseboxes.ratelimiter.util.RateLimitConfig;
+
 import java.util.List;
 import java.util.Map;
 

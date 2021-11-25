@@ -58,10 +58,10 @@ Example class that implements the required properties.
 package com.example.web;
 
 import com.looseboxes.ratelimiter.rates.Rates;
-import com.looseboxes.ratelimiter.web.core.util.RateConfig;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.util.RateConfig;
+import com.looseboxes.ratelimiter.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.util.Collections;
