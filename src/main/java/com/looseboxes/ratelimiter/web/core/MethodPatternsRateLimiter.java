@@ -11,13 +11,12 @@ public class MethodPatternsRateLimiter<R> extends PathPatternsRateLimiter<Method
 
     public MethodPatternsRateLimiter(
             List<Class<?>> classes,
-            RateLimiterConfigurationRegistry<R> rateLimiterConfigurationRegistry,
+            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
             IdProvider<Method, PathPatterns<String>> idProvider) {
         super(
                 classes.stream().flatMap(clazz -> Arrays.stream(clazz.getDeclaredMethods())).collect(Collectors.toList()),
                 new MethodAnnotationProcessor(),
-                new MethodAnnotationCollector(),
-                rateLimiterConfigurationRegistry,
+                new MethodAnnotationCollector(), rateLimiterConfigurationSource,
                 idProvider);
     }
 }

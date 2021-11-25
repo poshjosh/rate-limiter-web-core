@@ -24,7 +24,7 @@ public class PathPatternsRateLimiter<S, R, K> implements RateLimiter<K> {
             List<S> sources,
             AnnotationProcessor<S> annotationProcessor,
             AnnotationCollector<S, Map<RateLimitGroupMembers<S>, RateLimitConfig>> annotationCollector,
-            RateLimiterConfigurationRegistry<R> rateLimiterConfigurationRegistry,
+            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
             IdProvider<S, PathPatterns<K>> idProvider){
 
         this.requestPathPatterns = new ArrayList<>();
@@ -44,7 +44,7 @@ public class PathPatternsRateLimiter<S, R, K> implements RateLimiter<K> {
                 this.requestPathPatterns.add(pathPatterns);
 
                 RateLimiterConfiguration<Object> rateLimiterConfiguration =
-                        rateLimiterConfigurationRegistry.copyConfigurationOrDefault(name)
+                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name)
                                 .rateCache(new SingletonRateCache<>(pathPatterns))
                                 .rateLimitConfig(entry.getValue());
                 RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateLimiterConfiguration);

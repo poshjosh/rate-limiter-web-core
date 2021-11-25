@@ -8,8 +8,9 @@ public class ClassPatternsRateLimiter<R> extends PathPatternsRateLimiter<Class<?
 
     public ClassPatternsRateLimiter(
             List<Class<?>> classes,
-            RateLimiterConfigurationRegistry<R> rateLimiterConfigurationRegistry,
+            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
             IdProvider<Class<?>, PathPatterns<String>> idProvider) {
-        super(classes, new ClassAnnotationProcessor(), new ClassAnnotationCollector(), rateLimiterConfigurationRegistry, idProvider);
+        super(classes, new ClassAnnotationProcessor(), new ClassAnnotationCollector(),
+                rateLimiterConfigurationSource, idProvider);
     }
 }

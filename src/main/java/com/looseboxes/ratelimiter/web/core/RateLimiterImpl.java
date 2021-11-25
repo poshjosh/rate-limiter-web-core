@@ -18,7 +18,7 @@ public class RateLimiterImpl<R> implements RateLimiter<R> {
 
     public RateLimiterImpl(
             Map<String, RateLimitConfig> rateLimitConfigs,
-            RateLimiterConfigurationRegistry<R> rateLimiterConfigurationRegistry) {
+            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource) {
         final int size = rateLimitConfigs.size();
         this.requestToIdConverters = new ArrayList<>(size);
         this.rateLimiters = new ArrayList<>(size);
@@ -26,10 +26,10 @@ public class RateLimiterImpl<R> implements RateLimiter<R> {
         Set<Map.Entry<String, RateLimitConfig>> entrySet = rateLimitConfigs.entrySet();
         for(Map.Entry<String, RateLimitConfig> entry : entrySet) {
             String groupName = entry.getKey();
-            RequestToIdConverter<R> converter = rateLimiterConfigurationRegistry.getRequestToIdConverterOrDefault(groupName);
+            RequestToIdConverter<R> converter = rateLimiterConfigurationSource.getRequestToIdConverterOrDefault(groupName);
             this.requestToIdConverters.add(converter);
 
-            final RateLimiterConfiguration<Object> config = rateLimiterConfigurationRegistry
+            final RateLimiterConfiguration<Object> config = rateLimiterConfigurationSource
                     .copyConfigurationOrDefault(groupName).rateLimitConfig(entry.getValue());
             RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(config);
             this.rateLimiters.add(rateLimiter);

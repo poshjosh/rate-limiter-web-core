@@ -1,70 +1,35 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.cache.InMemoryRateCache;
+import com.looseboxes.ratelimiter.RateExceededHandler;
+import com.looseboxes.ratelimiter.RateSupplier;
+import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.lang.reflect.Method;
 
-public class RateLimiterConfigurationRegistry<R> {
+public interface RateLimiterConfigurationRegistry<R> {
 
-    private final Map<String, RequestToIdConverter<R>> converters;
+    void registerRequestToIdConverter(Class<?> clazz, RequestToIdConverter<R> requestToIdConverter);
 
-    private final RequestToIdConverter<R> defaultRequestToIdConverter;
+    void registerRequestToIdConverter(Method method, RequestToIdConverter<R> requestToIdConverter);
 
-    private final Map<String, RateLimiterConfiguration<Object>> configurationMap;
+    void registerRequestToIdConverter(String name, RequestToIdConverter<R> requestToIdConverter);
 
-    private final RateLimiterConfiguration<Object> defaultRateLimiterConfiguration;
+    void registerRateCache(Class<?> clazz, RateCache rateCache);
 
-    public RateLimiterConfigurationRegistry(
-            RequestToIdConverter<R> defaultRequestToIdConverter,
-            RateCache<Object> rateCache,
-            RateSupplier rateSupplier,
-            RateExceededHandler rateExceededHandler,
-            RateLimiterConfigurer<R> rateLimiterConfigurer) {
-        this.converters = new HashMap<>();
-        this.defaultRequestToIdConverter = Objects.requireNonNull(defaultRequestToIdConverter);
-        this.configurationMap = new HashMap<>();
-        this.defaultRateLimiterConfiguration = new RateLimiterConfiguration<>()
-                .rateCache(rateCache == null ? new InMemoryRateCache<>() : rateCache)
-                .rateSupplier(rateSupplier == null ? new LimitWithinDurationSupplier() : rateSupplier)
-                .rateExceededHandler(rateExceededHandler == null ? new RateExceededExceptionThrower() : rateExceededHandler);
-        if(rateLimiterConfigurer != null) {
-            rateLimiterConfigurer.configure(this);
-        }
-    }
+    void registerRateCache(Method method, RateCache rateCache);
 
-    public void registerConverter(String name, RequestToIdConverter<R> requestToIdConverter) {
-        converters.put(name, requestToIdConverter);
-    }
+    void registerRateCache(String name, RateCache rateCache);
 
-    public RequestToIdConverter<R> getDefaultRequestToIdConverter() {
-        return defaultRequestToIdConverter;
-    }
+    void registerRateSupplier(Class<?> clazz, RateSupplier rateSupplier);
 
-    public RequestToIdConverter<R> getRequestToIdConverterOrDefault(String name) {
-        return converters.getOrDefault(name, defaultRequestToIdConverter);
-    }
+    void registerRateSupplier(Method method, RateSupplier rateSupplier);
 
-    public void registerRateCache(String name, RateCache rateCache) {
-        getOrCreateConfiguration(name).rateCache(rateCache);
-    }
+    void registerRateSupplier(String name, RateSupplier rateSupplier);
 
-    public void registerRateSupplier(String name, RateSupplier rateSupplier) {
-        getOrCreateConfiguration(name).setRateSupplier(rateSupplier);
-    }
+    void registerRateExceededHandler(Class<?> clazz, RateExceededHandler rateExceededHandler);
 
-    public void registerRateExceededHandler(String name, RateExceededHandler rateExceededHandler) {
-        getOrCreateConfiguration(name).setRateExceededHandler(rateExceededHandler);
-    }
+    void registerRateExceededHandler(Method method, RateExceededHandler rateExceededHandler);
 
-    public RateLimiterConfiguration<Object> copyConfigurationOrDefault(String name) {
-        return new RateLimiterConfiguration<>(configurationMap.getOrDefault(name, defaultRateLimiterConfiguration));
-    }
-
-    private RateLimiterConfiguration<Object> getOrCreateConfiguration(String name) {
-        return configurationMap.computeIfAbsent(name, (s) -> new RateLimiterConfiguration<>(defaultRateLimiterConfiguration));
-    }
+    void registerRateExceededHandler(String name, RateExceededHandler rateExceededHandler);
 }
