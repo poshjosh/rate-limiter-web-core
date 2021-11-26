@@ -1,7 +1,7 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.RateRecordedListener;
-import com.looseboxes.ratelimiter.RateSupplier;
+import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
 
 import java.lang.reflect.Method;
@@ -20,15 +20,15 @@ public interface RateLimiterConfigurationRegistry<R> {
 
     void registerRateCache(String name, RateCache rateCache);
 
-    void registerRateSupplier(Class<?> clazz, RateSupplier rateSupplier);
+    void registerRateFactory(Class<?> clazz, RateFactory rateFactory);
 
-    void registerRateSupplier(Method method, RateSupplier rateSupplier);
+    void registerRateFactory(Method method, RateFactory rateFactory);
 
-    void registerRateSupplier(String name, RateSupplier rateSupplier);
+    void registerRateFactory(String name, RateFactory rateFactory);
 
-    void registerRateExceededHandler(Class<?> clazz, RateRecordedListener rateRecordedListener);
+    void registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededHandler(Method method, RateRecordedListener rateRecordedListener);
+    void registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededHandler(String name, RateRecordedListener rateRecordedListener);
+    void registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener);
 }

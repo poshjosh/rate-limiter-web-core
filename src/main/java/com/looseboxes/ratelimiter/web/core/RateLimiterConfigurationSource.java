@@ -28,7 +28,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
     public RateLimiterConfigurationSource(
             RequestToIdConverter<R> defaultRequestToIdConverter,
             RateCache<Object> rateCache,
-            RateSupplier rateSupplier,
+            RateFactory rateFactory,
             RateRecordedListener rateRecordedListener,
             RateLimiterConfigurer<R> rateLimiterConfigurer) {
         this.converters = new HashMap<>();
@@ -36,13 +36,13 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         this.configurationMap = new HashMap<>();
         this.defaultRateLimiterConfiguration = new RateLimiterConfiguration<>()
                 .rateCache(rateCache == null ? new InMemoryRateCache<>() : rateCache)
-                .rateSupplier(rateSupplier == null ? new LimitWithinDurationSupplier() : rateSupplier)
-                .rateExceededHandler(rateRecordedListener == null ? new RateExceededExceptionThrower() : rateRecordedListener);
+                .rateFactory(rateFactory == null ? new LimitWithinDurationFactory() : rateFactory)
+                .rateRecordedListener(rateRecordedListener == null ? new RateExceededExceptionThrower() : rateRecordedListener);
         if(rateLimiterConfigurer != null) {
             rateLimiterConfigurer.addRequestToIdConverters(this);
             rateLimiterConfigurer.addRateCaches(this);
-            rateLimiterConfigurer.addRateSuppliers(this);
-            rateLimiterConfigurer.addRateExceededHandlers(this);
+            rateLimiterConfigurer.addRateFactorys(this);
+            rateLimiterConfigurer.addRateRecordedListener(this);
         }
     }
 
@@ -81,28 +81,28 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         getOrCreateConfiguration(name).rateCache(rateCache);
     }
 
-    @Override public void registerRateSupplier(Class<?> clazz, RateSupplier rateSupplier) {
-        registerRateSupplier(classNameProvider.getId(clazz), rateSupplier);
+    @Override public void registerRateFactory(Class<?> clazz, RateFactory rateFactory) {
+        registerRateFactory(classNameProvider.getId(clazz), rateFactory);
     }
 
-    @Override public void registerRateSupplier(Method method, RateSupplier rateSupplier) {
-        registerRateSupplier(methodNameProvider.getId(method), rateSupplier);
+    @Override public void registerRateFactory(Method method, RateFactory rateFactory) {
+        registerRateFactory(methodNameProvider.getId(method), rateFactory);
     }
 
-    @Override public void registerRateSupplier(String name, RateSupplier rateSupplier) {
-        getOrCreateConfiguration(name).setRateSupplier(rateSupplier);
+    @Override public void registerRateFactory(String name, RateFactory rateFactory) {
+        getOrCreateConfiguration(name).setRateFactory(rateFactory);
     }
 
-    @Override public void registerRateExceededHandler(Class<?> clazz, RateRecordedListener rateRecordedListener) {
-        registerRateExceededHandler(classNameProvider.getId(clazz), rateRecordedListener);
+    @Override public void registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener) {
+        registerRateRecordedListener(classNameProvider.getId(clazz), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededHandler(Method method, RateRecordedListener rateRecordedListener) {
-        registerRateExceededHandler(methodNameProvider.getId(method), rateRecordedListener);
+    @Override public void registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener) {
+        registerRateRecordedListener(methodNameProvider.getId(method), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededHandler(String name, RateRecordedListener rateRecordedListener) {
-        getOrCreateConfiguration(name).setRateExceededHandler(rateRecordedListener);
+    @Override public void registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener) {
+        getOrCreateConfiguration(name).setRateRecordedListener(rateRecordedListener);
     }
 
     public RateLimiterConfiguration<Object> copyConfigurationOrDefault(String name) {

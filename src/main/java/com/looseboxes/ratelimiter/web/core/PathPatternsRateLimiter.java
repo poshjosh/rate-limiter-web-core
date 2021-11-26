@@ -4,10 +4,9 @@ import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.AnnotationCollector;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
-import com.looseboxes.ratelimiter.annotation.RateLimitGroupMembers;
 import com.looseboxes.ratelimiter.cache.SingletonRateCache;
 import com.looseboxes.ratelimiter.rates.Rate;
-import com.looseboxes.ratelimiter.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.util.RateLimitGroupData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +22,7 @@ public class PathPatternsRateLimiter<S, R, K> implements RateLimiter<K> {
     public PathPatternsRateLimiter(
             List<S> sources,
             AnnotationProcessor<S> annotationProcessor,
-            AnnotationCollector<S, Map<RateLimitGroupMembers<S>, RateLimitConfig>> annotationCollector,
+            AnnotationCollector<S, Map<String, RateLimitGroupData<S>>> annotationCollector,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
             IdProvider<S, PathPatterns<K>> idProvider){
 
@@ -31,24 +30,29 @@ public class PathPatternsRateLimiter<S, R, K> implements RateLimiter<K> {
         this.rateLimiters = new ArrayList<>();
 
         sources.forEach(source -> annotationProcessor.process(source, annotationCollector));
-        Map<RateLimitGroupMembers<S>, RateLimitConfig> rateLimitConfigs = annotationCollector.getResult();
-        Set<Map.Entry<RateLimitGroupMembers<S>, RateLimitConfig>> entrySet = rateLimitConfigs.entrySet();
-        for(Map.Entry<RateLimitGroupMembers<S>, RateLimitConfig> entry : entrySet) {
-            RateLimitGroupMembers<S> group = entry.getKey();
-            String name = group.getName();
-            Collection<S> members = group.getMembers();
 
-            if (!members.isEmpty()) {
+        Map<String, RateLimitGroupData<S>> rateLimitConfigs = annotationCollector.getResult();
+        Set<Map.Entry<String, RateLimitGroupData<S>>> entrySet = rateLimitConfigs.entrySet();
+        for(Map.Entry<String, RateLimitGroupData<S>> entry : entrySet) {
+            String groupName = entry.getKey();
+            RateLimitGroupData<S> groupData = entry.getValue();
+            Collection<S> groupMembers = groupData.getMembers();
 
-                PathPatterns<K> pathPatterns = idProvider.getId(members.iterator().next());
-                this.requestPathPatterns.add(pathPatterns);
+            if (!groupMembers.isEmpty()) {
 
-                RateLimiterConfiguration<Object> rateLimiterConfiguration =
-                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name)
-                                .rateCache(new SingletonRateCache<>(pathPatterns))
-                                .rateLimitConfig(entry.getValue());
-                RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateLimiterConfiguration);
-                this.rateLimiters.add(rateLimiter);
+                for(S groupMember : groupMembers) {
+
+                    PathPatterns<K> pathPatterns = idProvider.getId(groupMember);
+
+                    this.requestPathPatterns.add(pathPatterns);
+
+                    RateLimiterConfiguration<Object> rateLimiterConfiguration =
+                            rateLimiterConfigurationSource.copyConfigurationOrDefault(groupName)
+                                    .rateCache(new SingletonRateCache<>(pathPatterns))
+                                    .rateLimitConfig(groupData.getConfig());
+                    RateLimiter<Object> rateLimiter = new DefaultRateLimiter<>(rateLimiterConfiguration);
+                    this.rateLimiters.add(rateLimiter);
+                }
             }
         }
     }

@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Represents zero or more path patterns.
  *
- * Should support both path variables of the form {@code /users/{id}} and ant style path patterns as depicted in
+ * Supports both path variables of the form {@code /users/{id}} and ant style path patterns as depicted in
  * the following table:
  *
  * +----------+-----------------------------------+
@@ -16,9 +16,9 @@ import java.util.List;
  * | *        | Matches zero or more characters.  |
  * | **       | Matches zero or more directories. |
  * +----------+-----------------------------------+
- * @param <REQUEST>
+ * @param <PATH> The of object that may be matched
  */
-public interface PathPatterns<REQUEST> {
+public interface PathPatterns<PATH> {
 
     PathPatterns<Object> NONE = new PathPatterns<Object>() {
         @Override
@@ -26,7 +26,7 @@ public interface PathPatterns<REQUEST> {
             return other;
         }
         @Override
-        public boolean matches(Object request) {
+        public boolean matches(Object path) {
             return false;
         }
         @Override
@@ -39,9 +39,9 @@ public interface PathPatterns<REQUEST> {
         return (PathPatterns<T>)NONE;
     }
 
-    PathPatterns<REQUEST> combine(PathPatterns<REQUEST> other);
+    PathPatterns<PATH> combine(PathPatterns<PATH> other);
 
-    boolean matches(REQUEST request);
+    boolean matches(PATH path);
 
     List<String> getPathPatterns();
 }
