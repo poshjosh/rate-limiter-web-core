@@ -6,12 +6,13 @@ import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
 import com.looseboxes.ratelimiter.cache.InMemoryRateCache;
 import com.looseboxes.ratelimiter.cache.RateCache;
+import com.looseboxes.ratelimiter.web.core.util.ElementPatternsMatcher;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
+import com.looseboxes.ratelimiter.web.core.util.RequestUriMatcher;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurationRegistry<R> {
 
@@ -20,9 +21,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
 
     private final RequestToIdConverter<R, String> requestToUriConverter;
 
-    private final Map<String, RequestToIdConverter<R, Object>> converters;
-
-    private RequestToIdConverter<R, Object> defaultRequestToIdConverter;
+    private final Map<String, Matcher<R>> matchers;
 
     private final Map<String, RateLimiterConfiguration<Object>> configurationMap;
 
@@ -34,7 +33,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
 
     private final IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider;
 
-    private final Matcher<R> matchAllForRequestUri;
+    private final Matcher<R> matcherForAllRequestUris;
 
     public RateLimiterConfigurationSource(
             RequestToIdConverter<R, String> requestToUriConverter,
@@ -45,8 +44,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
             IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider,
             IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider) {
         this.requestToUriConverter = Objects.requireNonNull(requestToUriConverter);
-        this.converters = new HashMap<>();
-        this.defaultRequestToIdConverter = request -> request;
+        this.matchers = new HashMap<>();
         this.configurationMap = new HashMap<>();
         this.defaultConfiguration = new RateLimiterConfiguration<>()
                 .rateCache(rateCache == null ? new InMemoryRateCache<>() : rateCache)
@@ -58,93 +56,37 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         }
         this.classPathPatternsProvider = Objects.requireNonNull(classPathPatternsProvider);
         this.methodPathPatternsProvider = Objects.requireNonNull(methodPathPatternsProvider);
-        this.matchAllForRequestUri = new Matcher<R>() {
-            @Override
-            public boolean matches(R target) {
-                return true;
-            }
-            @Override
-            public Object getId(R target) {
-                return requestToUriConverter.convert(target);
-            }
-        };
+        this.matcherForAllRequestUris = new RequestUriMatcher<>(requestToUriConverter);
+    }
+
+    @Override public void registerRequestMatcher(Class<?> clazz, Matcher<R> matcher) {
+        registerRequestMatcher(classNameProvider.getId(clazz), matcher);
+    }
+
+    @Override public void registerRequestMatcher(Method method, Matcher<R> matcher) {
+        registerRequestMatcher(methodNameProvider.getId(method), matcher);
+    }
+
+    @Override public void registerRequestMatcher(String name, Matcher<R> matcher) {
+        matchers.put(name, Objects.requireNonNull(matcher));
     }
 
     public Matcher<R> getMatcherForProperties(String name) {
-        return matchAllForRequestUri;
+        return matchers.computeIfAbsent(name, s -> matcherForAllRequestUris);
     }
 
-    public Matcher<R> getMatcherForSource(String name, Object source) {
-        if(source instanceof List) {
-            List<Matcher<R>> matchers = ((List<?>)source).stream().map(s -> getMatcherForSource(name, s)).collect(Collectors.toList());
-            List<Object> matcherIds = matchers.stream().map(matcher -> matcher.getId(null)).collect(Collectors.toList());
-            return new Matcher<R>() {
-                @Override
-                public boolean matches(R target) {
-                    return matchers.stream().anyMatch(matcher -> matcher.matches(target));
-                }
-                @Override
-                public Object getId(R target) {
-                    return matcherIds;
-                }
-                @Override
-                public String toString() {
-                    return "$Matcher{" + matcherIds + "}";
-                }
-            };
+    public Matcher<R> getMatcherForSourceElement(String name, Object source) {
+        return matchers.computeIfAbsent(name, s -> createMatcherForSourceElement(source));
+    }
+
+    private Matcher<R> createMatcherForSourceElement(Object source) {
+        if(source instanceof Class) {
+            return new ElementPatternsMatcher<>((Class<?>)source, classPathPatternsProvider, requestToUriConverter);
+        }else if(source instanceof Method) {
+            return  new ElementPatternsMatcher<>((Method)source, methodPathPatternsProvider, requestToUriConverter);
         }else{
-            final PathPatterns<String> pathPatterns;
-            if(source instanceof Class) {
-                pathPatterns = classPathPatternsProvider.getId((Class<?>) source);
-            }else if(source instanceof Method) {
-                pathPatterns = methodPathPatternsProvider.getId((Method) source);
-            }else{
-                throw new UnsupportedOperationException();
-            }
-            return new Matcher<R>() {
-                @Override
-                public boolean matches(R target) {
-                    String uri = requestToUriConverter.convert(target);
-                    return pathPatterns.matches(uri);
-                }
-                @Override
-                public Object getId(R target) {
-                    return pathPatterns.getPatterns();
-                }
-                @Override
-                public String toString() {
-                    return "$Matcher{" + pathPatterns + "}";
-                }
-            };
+            throw new UnsupportedOperationException();
         }
-    }
-
-    @Override public void registerRequestToIdConverter(RequestToIdConverter<R, Object> requestToIdConverter) {
-        defaultRequestToIdConverter = Objects.requireNonNull(requestToIdConverter);
-    }
-
-    @Override public void registerRequestToIdConverter(Class<?> clazz,
-            RequestToIdConverter<R, Object> requestToIdConverter) {
-        registerRequestToIdConverter(classNameProvider.getId(clazz), requestToIdConverter);
-    }
-
-    @Override public void registerRequestToIdConverter(Method method,
-            RequestToIdConverter<R, Object> requestToIdConverter) {
-        registerRequestToIdConverter(methodNameProvider.getId(method), requestToIdConverter);
-    }
-
-    @Override public void registerRequestToIdConverter(String name,
-            RequestToIdConverter<R, Object> requestToIdConverter) {
-        converters.put(name, Objects.requireNonNull(requestToIdConverter));
-    }
-
-    // @TODO make private
-    public RequestToIdConverter<R, String> getRequestToUriConverter() {
-        return requestToUriConverter;
-    }
-
-    public RequestToIdConverter<R, Object> getRequestToIdConverterOrDefault(String name) {
-        return converters.getOrDefault(name, defaultRequestToIdConverter == null ? requestToUriConverter::convert : defaultRequestToIdConverter);
     }
 
     @Override public void registerRateCache(RateCache<Object> rateCache) {

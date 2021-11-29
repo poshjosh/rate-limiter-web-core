@@ -3,19 +3,17 @@ package com.looseboxes.ratelimiter.web.core;
 import com.looseboxes.ratelimiter.RateRecordedListener;
 import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
+import com.looseboxes.ratelimiter.web.core.util.Matcher;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 public interface RateLimiterConfigurationRegistry<R> {
 
-    void registerRequestToIdConverter(RequestToIdConverter<R, Object> requestToIdConverter);
+    void registerRequestMatcher(Class<?> clazz, Matcher<R> matcher);
 
-    void registerRequestToIdConverter(Class<?> clazz, RequestToIdConverter<R, Object> requestToIdConverter);
+    void registerRequestMatcher(Method method, Matcher<R> matcher);
 
-    void registerRequestToIdConverter(Method method, RequestToIdConverter<R, Object> requestToIdConverter);
-
-    void registerRequestToIdConverter(String name, RequestToIdConverter<R, Object> requestToIdConverter);
+    void registerRequestMatcher(String name, Matcher<R> matcher);
 
     void registerRateCache(RateCache<Object> rateCache);
 

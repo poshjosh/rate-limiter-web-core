@@ -4,8 +4,8 @@ import com.looseboxes.ratelimiter.DefaultRateLimiter;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.RateLimiterConfiguration;
 import com.looseboxes.ratelimiter.annotation.*;
-import com.looseboxes.ratelimiter.cache.SingletonRateCache;
 import com.looseboxes.ratelimiter.node.*;
+import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
 import com.looseboxes.ratelimiter.rates.Rate;
 import com.looseboxes.ratelimiter.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
@@ -17,7 +17,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class RateLimitHandler<R> {
 
@@ -40,7 +39,7 @@ public class RateLimitHandler<R> {
         final Set<String> propertyGroupNames = new LinkedHashSet<>();
         collectLeafNodes(elementRoot, node -> propertyGroupNames.add(node.getName()));
 
-        final BiConsumer<Object, Node<NodeData>> requirePropertyGroupNameNotUsedAsAnnotationGroupName = (element, node) -> {
+        final BiConsumer<Object, Node<NodeData>> requirePropertyGroupNameNotEqualToAnnotationGroupName = (element, node) -> {
             if(node != null && propertyGroupNames.contains(node.getName())) {
                 throw new IllegalStateException(
                         "The same name cannot be used for both property based and annotation based rate limit group. Name: " + node.getName());
@@ -48,9 +47,9 @@ public class RateLimitHandler<R> {
         };
 
         // Add annotation based rate limit groups
-        annotationProcessor.process(elementRoot, resourceClasses, requirePropertyGroupNameNotUsedAsAnnotationGroupName);
+        annotationProcessor.process(elementRoot, resourceClasses, requirePropertyGroupNameNotEqualToAnnotationGroupName);
         if(LOG.isTraceEnabled()) {
-            LOG.trace("Element Nodes: {}", new NodeFormatter().format(elementRoot));
+            LOG.trace("Element Nodes: {}", NodeFormatters.indentedHeirarchy().format(elementRoot));
         }
 
         BiFunction<String, NodeData, RateLimiter<R>> valueConverter =
@@ -59,7 +58,7 @@ public class RateLimitHandler<R> {
         // Transform the root and it's children to rate limiter nodes
         Node<RateLimiter<R>> rateLimiterRoot = elementRoot.transform(null, (name, value) -> name, valueConverter);
         if(LOG.isDebugEnabled()) {
-            LOG.debug("RateLimiter Nodes: {}", new NodeFormatter().format(rateLimiterRoot));
+            LOG.debug("RateLimiter Nodes: {}", NodeFormatters.indentedHeirarchy().format(rateLimiterRoot));
         }
 
         // Collect property and annotation based leaf nodes separately, because they are accessed differently
@@ -76,16 +75,10 @@ public class RateLimitHandler<R> {
 
         this.propertyBasedRateLimiterLeafNodes = Collections.unmodifiableList(new LinkedList<>(propertyLeafs));
         this.annotationBasedRateLimiterLeafNodes = Collections.unmodifiableList(new LinkedList<>(annotationLeafs));
-
-//        if(LOG.isTraceEnabled()) {
-//            LOG.trace("\nProperty based rate limiter leaf nodes:\n{}\nAnnotation based rate limiter leaf nodes:\n{}",
-//                    propertyBasedRateLimiterLeafNodes.stream().map(NodeUtil::toString).collect(Collectors.joining("\n")),
-//                    annotationBasedRateLimiterLeafNodes.stream().map(NodeUtil::toString).collect(Collectors.joining("\n")));
-//        }
     }
 
     private <T> void collectLeafNodes(Node<T> root, Consumer<Node<T>> collector) {
-        new NodeVisitor<>(Node::isLeaf, collector).accept(root);
+        new BreadthFirstNodeVisitor<>(Node::isLeaf, collector).accept(root);
     }
 
     public void handleRequest(R request) {
@@ -103,8 +96,6 @@ public class RateLimitHandler<R> {
             return;
         }
 
-//        System.out.println();
-
         for(Node<RateLimiter<R>> rateLimiterNode : rateLimiterNodes) {
 
             Node<RateLimiter<R>> currentNode = rateLimiterNode;
@@ -114,11 +105,7 @@ public class RateLimitHandler<R> {
 
             while(rateLimiter != null && rateLimiter != RateLimiter.noop()) {
 
-//                System.out.println("RateLimitHandler using " + currentNode.getName() + " = " + rateLimiter);
-
                 final Rate rate = rateLimiter.record(request);
-
-//                System.out.println("RateLimitHandler rate " + rate);
 
                 final boolean matched = rate != Rate.NONE;
 
@@ -163,29 +150,22 @@ public class RateLimitHandler<R> {
 
                 Matcher<R> matcher = getOrCreateMatcher(name, nodeData, rateLimiterConfigurationSource);
 
-                // Since each PathPatterns pertains to one RateLimiter, we use SingletonRateCache
-                // This is because the PathPatterns is used as the key. Irrespective of which request URI is received
-                // we use the matching PathPatterns as key. This obviates the need for multi key rate cache.
-                // @TODO Find a better way to achieve this
-                // This is overriding registered RateCache
-                if(!NodeUtil.isPropertyNodeData(nodeData)) {
-                    // @TODO fix this
-                    // Passing null to method Matcher.getId() is an ugly hack
-                    rateLimiterConfiguration.rateCache(new SingletonRateCache<>(matcher.getId(null)));
-                }
-
                 return new RequestMatchingRateLimiter<>(matcher, new DefaultRateLimiter<>(rateLimiterConfiguration));
             }
         }
     }
-
 
     private <R> Matcher<R> getOrCreateMatcher(
             String name,
             NodeData nodeData,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
 
-        return NodeUtil.isRootNode(name, nodeData) ? Matcher.matchNone() :
+        Matcher<R> matcher = NodeUtil.isRootNode(name, nodeData) ? Matcher.matchNone() :
                 NodeUtil.isPropertyNodeData(nodeData) ? rateLimiterConfigurationSource.getMatcherForProperties(name) :
-                        rateLimiterConfigurationSource.getMatcherForSource(name, nodeData.getSource());
-    }}
+                        rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeData.getSource());
+        if(LOG.isInfoEnabled()) {
+            LOG.info("\nName: {}\nNode data: {}\nMatcher: {}", name, nodeData, matcher);
+        }
+        return matcher;
+    }
+}

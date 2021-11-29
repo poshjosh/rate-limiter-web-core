@@ -14,7 +14,7 @@ import com.looseboxes.ratelimiter.annotation.RateLimit;
 class GreetingResource {
 
     // Only 99 calls to this path is allowed per minute
-    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTES)
+    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTES, group="greeting")
     @GetMapping("/greet")
     String greet() {
         return "Hello World";
@@ -29,6 +29,7 @@ package com.looseboxes.ratelimiter.web.spring;
 
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurationRegistry;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
+import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,32 +40,52 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
     @Override
     public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
 
-        // If you do not register a listener, the default listener throws an exception
         //
+        // Register rate recorded listeners
+        //
+
+        // If you do not register a listener, the default listener throws an exception
         registry.registerRateRecordedListener(rateRecordedEvent -> {
-            
+
             // Handle rate recorded event
-            
+
             // For example log whether a limit was exceeded
-            System.out.println("Limit exceeded: " + rateRecordedEvent.isLimitExceeded()); 
+            System.out.println("Limit exceeded: " + rateRecordedEvent.isLimitExceeded());
         });
 
-        // The default behaviour is to return the relative request URI
         //
-        registry.registerRequestToIdConverter(request -> {
-            
-            // Convert the request to an identity
+        // Register request matchers
+        //
 
-            // Examples:
+        // The default behaviour is to return the relative request URI
+        // Here are other examples:
 
-            // To rate limit requests identified by a specific header
-//            return request.getHeader("<HEADER_NAME>");
+        // Apply these matchers to all rate limiters belonging to this group
+        final String rateLimiterGroup = "greeting";
 
-            // To rate limit users identified by session ID
-//            return request.getSession().getId();
+        // Rate limit by utm_source parameter
+        registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
+            @Override
+            public boolean matches(HttpServletRequest request) {
+                return true;
+            }
+            @Override
+            public Object getId(HttpServletRequest request) {
+                return request.getParameter("utm_source");
+            }
+        });
 
-            // If tracking requests by utm_source, then we can rate all users from a particular source 
-            return request.getParameter("utm_source");
+        // Alternatively, rate limit users from a single source: utm_source=ERRING-SOURCE
+        registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
+            private final String paramName = "utm_source";
+            @Override
+            public boolean matches(HttpServletRequest request) {
+                return "ERRING-SOURCE".equals(request.getParameter(paramName));
+            }
+            @Override
+            public Object getId(HttpServletRequest request) {
+                return request.getParameter(paramName);
+            }
         });
     }
 }
@@ -74,7 +95,14 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
 
 There are 2 ways to rate limit a web application:
 
-### 1. Use the `@RateLimit` annotation
+### 1. Use the `@RateLimit` and/or `@RateLimitGroup` annotation
+
+- The `@RateLimit` annotation may be placed on a super class.
+
+- The `@RateLimit` annotation must be placed together with path related annotations e.g:
+  Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
+
+- The `@RateLimitGroup` annotation may span multiple class or multiple methods but not both.
 
 __Example using Springframework__
 
@@ -112,13 +140,6 @@ class GreetingResource {
     }
 }
 ```
-
-- The `@RateLimit` annotation may be placed on a super class.
-
-- The `@RateLimit` annotation must be placed together with path related annotations e.g:
-Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
-  
-- The `@RateLimitGroup` annotation may span multiple class or multiple methods but not both.
   
 ### 2. Define rate limit properties
 
@@ -148,7 +169,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
 
     @Override
     public Map<String, RateLimitConfig> getRateLimitConfigs() {
-        return Collections.singletonMap("default", getRateLimitConfigList());
+        return Collections.singletonMap("greeting", getRateLimitConfigList());
     }
 
     private RateLimitConfig getRateLimitConfigList() {
@@ -172,5 +193,6 @@ _Make sure this class is available for injection into other resources/beans._
 
 The properties the user defines should be used to create a rate limiter which will be automatically applied to
 every request the web application handles. 
+
 
 
