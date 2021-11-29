@@ -125,7 +125,7 @@ public class RateLimitHandler<R> {
         }
     }
 
-    private <R> RateLimiter<R> createRateLimiter(
+    private RateLimiter<R> createRateLimiter(
             String name,
             NodeData nodeData,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
@@ -155,17 +155,13 @@ public class RateLimitHandler<R> {
         }
     }
 
-    private <R> Matcher<R> getOrCreateMatcher(
+    private Matcher<R> getOrCreateMatcher(
             String name,
             NodeData nodeData,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
 
-        Matcher<R> matcher = NodeUtil.isRootNode(name, nodeData) ? Matcher.matchNone() :
+        return NodeUtil.isRootNode(name, nodeData) ? Matcher.matchNone() :
                 NodeUtil.isPropertyNodeData(nodeData) ? rateLimiterConfigurationSource.getMatcherForProperties(name) :
                         rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeData.getSource());
-        if(LOG.isInfoEnabled()) {
-            LOG.info("\nName: {}\nNode data: {}\nMatcher: {}", name, nodeData, matcher);
-        }
-        return matcher;
     }
 }
