@@ -5,20 +5,27 @@ import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 public interface RateLimiterConfigurationRegistry<R> {
 
-    void registerRequestToIdConverter(Class<?> clazz, RequestToIdConverter<R> requestToIdConverter);
+    void registerRequestToIdConverter(RequestToIdConverter<R, Object> requestToIdConverter);
 
-    void registerRequestToIdConverter(Method method, RequestToIdConverter<R> requestToIdConverter);
+    void registerRequestToIdConverter(Class<?> clazz, RequestToIdConverter<R, Object> requestToIdConverter);
 
-    void registerRequestToIdConverter(String name, RequestToIdConverter<R> requestToIdConverter);
+    void registerRequestToIdConverter(Method method, RequestToIdConverter<R, Object> requestToIdConverter);
 
-    void registerRateCache(Class<?> clazz, RateCache rateCache);
+    void registerRequestToIdConverter(String name, RequestToIdConverter<R, Object> requestToIdConverter);
 
-    void registerRateCache(Method method, RateCache rateCache);
+    void registerRateCache(RateCache<Object> rateCache);
 
-    void registerRateCache(String name, RateCache rateCache);
+    void registerRateCache(Class<?> clazz, RateCache<Object> rateCache);
+
+    void registerRateCache(Method method, RateCache<Object> rateCache);
+
+    void registerRateCache(String name, RateCache<Object> rateCache);
+
+    void registerRateFactory(RateFactory rateFactory);
 
     void registerRateFactory(Class<?> clazz, RateFactory rateFactory);
 
@@ -26,9 +33,23 @@ public interface RateLimiterConfigurationRegistry<R> {
 
     void registerRateFactory(String name, RateFactory rateFactory);
 
+    void registerRateRecordedListener(RateRecordedListener rateRecordedListener);
+
     void registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
 
     void registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener);
 
     void registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener);
+
+    /**
+     * Register a root listener, which will always be invoked before any other listener
+     * @param rateRecordedListener The listener to register
+     */
+    void registerRootRateRecordedListener(RateRecordedListener rateRecordedListener);
+
+    /**
+     * Add this listener to the root listeners, which will always be invoked before any other listener
+     * @param rateRecordedListener The listener to register
+     */
+    void addRootRateRecordedListener(RateRecordedListener rateRecordedListener);
 }

@@ -2,7 +2,75 @@
 
 Light-weight rate limiting library for java web apps, based on https://github.com/poshjosh/rate-limiter
 
-## Rate limiting a java web application
+## Quick Start
+
+__Annotate the resource endpoint you want to rate imit__
+
+```java
+import com.looseboxes.ratelimiter.annotation.RateLimit;
+
+@Controller
+@RequestMapping("/api")
+class GreetingResource {
+
+    // Only 99 calls to this path is allowed per minute
+    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTES)
+    @GetMapping("/greet")
+    String greet() {
+        return "Hello World";
+    }
+}
+```
+
+__Configure rate limiting__
+
+```java
+package com.looseboxes.ratelimiter.web.spring;
+
+import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurationRegistry;
+import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
+import org.springframework.context.annotation.Configuration;
+
+import javax.servlet.http.HttpServletRequest;
+
+@Configuration
+public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServletRequest> {
+
+    @Override
+    public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
+
+        // If you do not register a listener, the default listener throws an exception
+        //
+        registry.registerRateRecordedListener(rateRecordedEvent -> {
+            
+            // Handle rate recorded event
+            
+            // For example log whether a limit was exceeded
+            System.out.println("Limit exceeded: " + rateRecordedEvent.isLimitExceeded()); 
+        });
+
+        // The default behaviour is to return the relative request URI
+        //
+        registry.registerRequestToIdConverter(request -> {
+            
+            // Convert the request to an identity
+
+            // Examples:
+
+            // To rate limit requests identified by a specific header
+//            return request.getHeader("<HEADER_NAME>");
+
+            // To rate limit users identified by session ID
+//            return request.getSession().getId();
+
+            // If tracking requests by utm_source, then we can rate all users from a particular source 
+            return request.getParameter("utm_source");
+        });
+    }
+}
+```
+
+## Ways and Means
 
 There are 2 ways to rate limit a web application:
 
@@ -49,6 +117,8 @@ class GreetingResource {
 
 - The `@RateLimit` annotation must be placed together with path related annotations e.g:
 Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
+  
+- The `@RateLimitGroup` annotation may span multiple class or multiple methods but not both.
   
 ### 2. Define rate limit properties
 
@@ -101,11 +171,6 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
 _Make sure this class is available for injection into other resources/beans._
 
 The properties the user defines should be used to create a rate limiter which will be automatically applied to
-every request the web application handles. This `RateLimiter` is equally available for injection by the user.
-
-If the user wants to manually use the rate limiter created from the properties, then they need to override
-the method `com.looseboxes.ratelimiter.web.core.util.RateLimitProperties#getAuto()` and return `false`.
-This way, the rate limiter will __not__ be automatically applied to requests processed by the web application.
-The user may then inject the rate limiter where ever it is needed. 
+every request the web application handles. 
 
 

@@ -1,4 +1,4 @@
-package com.looseboxes.ratelimiter.web.core;
+package com.looseboxes.ratelimiter.web.core.util;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.List;
  * +----------+-----------------------------------+
  * @param <PATH> The of object that may be matched
  */
-public interface PathPatterns<PATH> {
+public interface PathPatterns<PATH> extends Matcher<PATH> {
 
     PathPatterns<Object> NONE = new PathPatterns<Object>() {
         @Override
@@ -26,12 +26,11 @@ public interface PathPatterns<PATH> {
             return other;
         }
         @Override
+        public List<String> getPatterns() { return Collections.emptyList(); }
+        @Override
         public boolean matches(Object path) {
             return false;
         }
-        @Override
-        public List<String> getPathPatterns() { return Collections.emptyList(); }
-
     };
 
     @SuppressWarnings("unchecked")
@@ -41,7 +40,13 @@ public interface PathPatterns<PATH> {
 
     PathPatterns<PATH> combine(PathPatterns<PATH> other);
 
-    boolean matches(PATH path);
+    List<String> getPatterns();
 
-    List<String> getPathPatterns();
+    @Override
+    default Object getId(PATH target) {
+        return getPatterns();
+    }
+
+    @Override
+    boolean matches(PATH path);
 }
