@@ -35,7 +35,7 @@ public class RateLimitHandler<R> {
         this.properties = Objects.requireNonNull(properties);
 
         // First add property based rate limit groups
-        final Node<NodeData> elementRoot = NodeUtil.addNodesToRoot(properties.getRateLimitConfigs());
+        final Node<NodeData> elementRoot = addNodesToRoot(properties.getRateLimitConfigs());
         final Set<String> propertyGroupNames = new LinkedHashSet<>();
         collectLeafNodes(elementRoot, node -> propertyGroupNames.add(node.getName()));
 
@@ -53,7 +53,7 @@ public class RateLimitHandler<R> {
         }
 
         BiFunction<String, NodeData, RateLimiter<R>> valueConverter =
-                (name, nodeData) -> createRateLimiter(name, nodeData, rateLimiterConfigurationSource);
+                (name, nodeData) -> createRateLimiter(elementRoot, name, nodeData, rateLimiterConfigurationSource);
 
         // Transform the root and it's children to rate limiter nodes
         Node<RateLimiter<R>> rateLimiterRoot = elementRoot.transform(null, (name, value) -> name, valueConverter);
@@ -75,10 +75,6 @@ public class RateLimitHandler<R> {
 
         this.propertyBasedRateLimiterLeafNodes = Collections.unmodifiableList(new LinkedList<>(propertyLeafs));
         this.annotationBasedRateLimiterLeafNodes = Collections.unmodifiableList(new LinkedList<>(annotationLeafs));
-    }
-
-    private <T> void collectLeafNodes(Node<T> root, Consumer<Node<T>> collector) {
-        new BreadthFirstNodeVisitor<>(Node::isLeaf, collector).accept(root);
     }
 
     public void handleRequest(R request) {
@@ -125,11 +121,26 @@ public class RateLimitHandler<R> {
         }
     }
 
+    private Node<NodeData> addNodesToRoot(Map<String, RateLimitConfig> rateLimitConfigs) {
+        Map<String, RateLimitConfig> configsWithoutParent = new LinkedHashMap<>(rateLimitConfigs);
+        String rootNodeName = "root";
+        RateLimitConfig rootNodeConfig = configsWithoutParent.remove(rootNodeName);
+        NodeData nodeData = rootNodeConfig == null ? null : new NodeData(null, rootNodeConfig);
+        Node<NodeData> rootNode = NodeUtil.createNode(rootNodeName, nodeData, null);
+        NodeUtil.createNodes(rootNode, configsWithoutParent);
+        return rootNode;
+    }
+
+    private <T> void collectLeafNodes(Node<T> root, Consumer<Node<T>> collector) {
+        new BreadthFirstNodeVisitor<>(Node::isLeaf, collector).accept(root);
+    }
+
     private RateLimiter<R> createRateLimiter(
+            Node<NodeData> rootNode,
             String name,
             NodeData nodeData,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
-        if(NodeUtil.isRootNode(name, nodeData)) {
+        if(isEqual(rootNode, name, nodeData)) {
             return RateLimiter.noop();
         }else {
 
@@ -148,7 +159,7 @@ public class RateLimitHandler<R> {
                         rateLimiterConfigurationSource.copyConfigurationOrDefault(name)
                                 .rateLimitConfig(config);
 
-                Matcher<R> matcher = getOrCreateMatcher(name, nodeData, rateLimiterConfigurationSource);
+                Matcher<R> matcher = getOrCreateMatcher(rootNode, name, nodeData, rateLimiterConfigurationSource);
 
                 return new RequestMatchingRateLimiter<>(matcher, new DefaultRateLimiter<>(rateLimiterConfiguration));
             }
@@ -156,12 +167,15 @@ public class RateLimitHandler<R> {
     }
 
     private Matcher<R> getOrCreateMatcher(
-            String name,
-            NodeData nodeData,
-            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
+            Node<NodeData> rootNode, String name,
+            NodeData nodeData, RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
 
-        return NodeUtil.isRootNode(name, nodeData) ? Matcher.matchNone() :
+        return isEqual(rootNode, name, nodeData) ? Matcher.matchNone() :
                 NodeUtil.isPropertyNodeData(nodeData) ? rateLimiterConfigurationSource.getMatcherForProperties(name) :
                         rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeData.getSource());
+    }
+
+    private boolean isEqual(Node<NodeData> node, String name, NodeData nodeData) {
+        return Objects.equals(node.getName(), name) && Objects.equals(node.getValueOrDefault(null), nodeData);
     }
 }

@@ -18,7 +18,7 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <rate-limiter.version>0.0.703</rate-limiter.version>
+        <rate-limiter.version>0.0.704</rate-limiter.version>
         <logback.version>1.2.6</logback.version>
         <javax.enterprise.version>2.0</javax.enterprise.version>
         <it.skip>true</it.skip>
