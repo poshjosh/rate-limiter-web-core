@@ -34,60 +34,58 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Configuration
-public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServletRequest> {
+@Configuration public class RateLimiterConfigurerImpl
+        implements RateLimiterConfigurer<HttpServletRequest> {
 
-    @Override
-    public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
+  @Override public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
 
-        //
-        // Register rate recorded listeners
-        //
+    //
+    // Register rate recorded listeners
+    //
 
-        // If you do not register a listener, the default listener throws an exception
-        registry.registerRateRecordedListener(rateRecordedEvent -> {
+    // If you do not register a listener, the default listener throws an exception
+    registry.registerRateExceededListener(rateExceededEvent -> {
 
-            // Handle rate recorded event
+      // Handle rate recorded event
 
-            // For example log whether a limit was exceeded
-            System.out.println("Limit exceeded: " + rateRecordedEvent.isLimitExceeded());
-        });
+      // For example, log the limit that was exceeded
+      System.out.println("Limit exceeded: " + rateExceededEvent.getExceededLimit());
+    });
 
-        //
-        // Register request matchers
-        //
+    //
+    // Register request matchers
+    //
 
-        // The default behaviour is to return the relative request URI
-        // Here are other examples:
+    // The default behaviour is to return the relative request URI
+    // Here are other examples:
 
-        // Apply these matchers to all rate limiters belonging to this group
-        final String rateLimiterGroup = "greeting";
+    // Apply these matchers to all rate limiters belonging to this group
+    final String rateLimiterGroup = "greeting";
 
-        // Rate limit by utm_source parameter
-        registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
-            @Override
-            public boolean matches(HttpServletRequest request) {
-                return true;
-            }
-            @Override
-            public Object getId(HttpServletRequest request) {
-                return request.getParameter("utm_source");
-            }
-        });
+    // Rate limit by utm_source parameter
+    registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
+      @Override public boolean matches(HttpServletRequest request) {
+        return true;
+      }
 
-        // Alternatively, rate limit users from a single source: utm_source=ERRING-SOURCE
-        registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
-            private final String paramName = "utm_source";
-            @Override
-            public boolean matches(HttpServletRequest request) {
-                return "ERRING-SOURCE".equals(request.getParameter(paramName));
-            }
-            @Override
-            public Object getId(HttpServletRequest request) {
-                return request.getParameter(paramName);
-            }
-        });
-    }
+      @Override public Object getId(HttpServletRequest request) {
+        return request.getParameter("utm_source");
+      }
+    });
+
+    // Alternatively, rate limit users from a single source: utm_source=ERRING-SOURCE
+    registry.registerRequestMatcher(rateLimiterGroup, new Matcher<HttpServletRequest>() {
+      private final String paramName = "utm_source";
+
+      @Override public boolean matches(HttpServletRequest request) {
+        return "ERRING-SOURCE".equals(request.getParameter(paramName));
+      }
+
+      @Override public Object getId(HttpServletRequest request) {
+        return request.getParameter(paramName);
+      }
+    });
+  }
 }
 ```
 

@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.RateRecordedListener;
+import com.looseboxes.ratelimiter.RateExceededListener;
 import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
@@ -31,23 +31,23 @@ public interface RateLimiterConfigurationRegistry<R> {
 
     void registerRateFactory(String name, RateFactory rateFactory);
 
-    void registerRateRecordedListener(RateRecordedListener rateRecordedListener);
+    void registerRateExceededListener(RateExceededListener rateExceededListener);
 
-    void registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
+    void registerRateExceededListener(Class<?> clazz, RateExceededListener rateExceededListener);
 
-    void registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener);
+    void registerRateExceededListener(Method method, RateExceededListener rateExceededListener);
 
-    void registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener);
+    void registerRateExceededListener(String name, RateExceededListener rateExceededListener);
 
     /**
      * Register a root listener, which will always be invoked before any other listener
-     * @param rateRecordedListener The listener to register
+     * @param rateExceededListener The listener to register
      */
-    void registerRootRateRecordedListener(RateRecordedListener rateRecordedListener);
+    void registerRootRateExceededListener(RateExceededListener rateExceededListener);
 
     /**
      * Add this listener to the root listeners, which will always be invoked before any other listener
-     * @param rateRecordedListener The listener to register
+     * @param rateExceededListener The listener to register
      */
-    void addRootRateRecordedListener(RateRecordedListener rateRecordedListener);
+    void addRootRateExceededListener(RateExceededListener rateExceededListener);
 }
