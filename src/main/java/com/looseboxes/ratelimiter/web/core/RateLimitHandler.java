@@ -156,12 +156,11 @@ public class RateLimitHandler<R> {
             }else {
 
                 RateLimiterConfiguration<Object> rateLimiterConfiguration =
-                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name)
-                                .rateLimitConfig(config);
+                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name);
 
                 Matcher<R> matcher = getOrCreateMatcher(rootNode, name, nodeData, rateLimiterConfigurationSource);
 
-                return new RequestMatchingRateLimiter<>(matcher, new DefaultRateLimiter<>(rateLimiterConfiguration));
+                return new RequestMatchingRateLimiter<>(matcher, new DefaultRateLimiter<>(rateLimiterConfiguration, config));
             }
         }
     }
