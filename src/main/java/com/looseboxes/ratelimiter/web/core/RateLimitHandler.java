@@ -1,12 +1,10 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.DefaultRateLimiter;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.RateLimiterConfiguration;
 import com.looseboxes.ratelimiter.annotation.*;
 import com.looseboxes.ratelimiter.node.*;
 import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
-import com.looseboxes.ratelimiter.rates.Rate;
 import com.looseboxes.ratelimiter.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
@@ -22,9 +20,18 @@ public class RateLimitHandler<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateLimitHandler.class);
 
+    private static final class NodeValue<R> {
+        private final Matcher<R> matcher;
+        private final RateLimiter<Object> rateLimiter;
+        public NodeValue(Matcher<R> matcher, RateLimiter<Object> rateLimiter) {
+            this.matcher = matcher;
+            this.rateLimiter = rateLimiter;
+        }
+    }
+
     private final RateLimitProperties properties;
-    private final List<Node<RateLimiter<R>>> propertyBasedRateLimiterLeafNodes;
-    private final List<Node<RateLimiter<R>>> annotationBasedRateLimiterLeafNodes;
+    private final List<Node<NodeValue<R>>> propertyBasedRateLimiterLeafNodes;
+    private final List<Node<NodeValue<R>>> annotationBasedRateLimiterLeafNodes;
 
     public RateLimitHandler(
             RateLimitProperties properties,
@@ -52,19 +59,22 @@ public class RateLimitHandler<R> {
             LOG.trace("Element Nodes: {}", NodeFormatters.indentedHeirarchy().format(elementRoot));
         }
 
-        BiFunction<String, NodeData, RateLimiter<R>> valueConverter =
-                (name, nodeData) -> createRateLimiter(elementRoot, name, nodeData, rateLimiterConfigurationSource);
+
+        final NodeValue<R> resultIfNone = new NodeValue<>(Matcher.matchNone(), RateLimiter.noop());
+
+        BiFunction<String, NodeData, NodeValue<R>> valueConverter =
+                (name, nodeData) -> createRateLimiterNode(elementRoot, name, nodeData, rateLimiterConfigurationSource, resultIfNone);
 
         // Transform the root and it's children to rate limiter nodes
-        Node<RateLimiter<R>> rateLimiterRoot = elementRoot.transform(null, (name, value) -> name, valueConverter);
+        Node<NodeValue<R>> rateLimiterRoot = elementRoot.transform(null, (name, value) -> name, valueConverter);
         if(LOG.isDebugEnabled()) {
             LOG.debug("RateLimiter Nodes: {}", NodeFormatters.indentedHeirarchy().format(rateLimiterRoot));
         }
 
         // Collect property and annotation based leaf nodes separately, because they are accessed differently
-        Set<Node<RateLimiter<R>>> propertyLeafs = new LinkedHashSet<>();
-        Set<Node<RateLimiter<R>>> annotationLeafs = new LinkedHashSet<>();
-        Consumer<Node<RateLimiter<R>>> collector = node -> {
+        Set<Node<NodeValue<R>>> propertyLeafs = new LinkedHashSet<>();
+        Set<Node<NodeValue<R>>> annotationLeafs = new LinkedHashSet<>();
+        Consumer<Node<NodeValue<R>>> collector = node -> {
             if(propertyGroupNames.contains(node.getName())) {
                 propertyLeafs.add(node);
             }else{
@@ -85,34 +95,34 @@ public class RateLimitHandler<R> {
         }
     }
 
-    public void handleRequest(R request, List<Node<RateLimiter<R>>> rateLimiterNodes, boolean firstMatchOnly) {
+    public void handleRequest(R request, List<Node<NodeValue<R>>> rateLimiterNodes, boolean firstMatchOnly) {
 
         // We check this dynamically, to be able to respond to changes to this property dynamically
         if(Boolean.TRUE.equals(properties.getDisabled())) {
             return;
         }
 
-        for(Node<RateLimiter<R>> rateLimiterNode : rateLimiterNodes) {
+        for(Node<NodeValue<R>> rateLimiterNode : rateLimiterNodes) {
 
-            Node<RateLimiter<R>> currentNode = rateLimiterNode;
-            RateLimiter<R> rateLimiter =  currentNode.getValueOrDefault(null);
+            Node<NodeValue<R>> currentNode = rateLimiterNode;
+            NodeValue<R> nodeValue =  currentNode.getValueOrDefault(null);
 
             int matchCount = 0;
 
-            while(rateLimiter != null && rateLimiter != RateLimiter.noop()) {
+            while(nodeValue != null) {
 
-                final Rate rate = rateLimiter.record(request);
+                final boolean matches = nodeValue.matcher.matches(request);
 
-                final boolean matched = rate != Rate.NONE;
-
-                if(!matched) {
+                if(!matches) {
                     break;
                 }
+
+                nodeValue.rateLimiter.record(request);
 
                 ++matchCount;
 
                 currentNode = currentNode.getParentOrDefault(null);
-                rateLimiter = currentNode == null ? null : currentNode.getValueOrDefault(null);
+                nodeValue = currentNode == null ? null : currentNode.getValueOrDefault(null);
             }
 
             if(firstMatchOnly && matchCount > 0) {
@@ -135,13 +145,14 @@ public class RateLimitHandler<R> {
         new BreadthFirstNodeVisitor<>(Node::isLeaf, collector).accept(root);
     }
 
-    private RateLimiter<R> createRateLimiter(
+    private NodeValue<R> createRateLimiterNode(
             Node<NodeData> rootNode,
             String name,
             NodeData nodeData,
-            RateLimiterConfigurationSource<R> rateLimiterConfigurationSource){
+            RateLimiterConfigurationSource<R> configurationSource,
+            NodeValue<R> resultIfNone){
         if(isEqual(rootNode, name, nodeData)) {
-            return RateLimiter.noop();
+            return resultIfNone;
         }else {
 
             RateLimitConfig config = nodeData.getConfig();
@@ -152,15 +163,18 @@ public class RateLimitHandler<R> {
                 // @TODO how do we handle this?
                 // Do we create multiple rate limiters, one for each of the direct children of this group
                 // Do we re-use the rate limiters of the children ? They must already exist since we create children first
-                return RateLimiter.noop();
+                return resultIfNone;
             }else {
 
                 RateLimiterConfiguration<Object> rateLimiterConfiguration =
-                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name);
+                        configurationSource.copyConfigurationOrDefault(name);
 
-                Matcher<R> matcher = getOrCreateMatcher(rootNode, name, nodeData, rateLimiterConfigurationSource);
+                Matcher<R> matcher = getOrCreateMatcher(rootNode, name, nodeData, configurationSource);
 
-                return new RequestMatchingRateLimiter<>(matcher, new DefaultRateLimiter<>(rateLimiterConfiguration, config));
+                RateLimiter<Object> rateLimiter = configurationSource.getRateLimiterProvider(name)
+                        .getRateLimiter(rateLimiterConfiguration, config);
+
+                return new NodeValue<>(matcher, rateLimiter);
             }
         }
     }

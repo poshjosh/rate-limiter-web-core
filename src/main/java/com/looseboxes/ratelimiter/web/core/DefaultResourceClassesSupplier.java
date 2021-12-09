@@ -7,12 +7,12 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
-public class ResourceClassesSupplierImpl implements ResourceClassesSupplier{
+public class DefaultResourceClassesSupplier implements ResourceClassesSupplier{
 
     private final List<Class<?>> classes;
 
     @SafeVarargs
-    public ResourceClassesSupplierImpl(
+    public DefaultResourceClassesSupplier(
             ClassesInPackageFinder classesInPackageFinder,
             List<String> resourcePackages,
             Class<? extends Annotation>... annotations) {

@@ -9,6 +9,12 @@ import java.lang.reflect.Method;
 
 public interface RateLimiterConfigurationRegistry<R> {
 
+    void registerRateLimiterProvider(Class<?> clazz, RateLimiterProvider rateLimiterProvider);
+
+    void registerRateLimiterProvider(Method method, RateLimiterProvider rateLimiterProvider);
+
+    void registerRateLimiterProvider(String name, RateLimiterProvider rateLimiterProvider);
+
     void registerRequestMatcher(Class<?> clazz, Matcher<R> matcher);
 
     void registerRequestMatcher(Method method, Matcher<R> matcher);
