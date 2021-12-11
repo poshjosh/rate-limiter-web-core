@@ -27,6 +27,9 @@ public class RateLimitHandler<R> {
             this.matcher = matcher;
             this.rateLimiter = rateLimiter;
         }
+        @Override public String toString() {
+            return "RateLimitHandler$NodeValue{" + matcher + " = " + rateLimiter + '}';
+        }
     }
 
     private final RateLimitProperties properties;
