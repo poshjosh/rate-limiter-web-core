@@ -73,11 +73,11 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
     }
 
     public Matcher<R> getMatcherForProperties(String name) {
-        return matchers.computeIfAbsent(name, s -> matcherForAllRequestUris);
+        return matchers.computeIfAbsent(name, key -> matcherForAllRequestUris);
     }
 
     public Matcher<R> getMatcherForSourceElement(String name, Object source) {
-        return matchers.computeIfAbsent(name, s -> createMatcherForSourceElement(source));
+        return matchers.computeIfAbsent(name, key -> createMatcherForSourceElement(source));
     }
 
     private Matcher<R> createMatcherForSourceElement(Object source) {
