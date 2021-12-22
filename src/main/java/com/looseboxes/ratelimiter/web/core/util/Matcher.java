@@ -1,17 +1,19 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-public interface Matcher<T> {
+import com.looseboxes.ratelimiter.util.Nullable;
 
-    Matcher<Object> MATCH_NONE = target -> false;
+public interface Matcher<T, K> {
+
+    Matcher<Object, Object> MATCH_NONE = (target, resultIfNone) -> resultIfNone;
 
     @SuppressWarnings("unchecked")
-    static <T> Matcher<T> matchNone() {
-        return (Matcher<T>)MATCH_NONE;
+    static <T, K> Matcher<T, K> matchNone() {
+        return (Matcher<T, K>)MATCH_NONE;
     }
 
-    boolean matches(T target);
-
-    default Object getId(T target) {
-        return target;
+    default @Nullable K match(T target) {
+        return getKeyIfMatchingOrDefault(target, null);
     }
+
+    K getKeyIfMatchingOrDefault(T target, K resultIfNone);
 }

@@ -9,6 +9,7 @@ import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -73,7 +74,7 @@ public class RateLimitHandler<R> {
         }
 
         // Transform the root and it's children to rate limiter nodes
-        final Node<NodeValue<RateLimiter<Object>>> rateLimiterRootNode = rootNode
+        final Node<NodeValue<RateLimiter<? extends Serializable>>> rateLimiterRootNode = rootNode
                 .transform(null, (name, value) -> name, new NodeValueConverter(rootNode, rateLimiterConfigurationSource));
         if(LOG.isDebugEnabled()) {
             LOG.debug("RateLimiter nodes: {}", NodeFormatters.indentedHeirarchy().format(rateLimiterRootNode));

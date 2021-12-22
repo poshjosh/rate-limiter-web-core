@@ -8,7 +8,7 @@ import java.util.Objects;
  * Matcher which matches all request URIs
  * @param <R> The type of the request for which a match will be checked for
  */
-public class RequestUriMatcher<R> implements Matcher<R>{
+public class RequestUriMatcher<R> implements Matcher<R, String>{
 
     private final RequestToIdConverter<R, String> requestToUriConverter;
 
@@ -17,12 +17,7 @@ public class RequestUriMatcher<R> implements Matcher<R>{
     }
 
     @Override
-    public boolean matches(R target) {
-        return true;
-    }
-
-    @Override
-    public Object getId(R target) {
+    public String getKeyIfMatchingOrDefault(R target, String resultIfNone) {
         return requestToUriConverter.convert(target);
     }
 }

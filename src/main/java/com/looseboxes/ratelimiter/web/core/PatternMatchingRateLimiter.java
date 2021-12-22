@@ -9,6 +9,8 @@ import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.rowset.serial.SerialArray;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -19,18 +21,18 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
     private final Predicate<R> filter;
     private final RateLimiterConfigurationSource<R> rateLimiterConfigurationSource;
-    private final Node<NodeValue<RateLimiter<Object>>> rootNode;
-    private final List<Node<NodeValue<RateLimiter<Object>>>> leafNodes;
+    private final Node<NodeValue<RateLimiter<?>>> rootNode;
+    private final List<Node<NodeValue<RateLimiter<?>>>> leafNodes;
     private final boolean firstMatchOnly;
 
     public PatternMatchingRateLimiter(Predicate<R> filter,
                                       RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
-                                      Node<NodeValue<RateLimiter<Object>>> rootNode,
+                                      Node<NodeValue<RateLimiter<?>>> rootNode,
                                       boolean firstMatchOnly) {
         this.filter = Objects.requireNonNull(filter);
         this.rateLimiterConfigurationSource = Objects.requireNonNull(rateLimiterConfigurationSource);
         this.rootNode = Objects.requireNonNull(rootNode);
-        Set<Node<NodeValue<RateLimiter<Object>>>> set = new LinkedHashSet<>();
+        Set<Node<NodeValue<RateLimiter<?>>>> set = new LinkedHashSet<>();
         collectLeafNodes(this.rootNode, set::add);
         this.leafNodes = new LinkedList<>(set);
         this.firstMatchOnly = firstMatchOnly;
@@ -48,29 +50,34 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
             return;
         }
 
-        for(Node<NodeValue<RateLimiter<Object>>> node : leafNodes) {
+        for(Node<NodeValue<RateLimiter<?>>> node : leafNodes) {
 
-            Node<NodeValue<RateLimiter<Object>>> currentNode = node;
-            NodeValue<RateLimiter<Object>> nodeValue =  currentNode.getValueOrDefault(null);
+            Node<NodeValue<RateLimiter<?>>> currentNode = node;
+            NodeValue<RateLimiter<?>> nodeValue =  currentNode.getValueOrDefault(null);
 
             int matchCount = 0;
 
             while(currentNode != rootNode && nodeValue != null) {
 
-                RateLimiter<Object> rateLimiter = nodeValue.getValue();
-                log.info("Name: {}, rate-limiter: {}", currentNode.getName(), rateLimiter);
+                RateLimiter<Serializable> rateLimiter = nodeValue.getValue();
+                final String currentNodeName = currentNode.getName();
+                log.trace("Name: {}, rate-limiter: {}", currentNodeName, rateLimiter);
 
                 if(rateLimiter == RateLimiter.NO_OP) {
                     break;
                 }
 
-                Matcher<R> matcher = getOrCreateMatcher(currentNode.getName(), nodeValue);
+                Matcher<R, ?> matcher = getOrCreateMatcher(currentNodeName, nodeValue);
 
-                final boolean matched = matcher.matches(request);
-                log.info("Name: {}, matched: {}, matcher: {}", currentNode.getName(), matched, matcher);
+                final Object keyOrNull = matcher.getKeyIfMatchingOrDefault(request, null);
+
+                final boolean matched = keyOrNull != null;
+                if(log.isTraceEnabled()) {
+                    log.trace("Name: {}, matched: {}, matcher: {}", currentNodeName, matched, matcher);
+                }
 
                 if(matched) {
-                    rateLimiter.increment(request, amount);
+                    rateLimiter.increment(keyOrNull, amount);
                 }else{
                     break;
                 }
@@ -87,7 +94,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
         }
     }
 
-    private Matcher<R> getOrCreateMatcher(String name, NodeValue<RateLimiter<Object>> nodeValue){
+    private <K extends Serializable> Matcher<R, K> getOrCreateMatcher(String name, NodeValue<RateLimiter<K>> nodeValue){
         return NodeUtil.isPropertyNodeData(nodeValue) ?
                 rateLimiterConfigurationSource.getMatcherForProperties(name) :
                 rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeValue.getSource());

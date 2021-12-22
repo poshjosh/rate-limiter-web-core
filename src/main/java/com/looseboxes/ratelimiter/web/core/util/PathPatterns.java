@@ -1,5 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,7 +19,7 @@ import java.util.List;
  * +----------+-----------------------------------+
  * @param <PATH> The of object that may be matched
  */
-public interface PathPatterns<PATH> extends Matcher<PATH> {
+public interface PathPatterns<PATH> extends Serializable {
 
     PathPatterns<Object> NONE = new PathPatterns<Object>() {
         @Override
@@ -42,11 +43,5 @@ public interface PathPatterns<PATH> extends Matcher<PATH> {
 
     List<String> getPatterns();
 
-    @Override
-    default Object getId(PATH target) {
-        return getPatterns();
-    }
-
-    @Override
     boolean matches(PATH path);
 }

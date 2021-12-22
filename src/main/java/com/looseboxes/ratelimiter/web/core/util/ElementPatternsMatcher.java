@@ -12,7 +12,7 @@ import java.util.Objects;
  * @param <S> The type of the element whose path patterns will be matched
  * @param <R> The type of the request for which a match will be checked for
  */
-public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements Matcher<R>{
+public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements Matcher<R, PathPatterns<String>>{
 
     private final PathPatterns<String> pathPatterns;
 
@@ -29,14 +29,13 @@ public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements 
     }
 
     @Override
-    public boolean matches(R request) {
-        String uri = requestToUriConverter.convert(request);
-        return pathPatterns.matches(uri);
+    public PathPatterns<String> getKeyIfMatchingOrDefault(R target, PathPatterns<String> resultIfNone) {
+        return matches(target) ? pathPatterns : resultIfNone;
     }
 
-    @Override
-    public Object getId(R target) {
-        return pathPatterns;
+    private boolean matches(R request) {
+        String uri = requestToUriConverter.convert(request);
+        return pathPatterns.matches(uri);
     }
 
     @Override public boolean equals(Object o) {

@@ -1,16 +1,15 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.RateLimiter;
-import com.looseboxes.ratelimiter.RateLimiterConfiguration;
-import com.looseboxes.ratelimiter.SimpleRateLimiter;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.RateLimitConfig;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimitConfig>, NodeValue<RateLimiter<Object>>> {
+public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimitConfig>, NodeValue<RateLimiter<? extends Serializable>>> {
 
     private final Node<NodeValue<RateLimitConfig>> rootNode;
     private final RateLimiterConfigurationSource<?> rateLimiterConfigurationSource;
@@ -22,7 +21,7 @@ public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimi
     }
 
     @Override
-    public NodeValue<RateLimiter<Object>> apply(String name, NodeValue<RateLimitConfig> nodeValue) {
+    public NodeValue<RateLimiter<? extends Serializable>> apply(String name, NodeValue<RateLimitConfig> nodeValue) {
 
         if(isEqual(rootNode, name, nodeValue)) {
 
@@ -43,10 +42,9 @@ public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimi
 
             }else {
 
-                RateLimiterConfiguration<Object> rateLimiterConfiguration =
-                        rateLimiterConfigurationSource.copyConfigurationOrDefault(name);
+                RateLimiter<? extends Serializable> rateLimiter = rateLimiterConfigurationSource.createRateLimiter(name, config);
 
-                return new NodeValue<>(nodeValue.getSource(), new SimpleRateLimiter<>(rateLimiterConfiguration, config));
+                return new NodeValue<>(nodeValue.getSource(), rateLimiter);
             }
         }
     }

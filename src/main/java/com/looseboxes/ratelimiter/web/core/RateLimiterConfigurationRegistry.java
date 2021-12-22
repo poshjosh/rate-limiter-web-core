@@ -9,25 +9,19 @@ import java.lang.reflect.Method;
 
 public interface RateLimiterConfigurationRegistry<R> {
 
-    void registerRateLimiterProvider(Class<?> clazz, RateLimiterProvider rateLimiterProvider);
+    void registerRequestMatcher(Class<?> clazz, Matcher<R, ?> matcher);
 
-    void registerRateLimiterProvider(Method method, RateLimiterProvider rateLimiterProvider);
+    void registerRequestMatcher(Method method, Matcher<R, ?> matcher);
 
-    void registerRateLimiterProvider(String name, RateLimiterProvider rateLimiterProvider);
+    void registerRequestMatcher(String name, Matcher<R, ?> matcher);
 
-    void registerRequestMatcher(Class<?> clazz, Matcher<R> matcher);
+    void registerRateCache(RateCache<?, ?> rateCache);
 
-    void registerRequestMatcher(Method method, Matcher<R> matcher);
+    void registerRateCache(Class<?> clazz, RateCache<?, ?> rateCache);
 
-    void registerRequestMatcher(String name, Matcher<R> matcher);
+    void registerRateCache(Method method, RateCache<?, ?> rateCache);
 
-    void registerRateCache(RateCache<Object> rateCache);
-
-    void registerRateCache(Class<?> clazz, RateCache<Object> rateCache);
-
-    void registerRateCache(Method method, RateCache<Object> rateCache);
-
-    void registerRateCache(String name, RateCache<Object> rateCache);
+    void registerRateCache(String name, RateCache<?, ?> rateCache);
 
     void registerRateFactory(RateFactory rateFactory);
 
@@ -56,4 +50,12 @@ public interface RateLimiterConfigurationRegistry<R> {
      * @param rateExceededListener The listener to register
      */
     void addRootRateExceededListener(RateExceededListener rateExceededListener);
+
+    void registerDefaultRateLimiterFactory(RateLimiterFactory rateLimiterFactory);
+
+    void registerRateLimiterFactory(Class<?> clazz, RateLimiterFactory rateLimiterFactory);
+
+    void registerRateLimiterFactory(Method method, RateLimiterFactory rateLimiterFactory);
+
+    void registerRateLimiterFactory(String name, RateLimiterFactory rateLimiterFactory);
 }
