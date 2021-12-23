@@ -92,6 +92,7 @@ There are 2 ways to rate limit a web application:
 ### 1. Use the `@RateLimit` and/or `@RateLimitGroup` annotation
 
 For the specification of these annotations, please read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
+In addition, the following applies:
 
 - The `@RateLimit` annotation must be placed together with path related annotations e.g:
   Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
