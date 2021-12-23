@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.util.RateConfigList;
 
 import java.util.List;
 import java.util.Map;
@@ -28,5 +28,5 @@ public interface RateLimitProperties {
     /**
      * @return Configurations for building a customizable {@link com.looseboxes.ratelimiter.RateLimiter}
      */
-    Map<String, RateLimitConfig> getRateLimitConfigs();
+    Map<String, RateConfigList> getRateLimitConfigs();
 }

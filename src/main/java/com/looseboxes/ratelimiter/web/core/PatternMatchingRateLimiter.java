@@ -9,8 +9,6 @@ import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.rowset.serial.SerialArray;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -52,41 +50,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
         for(Node<NodeValue<RateLimiter<?>>> node : leafNodes) {
 
-            Node<NodeValue<RateLimiter<?>>> currentNode = node;
-            NodeValue<RateLimiter<?>> nodeValue =  currentNode.getValueOrDefault(null);
-
-            int matchCount = 0;
-
-            while(currentNode != rootNode && nodeValue != null) {
-
-                RateLimiter<Serializable> rateLimiter = nodeValue.getValue();
-                final String currentNodeName = currentNode.getName();
-                log.trace("Name: {}, rate-limiter: {}", currentNodeName, rateLimiter);
-
-                if(rateLimiter == RateLimiter.NO_OP) {
-                    break;
-                }
-
-                Matcher<R, ?> matcher = getOrCreateMatcher(currentNodeName, nodeValue);
-
-                final Object keyOrNull = matcher.getKeyIfMatchingOrDefault(request, null);
-
-                final boolean matched = keyOrNull != null;
-                if(log.isTraceEnabled()) {
-                    log.trace("Name: {}, matched: {}, matcher: {}", currentNodeName, matched, matcher);
-                }
-
-                if(matched) {
-                    rateLimiter.increment(keyOrNull, amount);
-                }else{
-                    break;
-                }
-
-                ++matchCount;
-
-                currentNode = currentNode.getParentOrDefault(null);
-                nodeValue = currentNode == null ? null : currentNode.getValueOrDefault(null);
-            }
+            final int matchCount = increment(request, amount, node);
 
             if(firstMatchOnly && matchCount > 0) {
                 break;
@@ -94,7 +58,56 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
         }
     }
 
-    private <K extends Serializable> Matcher<R, K> getOrCreateMatcher(String name, NodeValue<RateLimiter<K>> nodeValue){
+    private int increment(R request, int amount, Node<NodeValue<RateLimiter<?>>> node) {
+
+        int successCount = 0;
+
+        while(node != rootNode && node != null && node.hasNodeValue()) {
+
+            final boolean success = doIncrement(request, amount, node);
+
+            if(!success) {
+                break;
+            }
+
+            ++successCount;
+
+            node = node.getParentOrDefault(null);
+        }
+
+        return successCount;
+    }
+
+    private boolean doIncrement(R request, int amount, Node<NodeValue<RateLimiter<?>>> node) {
+
+        final String nodeName = node.getName();
+        final NodeValue<RateLimiter<?>> nodeValue = node.getValueOrDefault(null);
+        final RateLimiter rateLimiter = nodeValue.getValue();
+        log.trace("Name: {}, rate-limiter: {}", nodeName, rateLimiter);
+
+        if(rateLimiter == RateLimiter.NO_OP) {
+            return false;
+        }
+
+        Matcher<R, ?> matcher = getOrCreateMatcher(nodeName, nodeValue);
+
+        final Object keyOrNull = matcher.getKeyIfMatchingOrDefault(request, null);
+
+        final boolean matched = keyOrNull != null;
+        if(log.isTraceEnabled()) {
+            log.trace("Name: {}, matched: {}, matcher: {}", nodeName, matched, matcher);
+        }
+
+        if(!matched) {
+            return false;
+        }
+
+        rateLimiter.increment(keyOrNull, amount);
+
+        return true;
+    }
+
+    private Matcher<R, ?> getOrCreateMatcher(String name, NodeValue<RateLimiter<?>> nodeValue){
         return NodeUtil.isPropertyNodeData(nodeValue) ?
                 rateLimiterConfigurationSource.getMatcherForProperties(name) :
                 rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeValue.getSource());

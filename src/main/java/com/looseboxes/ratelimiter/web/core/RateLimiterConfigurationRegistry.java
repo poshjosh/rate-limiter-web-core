@@ -2,6 +2,7 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.RateExceededListener;
 import com.looseboxes.ratelimiter.RateFactory;
+import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
 
@@ -51,11 +52,11 @@ public interface RateLimiterConfigurationRegistry<R> {
      */
     void addRootRateExceededListener(RateExceededListener rateExceededListener);
 
-    void registerDefaultRateLimiterFactory(RateLimiterFactory rateLimiterFactory);
+    void registerDefaultRateLimiterFactory(RateLimiterFactory<?> rateLimiterFactory);
 
-    void registerRateLimiterFactory(Class<?> clazz, RateLimiterFactory rateLimiterFactory);
+    void registerRateLimiterFactory(Class<?> clazz, RateLimiterFactory<?> rateLimiterFactory);
 
-    void registerRateLimiterFactory(Method method, RateLimiterFactory rateLimiterFactory);
+    void registerRateLimiterFactory(Method method, RateLimiterFactory<?> rateLimiterFactory);
 
-    void registerRateLimiterFactory(String name, RateLimiterFactory rateLimiterFactory);
+    void registerRateLimiterFactory(String name, RateLimiterFactory<?> rateLimiterFactory);
 }

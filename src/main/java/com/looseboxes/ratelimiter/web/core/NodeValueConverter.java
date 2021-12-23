@@ -3,25 +3,24 @@ package com.looseboxes.ratelimiter.web.core;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
-import com.looseboxes.ratelimiter.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.util.RateConfigList;
 
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimitConfig>, NodeValue<RateLimiter<? extends Serializable>>> {
+public class NodeValueConverter implements BiFunction<String, NodeValue<RateConfigList>, NodeValue<RateLimiter<?>>> {
 
-    private final Node<NodeValue<RateLimitConfig>> rootNode;
+    private final Node<NodeValue<RateConfigList>> rootNode;
     private final RateLimiterConfigurationSource<?> rateLimiterConfigurationSource;
 
-    public NodeValueConverter(Node<NodeValue<RateLimitConfig>> rootNode,
+    public NodeValueConverter(Node<NodeValue<RateConfigList>> rootNode,
                               RateLimiterConfigurationSource<?> rateLimiterConfigurationSource) {
         this.rootNode = Objects.requireNonNull(rootNode);
         this.rateLimiterConfigurationSource = Objects.requireNonNull(rateLimiterConfigurationSource);
     }
 
     @Override
-    public NodeValue<RateLimiter<? extends Serializable>> apply(String name, NodeValue<RateLimitConfig> nodeValue) {
+    public NodeValue<RateLimiter<?>> apply(String name, NodeValue<RateConfigList> nodeValue) {
 
         if(isEqual(rootNode, name, nodeValue)) {
 
@@ -29,7 +28,7 @@ public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimi
 
         }else {
 
-            RateLimitConfig config = nodeValue.getValue();
+            RateConfigList config = nodeValue.getValue();
 
             // One method with 3 @RateLimit annotations is a simple group (not really a group)
             // A true group spans either multiple methods/classes
@@ -42,7 +41,7 @@ public class NodeValueConverter implements BiFunction<String, NodeValue<RateLimi
 
             }else {
 
-                RateLimiter<? extends Serializable> rateLimiter = rateLimiterConfigurationSource.createRateLimiter(name, config);
+                RateLimiter<?> rateLimiter = rateLimiterConfigurationSource.createRateLimiter(name, config);
 
                 return new NodeValue<>(nodeValue.getSource(), rateLimiter);
             }
