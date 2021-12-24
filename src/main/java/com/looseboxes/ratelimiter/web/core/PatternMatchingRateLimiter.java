@@ -15,6 +15,8 @@ import java.util.function.Predicate;
 
 public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
+    private enum RateLimitResult{SUCCESS, FAILURE, NOMATCH, NOOP}
+
     private static final Logger log = LoggerFactory.getLogger(PatternMatchingRateLimiter.class);
 
     private final Predicate<R> filter;
@@ -41,70 +43,74 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
     }
 
     @Override
-    public void increment(R request, int amount) {
+    public boolean increment(R request, int amount) {
 
         // We check this dynamically, to be able to respond to changes to this property dynamically
         if(!filter.test(request)) {
-            return;
+            return true;
         }
+
+        int globalFailureCount = 0;
 
         for(Node<NodeValue<RateLimiter<?>>> node : leafNodes) {
 
-            final int matchCount = increment(request, amount, node);
+            int nodeSuccessCount = 0;
 
-            if(firstMatchOnly && matchCount > 0) {
+            while(node != rootNode && node != null && node.hasNodeValue()) {
+
+                final RateLimitResult result = increment(request, amount, node);
+
+                switch(result) {
+                    case SUCCESS: ++nodeSuccessCount; break;
+                    case FAILURE: ++globalFailureCount; break;
+                    case NOMATCH:
+                    case NOOP:
+                        break;
+                    default: throw new IllegalArgumentException();
+                }
+
+                if(!RateLimitResult.SUCCESS.equals(result)) {
+                    break;
+                }
+
+                node = node.getParentOrDefault(null);
+            }
+
+            if(firstMatchOnly && nodeSuccessCount > 0) {
                 break;
             }
         }
+
+        return globalFailureCount == 0;
     }
 
-    private int increment(R request, int amount, Node<NodeValue<RateLimiter<?>>> node) {
-
-        int successCount = 0;
-
-        while(node != rootNode && node != null && node.hasNodeValue()) {
-
-            final boolean success = doIncrement(request, amount, node);
-
-            if(!success) {
-                break;
-            }
-
-            ++successCount;
-
-            node = node.getParentOrDefault(null);
-        }
-
-        return successCount;
-    }
-
-    private boolean doIncrement(R request, int amount, Node<NodeValue<RateLimiter<?>>> node) {
+    private RateLimitResult increment(R request, int amount, Node<NodeValue<RateLimiter<?>>> node) {
 
         final String nodeName = node.getName();
         final NodeValue<RateLimiter<?>> nodeValue = node.getValueOrDefault(null);
         final RateLimiter rateLimiter = nodeValue.getValue();
-        log.trace("Name: {}, rate-limiter: {}", nodeName, rateLimiter);
+        if(log.isTraceEnabled()) {
+            log.trace("Name: {}, rate-limiter: {}", nodeName, rateLimiter);
+        }
 
         if(rateLimiter == RateLimiter.NO_OP) {
-            return false;
+            return RateLimitResult.NOOP;
         }
 
         Matcher<R, ?> matcher = getOrCreateMatcher(nodeName, nodeValue);
 
-        final Object keyOrNull = matcher.getKeyIfMatchingOrDefault(request, null);
+        final Object key = matcher.getKeyIfMatchingOrDefault(request, null);
 
-        final boolean matched = keyOrNull != null;
+        final boolean matched = key != null;
         if(log.isTraceEnabled()) {
             log.trace("Name: {}, matched: {}, matcher: {}", nodeName, matched, matcher);
         }
 
         if(!matched) {
-            return false;
+            return RateLimitResult.NOMATCH;
         }
 
-        rateLimiter.increment(keyOrNull, amount);
-
-        return true;
+        return rateLimiter.increment(key, amount) ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
     }
 
     private Matcher<R, ?> getOrCreateMatcher(String name, NodeValue<RateLimiter<?>> nodeValue){

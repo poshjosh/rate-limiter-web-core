@@ -14,15 +14,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public class RateLimitHandler<R> {
+public class WebRequestRateLimiter<R> implements RateLimiter<R>{
 
-    private static final Logger LOG = LoggerFactory.getLogger(RateLimitHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WebRequestRateLimiter.class);
 
     private final String rootNodeName = "root";
     private final RateLimiter<R> rateLimiterFromProperties;
     private final RateLimiter<R> rateLimiterFromAnnotations;
 
-    public RateLimitHandler(
+    public WebRequestRateLimiter(
             RateLimitProperties properties,
             RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
             List<Class<?>> resourceClasses,
@@ -37,12 +37,19 @@ public class RateLimitHandler<R> {
         this.rateLimiterFromAnnotations = createRateLimiterFromAnnotations(properties, rateLimiterConfigurationSource, propertyGroupNames, resourceClasses, annotationProcessor);
     }
 
-    public void handleRequest(R request) {
+    @Override
+    public boolean increment(R request, int amount) {
+        int failCount = 0;
         try {
-            this.rateLimiterFromProperties.increment(request);
+            if(!this.rateLimiterFromProperties.increment(request, amount)) {
+                ++failCount;
+            }
         }finally {
-            this.rateLimiterFromAnnotations.increment(request);
+            if(!this.rateLimiterFromAnnotations.increment(request, amount)) {
+                ++failCount;
+            }
         }
+        return failCount == 0;
     }
 
     private <T> void collectLeafNodes(Node<T> root, Consumer<Node<T>> collector) {

@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.RateExceededListener;
+import com.looseboxes.ratelimiter.RateRecordedListener;
 import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
@@ -32,25 +32,25 @@ public interface RateLimiterConfigurationRegistry<R> {
 
     void registerRateFactory(String name, RateFactory rateFactory);
 
-    void registerRateExceededListener(RateExceededListener rateExceededListener);
+    void registerRateExceededListener(RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededListener(Class<?> clazz, RateExceededListener rateExceededListener);
+    void registerRateExceededListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededListener(Method method, RateExceededListener rateExceededListener);
+    void registerRateExceededListener(Method method, RateRecordedListener rateRecordedListener);
 
-    void registerRateExceededListener(String name, RateExceededListener rateExceededListener);
+    void registerRateExceededListener(String name, RateRecordedListener rateRecordedListener);
 
     /**
      * Register a root listener, which will always be invoked before any other listener
-     * @param rateExceededListener The listener to register
+     * @param rateRecordedListener The listener to register
      */
-    void registerRootRateExceededListener(RateExceededListener rateExceededListener);
+    void registerRootRateExceededListener(RateRecordedListener rateRecordedListener);
 
     /**
      * Add this listener to the root listeners, which will always be invoked before any other listener
-     * @param rateExceededListener The listener to register
+     * @param rateRecordedListener The listener to register
      */
-    void addRootRateExceededListener(RateExceededListener rateExceededListener);
+    void addRootRateExceededListener(RateRecordedListener rateRecordedListener);
 
     void registerDefaultRateLimiterFactory(RateLimiterFactory<?> rateLimiterFactory);
 
