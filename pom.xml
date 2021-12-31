@@ -20,7 +20,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <rate-limiter.version>0.0.707-DRAFT</rate-limiter.version>
         <bucket4j.version>6.4.1</bucket4j.version>
-        <logback.version>1.2.6</logback.version>
         <javax.enterprise.version>2.0</javax.enterprise.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
@@ -35,16 +34,22 @@
             <version>${rate-limiter.version}</version>
         </dependency>
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.6</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>com.github.vladimir-bukhtoyarov</groupId>
             <artifactId>bucket4j-core</artifactId>
             <version>${bucket4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-            <scope>provided</scope>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>1.1.1</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
