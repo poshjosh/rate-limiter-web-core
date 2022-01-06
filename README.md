@@ -148,6 +148,7 @@ import com.looseboxes.ratelimiter.web.core.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitConfigList;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -155,11 +156,13 @@ import java.util.concurrent.TimeUnit;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-  @Override public List<String> getResourcePackages() {
+  @Override
+  public List<String> getResourcePackages() {
     return Collections.singletonList("com.example.web.resources");
   }
 
-  @Override public Map<String, RateConfigList> getRateLimitConfigs() {
+  @Override
+  public Map<String, RateConfigList> getRateLimitConfigs() {
     return Collections.singletonMap("limitBySession", getRateLimitConfigList());
   }
 
@@ -171,11 +174,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
   }
 
   private List<RateConfig> getRateLimits() {
-    RateConfig config = new RateConfig();
-    config.setLimit(2);
-    config.setDuration(1);
-    config.setTimeUnit(TimeUnit.MINUTES);
-    return Collections.singletonList(config);
+    return Collections.singletonList(new RateConfig().limit(1).duration(Duration.ofMinutes(1)));
   }
 }
 ```
