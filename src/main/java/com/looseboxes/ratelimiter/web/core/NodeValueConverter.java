@@ -1,6 +1,7 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.RateLimiter;
+import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.RateConfigList;
@@ -41,12 +42,20 @@ public class NodeValueConverter implements BiFunction<String, NodeValue<RateConf
 
             }else {
 
-                RateLimiter<?> rateLimiter = rateLimiterConfigurationSource.createRateLimiter(name, config);
+                RateLimiter<?> rateLimiter = createRateLimiter(name, config);
 
                 return new NodeValue<>(nodeValue.getSource(), rateLimiter);
             }
         }
     }
+
+
+    private RateLimiter<?> createRateLimiter(String name, RateConfigList rateConfigList) {
+        RateLimiterConfig rateLimiterConfig = rateLimiterConfigurationSource.copyConfigurationOrDefault(name);
+        return rateLimiterConfigurationSource.getRateLimiterFactory(name)
+                .createRateLimiter(rateLimiterConfig, rateConfigList);
+    }
+
 
     private <V> boolean isEqual(Node<NodeValue<V>> node, String name, NodeValue<V> nodeValue) {
         return Objects.equals(node.getName(), name) && Objects.equals(node.getValueOrDefault(null), nodeValue);

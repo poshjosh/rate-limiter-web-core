@@ -20,17 +20,17 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
     private static final Logger log = LoggerFactory.getLogger(PatternMatchingRateLimiter.class);
 
     private final Predicate<R> filter;
-    private final RateLimiterConfigurationSource<R> rateLimiterConfigurationSource;
+    private final MatcherRegistry<R> matcherRegistry;
     private final Node<NodeValue<RateLimiter<?>>> rootNode;
     private final List<Node<NodeValue<RateLimiter<?>>>> leafNodes;
     private final boolean firstMatchOnly;
 
     public PatternMatchingRateLimiter(Predicate<R> filter,
-                                      RateLimiterConfigurationSource<R> rateLimiterConfigurationSource,
+                                      MatcherRegistry<R> matcherRegistry,
                                       Node<NodeValue<RateLimiter<?>>> rootNode,
                                       boolean firstMatchOnly) {
         this.filter = Objects.requireNonNull(filter);
-        this.rateLimiterConfigurationSource = Objects.requireNonNull(rateLimiterConfigurationSource);
+        this.matcherRegistry = Objects.requireNonNull(matcherRegistry);
         this.rootNode = Objects.requireNonNull(rootNode);
         Set<Node<NodeValue<RateLimiter<?>>>> set = new LinkedHashSet<>();
         collectLeafNodes(this.rootNode, set::add);
@@ -115,7 +115,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
     private Matcher<R, ?> getOrCreateMatcher(String name, NodeValue<RateLimiter<?>> nodeValue){
         return NodeUtil.isPropertyNodeData(nodeValue) ?
-                rateLimiterConfigurationSource.getMatcherForProperties(name) :
-                rateLimiterConfigurationSource.getMatcherForSourceElement(name, nodeValue.getSource());
+                matcherRegistry.getOrCreateMatcherForProperties(name) :
+                matcherRegistry.getOrCreateMatcherForSourceElement(name, nodeValue.getSource());
     }
 }

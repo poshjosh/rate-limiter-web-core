@@ -5,29 +5,22 @@ import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.util.RateConfigList;
-import com.looseboxes.ratelimiter.web.core.util.ElementPatternsMatcher;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
-import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
-import com.looseboxes.ratelimiter.web.core.util.RequestUriMatcher;
 
 import java.lang.reflect.Method;
 import java.util.*;
 
 public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurationRegistry<R> {
 
+    // TODO - Use shared instances of these. Both classes are used in DefaultMatcherRegistry
     private final IdProvider<Class<?>, String> classNameProvider = new ClassNameProvider();
     private final IdProvider<Method, String> methodNameProvider = new MethodNameProvider();
 
+    private final MatcherRegistry<R> matcherRegistry;
+
     private final Map<String, RateLimiterConfig<?, ?>> configurations;
 
-    private final RateLimiterConfig defaultConfiguration;
-
-    private final RequestToIdConverter<R, String> requestToUriConverter;
-
-    private final Map<String, Matcher<R, ?>> matchers;
-
-    private final Matcher<R, ?> matcherForAllRequestUris;
+    private final RateLimiterConfig<?, ?> defaultConfiguration;
 
     private RateRecordedListener rootRateRecordedListener;
 
@@ -35,174 +28,151 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
 
     private RateLimiterFactory<?> defaultRateLimiterFactory;
 
-    private final IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider;
-
-    private final IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider;
-
     public RateLimiterConfigurationSource(
-            RequestToIdConverter<R, String> requestToUriConverter,
-            RateCache rateCache,
-            RateFactory rateFactory,
-            RateRecordedListener rateRecordedListener,
-            RateLimiterFactory<?> defaultRateLimiterFactory,
-            RateLimiterConfigurer<R> rateLimiterConfigurer,
-            IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider,
-            IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider) {
-        this.requestToUriConverter = Objects.requireNonNull(requestToUriConverter);
-        this.matchers = new HashMap<>();
-        this.matcherForAllRequestUris = new RequestUriMatcher<>(requestToUriConverter);
+            MatcherRegistry<R> matcherRegistry,
+            RateLimiterConfig<?, ?> rateLimiterConfig,
+            RateLimiterFactory<?> rateLimiterFactory,
+            RateLimiterConfigurer<R> rateLimiterConfigurer) {
+        this.matcherRegistry = Objects.requireNonNull(matcherRegistry);
         this.configurations = new HashMap<>();
-        defaultConfiguration = new RateLimiterConfig<>();
-        if (rateCache != null) {
-            defaultConfiguration.rateCache(rateCache);
-        }
-        if(rateFactory != null) {
-            defaultConfiguration.rateFactory(rateFactory);
-        }
-        if(rateRecordedListener != null) {
-            defaultConfiguration.rateExceededListener(rateRecordedListener);
-        }
+        this.defaultConfiguration = Objects.requireNonNull(rateLimiterConfig);
         this.rootRateRecordedListener = RateRecordedListener.NO_OP;
         this.rateLimiterFactories = new HashMap<>();
-        this.defaultRateLimiterFactory = Objects.requireNonNull(defaultRateLimiterFactory);
-        this.classPathPatternsProvider = Objects.requireNonNull(classPathPatternsProvider);
-        this.methodPathPatternsProvider = Objects.requireNonNull(methodPathPatternsProvider);
+        this.defaultRateLimiterFactory = Objects.requireNonNull(rateLimiterFactory);
         if(rateLimiterConfigurer != null) {
             rateLimiterConfigurer.configure(this);
         }
     }
 
-    @Override public void registerRequestMatcher(Class<?> clazz, Matcher<R, ?> matcher) {
-        registerRequestMatcher(classNameProvider.getId(clazz), matcher);
+    @Override
+    public Matcher<R, ?> getOrCreateMatcherForProperties(String name) {
+        return matcherRegistry.getOrCreateMatcherForProperties(name);
     }
 
-    @Override public void registerRequestMatcher(Method method, Matcher<R, ?> matcher) {
-        registerRequestMatcher(methodNameProvider.getId(method), matcher);
+    @Override
+    public Matcher<R, ?> getOrCreateMatcherForSourceElement(String name, Object source) {
+        return matcherRegistry.getOrCreateMatcherForSourceElement(name, source);
     }
 
-    @Override public void registerRequestMatcher(String name, Matcher<R, ?> matcher) {
-        matchers.put(name, Objects.requireNonNull(matcher));
+    @Override public RateLimiterConfigurationSource<R> registerRequestMatcher(Class<?> clazz, Matcher<R, ?> matcher) {
+        matcherRegistry.registerRequestMatcher(clazz, matcher);
+        return this;
     }
 
-    public Matcher<R, ?> getMatcherForProperties(String name) {
-        return matchers.getOrDefault(name, matcherForAllRequestUris);
+    @Override public RateLimiterConfigurationSource<R> registerRequestMatcher(Method method, Matcher<R, ?> matcher) {
+        matcherRegistry.registerRequestMatcher(method, matcher);
+        return this;
     }
 
-    public Matcher<R, ?> getMatcherForSourceElement(String name, Object source) {
-        return matchers.computeIfAbsent(name, key -> createMatcherForSourceElement(source));
+    @Override public RateLimiterConfigurationSource<R> registerRequestMatcher(String name, Matcher<R, ?> matcher) {
+        matcherRegistry.registerRequestMatcher(name, matcher);
+        return this;
     }
 
-    private Matcher<R, ?> createMatcherForSourceElement(Object source) {
-        if(source instanceof Class) {
-            return new ElementPatternsMatcher<>((Class<?>)source, classPathPatternsProvider, requestToUriConverter);
-        }else if(source instanceof Method) {
-            return  new ElementPatternsMatcher<>((Method)source, methodPathPatternsProvider, requestToUriConverter);
-        }else{
-            throw new UnsupportedOperationException();
-        }
+    @Override public RateLimiterConfigurationSource<R> registerRateCache(RateCache<?, ?> rateCache) {
+        defaultConfiguration.rateCache(Objects.requireNonNull((RateCache)rateCache));
+        return this;
     }
 
-    @Override public void registerRateCache(RateCache<?, ?> rateCache) {
-        defaultConfiguration.rateCache(Objects.requireNonNull(rateCache));
+    @Override public RateLimiterConfigurationSource<R> registerRateCache(Class<?> clazz, RateCache<?, ?> rateCache) {
+        return registerRateCache(classNameProvider.getId(clazz), rateCache);
     }
 
-    @Override public void registerRateCache(Class<?> clazz, RateCache<?, ?> rateCache) {
-        registerRateCache(classNameProvider.getId(clazz), rateCache);
+    @Override public RateLimiterConfigurationSource<R> registerRateCache(Method method, RateCache<?, ?> rateCache) {
+        return registerRateCache(methodNameProvider.getId(method), rateCache);
     }
 
-    @Override public void registerRateCache(Method method, RateCache<?, ?> rateCache) {
-        registerRateCache(methodNameProvider.getId(method), rateCache);
+    @Override public RateLimiterConfigurationSource<R> registerRateCache(String name, RateCache<?, ?> rateCache) {
+        getOrCreateConfigurationWithDefaults(name).rateCache((RateCache)Objects.requireNonNull(rateCache));
+        return this;
     }
 
-    @Override public void registerRateCache(String name, RateCache<?, ?> rateCache) {
-        getOrCreateConfigurationWithDefaults(name).rateCache(Objects.requireNonNull(rateCache));
-    }
-
-    @Override public void registerRateFactory(RateFactory rateFactory) {
+    @Override public RateLimiterConfigurationSource<R> registerRateFactory(RateFactory rateFactory) {
         defaultConfiguration.rateFactory(Objects.requireNonNull(rateFactory));
+        return this;
     }
 
-    @Override public void registerRateFactory(Class<?> clazz, RateFactory rateFactory) {
-        registerRateFactory(classNameProvider.getId(clazz), rateFactory);
+    @Override public RateLimiterConfigurationSource<R> registerRateFactory(Class<?> clazz, RateFactory rateFactory) {
+        return registerRateFactory(classNameProvider.getId(clazz), rateFactory);
     }
 
-    @Override public void registerRateFactory(Method method, RateFactory rateFactory) {
-        registerRateFactory(methodNameProvider.getId(method), rateFactory);
+    @Override public RateLimiterConfigurationSource<R> registerRateFactory(Method method, RateFactory rateFactory) {
+        return registerRateFactory(methodNameProvider.getId(method), rateFactory);
     }
 
-    @Override public void registerRateFactory(String name, RateFactory rateFactory) {
+    @Override public RateLimiterConfigurationSource<R> registerRateFactory(String name, RateFactory rateFactory) {
         getOrCreateConfigurationWithDefaults(name).setRateFactory(Objects.requireNonNull(rateFactory));
+        return this;
     }
 
-    @Override public void registerRateExceededListener(RateRecordedListener rateRecordedListener) {
-        defaultConfiguration.rateExceededListener(Objects.requireNonNull(rateRecordedListener));
+    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(RateRecordedListener rateRecordedListener) {
+        defaultConfiguration.rateRecordedListener(Objects.requireNonNull(rateRecordedListener));
+        return this;
     }
 
-    @Override public void registerRateExceededListener(Class<?> clazz, RateRecordedListener rateRecordedListener) {
-        registerRateExceededListener(classNameProvider.getId(clazz), rateRecordedListener);
+    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(Class<?> clazz, RateRecordedListener rateRecordedListener) {
+        return registerRateExceededListener(classNameProvider.getId(clazz), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededListener(Method method, RateRecordedListener rateRecordedListener) {
-        registerRateExceededListener(methodNameProvider.getId(method), rateRecordedListener);
+    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(Method method, RateRecordedListener rateRecordedListener) {
+        return registerRateExceededListener(methodNameProvider.getId(method), rateRecordedListener);
     }
 
-    @Override public void registerRateExceededListener(String name, RateRecordedListener rateRecordedListener) {
-        getOrCreateConfigurationWithDefaults(name).setRateExceededListener(Objects.requireNonNull(rateRecordedListener));
+    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(String name, RateRecordedListener rateRecordedListener) {
+        getOrCreateConfigurationWithDefaults(name).setRateRecordedListener(Objects.requireNonNull(rateRecordedListener));
+        return this;
     }
 
     /**
      * Register a root listener, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    @Override public void registerRootRateExceededListener(RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> registerRootRateExceededListener(RateRecordedListener rateRecordedListener) {
         rootRateRecordedListener = Objects.requireNonNull(rateRecordedListener);
+        return this;
     }
 
     /**
      * Add this listener to the root listeners, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    @Override public void addRootRateExceededListener(RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> addRootRateExceededListener(RateRecordedListener rateRecordedListener) {
         Objects.requireNonNull(rateRecordedListener);
         rootRateRecordedListener = rootRateRecordedListener.andThen(rateRecordedListener);
+        return this;
     }
 
-    @Override public void registerDefaultRateLimiterFactory(RateLimiterFactory<?> rateLimiterFactory) {
+    @Override public RateLimiterConfigurationSource<R> registerRateLimiterFactory(RateLimiterFactory<?> rateLimiterFactory) {
         defaultRateLimiterFactory = Objects.requireNonNull(rateLimiterFactory);
+        return this;
     }
 
-    @Override public void registerRateLimiterFactory(Class<?> clazz, RateLimiterFactory<?> rateLimiterFactory) {
-        registerRateLimiterFactory(classNameProvider.getId(clazz), rateLimiterFactory);
+    @Override public RateLimiterConfigurationSource<R> registerRateLimiterFactory(Class<?> clazz, RateLimiterFactory<?> rateLimiterFactory) {
+        return registerRateLimiterFactory(classNameProvider.getId(clazz), rateLimiterFactory);
     }
 
-    @Override public void registerRateLimiterFactory(Method method, RateLimiterFactory<?> rateLimiterFactory) {
-        registerRateLimiterFactory(methodNameProvider.getId(method), rateLimiterFactory);
+    @Override public RateLimiterConfigurationSource<R> registerRateLimiterFactory(Method method, RateLimiterFactory<?> rateLimiterFactory) {
+        return registerRateLimiterFactory(methodNameProvider.getId(method), rateLimiterFactory);
     }
 
-    @Override public void registerRateLimiterFactory(String name, RateLimiterFactory<?> rateLimiterFactory) {
+    @Override public RateLimiterConfigurationSource<R> registerRateLimiterFactory(String name, RateLimiterFactory<?> rateLimiterFactory) {
         rateLimiterFactories.put(name, Objects.requireNonNull(rateLimiterFactory));
+        return this;
     }
 
     public RateLimiterFactory<?> getRateLimiterFactory(String name) {
         return rateLimiterFactories.getOrDefault(name, defaultRateLimiterFactory);
     }
 
-    public RateLimiter<?> createRateLimiter(String name, RateConfigList rateConfigList) {
-        RateLimiterConfig rateLimiterConfig = copyConfigurationOrDefault(name);
-        return getRateLimiterFactory(name).createRateLimiter(rateLimiterConfig,
-                rateConfigList);
-    }
-
     public RateLimiterConfig<?, ?> copyConfigurationOrDefault(String name) {
-        RateLimiterConfig<?, ?> result = new RateLimiterConfig<>(
-                configurations.getOrDefault(name, defaultConfiguration));
+        RateLimiterConfig<?, ?> result = new RateLimiterConfig<>(configurations.getOrDefault(name, defaultConfiguration));
         if(rootRateRecordedListener != RateRecordedListener.NO_OP) {
-            result.setRateExceededListener(rootRateRecordedListener.andThen(result.getRateExceededListener()));
+            result.setRateRecordedListener(rootRateRecordedListener.andThen(result.getRateRecordedListener()));
         }
         return result;
     }
 
-    private RateLimiterConfig getOrCreateConfigurationWithDefaults(String name) {
+    private RateLimiterConfig<?, ?> getOrCreateConfigurationWithDefaults(String name) {
         return configurations.computeIfAbsent(name, key -> new RateLimiterConfig<>(defaultConfiguration));
     }
 }
