@@ -31,6 +31,7 @@ __Configure rate limiting__
 ```java
 package com.looseboxes.ratelimiter.web.spring;
 
+import com.looseboxes.ratelimiter.cache.JavaRateCache;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurationRegistry;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
@@ -65,22 +66,24 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
       return request.getSession().getId();
     });
 
-    final String paramName = "utm_source";
-
     // Rate limit by request parameter utm_source
     registry.registerRequestMatcher("limitByParamUtmSource", (request, resultIfNone) -> {
-      return request.getParameter(paramName);
+      return request.getParameter("utm_source");
     });
 
     // Rate limit users from a specific utm_source e.g facebook
     registry.registerRequestMatcher("limitByParamUtmSourceIsFacebook", (request, resultIfNone) -> {
-      final String paramValue = request.getParameter(paramName);
+      final String paramValue = request.getParameter("utm_source");
       if("facebook".equals(paramValue)) {
         return paramValue;
       }else{
         return resultIfNone;
       }
     });
+
+    // You could use a variety of Cache flavours
+    javax.cache.Cache javaxCache = null; // PROVIDE THIS
+    registry.registerRateCache("", new JavaRateCache<>(javaxCache));
   }
 }
 ```
