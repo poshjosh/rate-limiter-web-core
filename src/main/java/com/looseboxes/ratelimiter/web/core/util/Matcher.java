@@ -2,7 +2,7 @@ package com.looseboxes.ratelimiter.web.core.util;
 
 import java.util.Objects;
 
-public interface Matcher<T, K> {
+public interface Matcher<T, R> {
 
     Matcher<Object, Object> MATCH_NONE = (target, resultIfNone) -> resultIfNone;
 
@@ -11,7 +11,7 @@ public interface Matcher<T, K> {
         return (Matcher<T, K>)MATCH_NONE;
     }
 
-    K getKeyIfMatchingOrDefault(T target, K resultIfNone);
+    R getKeyIfMatchingOrDefault(T target, R resultIfNone);
 
     /**
      * Returns a composed {@code Matcher} that performs, in sequence, this
@@ -25,15 +25,15 @@ public interface Matcher<T, K> {
      * operation followed by the {@code after} operation
      * @throws NullPointerException if {@code after} is null
      */
-    default Matcher<T, K> andThen(Matcher<? super T, ? super K> after) {
+    default Matcher<T, R> andThen(Matcher<? super T, ? super R> after) {
         Objects.requireNonNull(after);
-        return (T t, K k) -> {
-            K result = getKeyIfMatchingOrDefault(t, k);
+        return (T t, R r) -> {
+            R result = getKeyIfMatchingOrDefault(t, r);
             // If there was no match, do not continue
-            if(result == k) {
+            if(result == r) {
                 return result;
             }
-            return (K)after.getKeyIfMatchingOrDefault(t, k);
+            return (R)after.getKeyIfMatchingOrDefault(t, r);
         };
     }
 
