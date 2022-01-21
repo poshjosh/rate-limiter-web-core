@@ -1,29 +1,25 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.web.core.RequestToIdConverter;
 
-import java.lang.reflect.GenericDeclaration;
 import java.util.Objects;
 
 /**
  * Matcher to match the path patterns declared on an element.
  *
- * @param <S> The type of the element whose path patterns will be matched
  * @param <R> The type of the request for which a match will be checked for
  */
-public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements Matcher<R, PathPatterns<String>>{
+public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>>{
 
     private final PathPatterns<String> pathPatterns;
 
     private final RequestToIdConverter<R, String> requestToUriConverter;
 
-    public ElementPatternsMatcher(
-            S source,
-            IdProvider<S, PathPatterns<String>> pathPatternsProvider,
+    public PathPatternsMatcher(
+            PathPatterns<String> pathPatterns,
             RequestToIdConverter<R, String> requestToUriConverter) {
 
-        this.pathPatterns = Objects.requireNonNull(pathPatternsProvider.getId(source));
+        this.pathPatterns = Objects.requireNonNull(pathPatterns);
 
         this.requestToUriConverter = Objects.requireNonNull(requestToUriConverter);
     }
@@ -43,7 +39,7 @@ public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements 
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        ElementPatternsMatcher<?, ?> that = (ElementPatternsMatcher<?, ?>) o;
+        PathPatternsMatcher<?> that = (PathPatternsMatcher<?>)o;
         return pathPatterns.equals(that.pathPatterns);
     }
 
@@ -53,6 +49,6 @@ public class ElementPatternsMatcher<S extends GenericDeclaration, R> implements 
 
     @Override
     public String toString() {
-        return "ElementPatternsMatcher{" + pathPatterns.getPatterns() + "}";
+        return "PathPatternsMatcher{" + pathPatterns.getPatterns() + "}";
     }
 }

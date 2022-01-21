@@ -3,10 +3,7 @@ package com.looseboxes.ratelimiter.web.core;
 import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
-import com.looseboxes.ratelimiter.web.core.util.ElementPatternsMatcher;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
-import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
-import com.looseboxes.ratelimiter.web.core.util.RequestUriMatcher;
+import com.looseboxes.ratelimiter.web.core.util.*;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -72,9 +69,11 @@ public class DefaultMatcherRegistry<R> implements MatcherRegistry<R> {
 
     private Matcher<R, ?> createMatcherForSourceElement(Object source) {
         if(source instanceof Class) {
-            return new ElementPatternsMatcher<>((Class<?>)source, classPathPatternsProvider, requestToUriConverter);
+            PathPatterns<String> pathPatterns = classPathPatternsProvider.getId((Class<?>)source);
+            return new PathPatternsMatcher<>(pathPatterns, requestToUriConverter);
         }else if(source instanceof Method) {
-            return  new ElementPatternsMatcher<>((Method)source, methodPathPatternsProvider, requestToUriConverter);
+            PathPatterns<String> pathPatterns = methodPathPatternsProvider.getId((Method)source);
+            return new PathPatternsMatcher<>(pathPatterns, requestToUriConverter);
         }else{
             throw new UnsupportedOperationException();
         }
