@@ -34,7 +34,6 @@ package com.looseboxes.ratelimiter.web.spring;
 import com.looseboxes.ratelimiter.cache.JavaRateCache;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurationRegistry;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,49 +41,49 @@ import javax.servlet.http.HttpServletRequest;
 @Configuration
 public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServletRequest> {
 
-  @Override 
-  public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
+    @Override
+    public void configure(RateLimiterConfigurationRegistry<HttpServletRequest> registry) {
 
-    // Register RateExceededListeners
-    // ------------------------------
+        // Register RateExceededListeners
+        // ------------------------------
 
-    // If you do not register a listener, the default listener throws an exception
-    registry.registerRateExceededListener(rateExceededEvent -> {
+        // If you do not register a listener, the default listener throws an exception
+        registry.registerRateRecordedListener(rateExceededEvent -> {
 
-      // For example, log the limit that was exceeded
-      System.out.println("Limit exceeded: " + rateExceededEvent.getExceededLimit());
-    });
+            // For example, log the limit that was exceeded
+            System.out.println("Limit exceeded: " + rateExceededEvent.getExceededLimit());
+        });
 
-    // Register request matchers
-    // -------------------------
+        // Register request matchers
+        // -------------------------
 
-    // The default behaviour is to return the relative request URI
-    // Here are other examples:
+        // The default behaviour is to return the relative request URI
+        // Here are other examples:
 
-    // Rate limit by session id
-    registry.registerRequestMatcher("limitBySession", (request, resultIfNone) -> {
-      return request.getSession().getId();
-    });
+        // Rate limit by session id
+        registry.registerRequestMatcher("limitBySession", (request, resultIfNone) -> {
+            return request.getSession().getId();
+        });
 
-    // Rate limit by request parameter utm_source
-    registry.registerRequestMatcher("limitByParamUtmSource", (request, resultIfNone) -> {
-      return request.getParameter("utm_source");
-    });
+        // Rate limit by request parameter utm_source
+        registry.registerRequestMatcher("limitByParamUtmSource", (request, resultIfNone) -> {
+            return request.getParameter("utm_source");
+        });
 
-    // Rate limit users from a specific utm_source e.g facebook
-    registry.registerRequestMatcher("limitByParamUtmSourceIsFacebook", (request, resultIfNone) -> {
-      final String paramValue = request.getParameter("utm_source");
-      if("facebook".equals(paramValue)) {
-        return paramValue;
-      }else{
-        return resultIfNone;
-      }
-    });
+        // Rate limit users from a specific utm_source e.g facebook
+        registry.registerRequestMatcher("limitByParamUtmSourceIsFacebook", (request, resultIfNone) -> {
+            final String paramValue = request.getParameter("utm_source");
+            if ("facebook".equals(paramValue)) {
+                return paramValue;
+            } else {
+                return resultIfNone;
+            }
+        });
 
-    // You could use a variety of Cache flavours
-    javax.cache.Cache javaxCache = null; // PROVIDE THIS
-    registry.registerRateCache("", new JavaRateCache<>(javaxCache));
-  }
+        // You could use a variety of Cache flavours
+        javax.cache.Cache javaxCache = null; // PROVIDE THIS
+        registry.registerRateCache("", new JavaRateCache<>(javaxCache));
+    }
 }
 ```
 

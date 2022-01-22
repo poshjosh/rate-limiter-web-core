@@ -25,11 +25,12 @@ public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>>{
     }
 
     @Override
-    public PathPatterns<String> getKeyIfMatchingOrDefault(R target, PathPatterns<String> resultIfNone) {
+    public PathPatterns<String> getIdIfMatchingOrDefault(R target, PathPatterns<String> resultIfNone) {
         return matches(target) ? pathPatterns : resultIfNone;
     }
 
-    private boolean matches(R request) {
+    @Override
+    public boolean matches(R request) {
         String uri = requestToUriConverter.convert(request);
         return pathPatterns.matches(uri);
     }

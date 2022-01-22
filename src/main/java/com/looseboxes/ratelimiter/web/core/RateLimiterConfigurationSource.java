@@ -105,20 +105,20 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
         return this;
     }
 
-    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> registerRateRecordedListener(RateRecordedListener rateRecordedListener) {
         defaultConfiguration.rateRecordedListener(Objects.requireNonNull(rateRecordedListener));
         return this;
     }
 
-    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(Class<?> clazz, RateRecordedListener rateRecordedListener) {
-        return registerRateExceededListener(classNameProvider.getId(clazz), rateRecordedListener);
+    @Override public RateLimiterConfigurationSource<R> registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener) {
+        return registerRateRecordedListener(classNameProvider.getId(clazz), rateRecordedListener);
     }
 
-    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(Method method, RateRecordedListener rateRecordedListener) {
-        return registerRateExceededListener(methodNameProvider.getId(method), rateRecordedListener);
+    @Override public RateLimiterConfigurationSource<R> registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener) {
+        return registerRateRecordedListener(methodNameProvider.getId(method), rateRecordedListener);
     }
 
-    @Override public RateLimiterConfigurationSource<R> registerRateExceededListener(String name, RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener) {
         getOrCreateConfigurationWithDefaults(name).setRateRecordedListener(Objects.requireNonNull(rateRecordedListener));
         return this;
     }
@@ -127,7 +127,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
      * Register a root listener, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    @Override public RateLimiterConfigurationSource<R> registerRootRateExceededListener(RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> registerRootRateRecordedListener(RateRecordedListener rateRecordedListener) {
         rootRateRecordedListener = Objects.requireNonNull(rateRecordedListener);
         return this;
     }
@@ -136,7 +136,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
      * Add this listener to the root listeners, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    @Override public RateLimiterConfigurationSource<R> addRootRateExceededListener(RateRecordedListener rateRecordedListener) {
+    @Override public RateLimiterConfigurationSource<R> addRootRateRecordedListener(RateRecordedListener rateRecordedListener) {
         Objects.requireNonNull(rateRecordedListener);
         rootRateRecordedListener = rootRateRecordedListener.andThen(rateRecordedListener);
         return this;

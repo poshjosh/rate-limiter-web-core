@@ -11,7 +11,11 @@ public interface Matcher<T, R> {
         return (Matcher<T, K>)MATCH_NONE;
     }
 
-    R getKeyIfMatchingOrDefault(T target, R resultIfNone);
+    default boolean matches(T target) {
+        return getIdIfMatchingOrDefault(target, null) != null;
+    }
+
+    R getIdIfMatchingOrDefault(T target, R resultIfNone);
 
     /**
      * Returns a composed {@code Matcher} that performs, in sequence, this
@@ -28,12 +32,12 @@ public interface Matcher<T, R> {
     default Matcher<T, R> andThen(Matcher<? super T, ? super R> after) {
         Objects.requireNonNull(after);
         return (T t, R r) -> {
-            R result = getKeyIfMatchingOrDefault(t, r);
+            R result = getIdIfMatchingOrDefault(t, r);
             // If there was no match, do not continue
             if(result == r) {
                 return result;
             }
-            return (R)after.getKeyIfMatchingOrDefault(t, r);
+            return (R)after.getIdIfMatchingOrDefault(t, r);
         };
     }
 

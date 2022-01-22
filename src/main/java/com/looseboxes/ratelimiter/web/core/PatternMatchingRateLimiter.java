@@ -99,7 +99,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
         Matcher<R, ?> matcher = matcherProvider.apply(nodeName, nodeData);
 
-        final Object key = matcher.getKeyIfMatchingOrDefault(request, null);
+        final Object key = matcher.getIdIfMatchingOrDefault(request, null);
 
         final boolean matched = key != null;
         if(log.isTraceEnabled()) {

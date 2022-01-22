@@ -35,25 +35,25 @@ public interface RateLimiterConfigurationRegistry<R> extends MatcherRegistry<R>{
 
     RateLimiterConfigurationRegistry<R> registerRateFactory(String name, RateFactory rateFactory);
 
-    RateLimiterConfigurationRegistry<R> registerRateExceededListener(RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> registerRateRecordedListener(RateRecordedListener rateRecordedListener);
 
-    RateLimiterConfigurationRegistry<R> registerRateExceededListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> registerRateRecordedListener(Class<?> clazz, RateRecordedListener rateRecordedListener);
 
-    RateLimiterConfigurationRegistry<R> registerRateExceededListener(Method method, RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> registerRateRecordedListener(Method method, RateRecordedListener rateRecordedListener);
 
-    RateLimiterConfigurationRegistry<R> registerRateExceededListener(String name, RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener);
 
     /**
      * Register a root listener, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    RateLimiterConfigurationRegistry<R> registerRootRateExceededListener(RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> registerRootRateRecordedListener(RateRecordedListener rateRecordedListener);
 
     /**
      * Add this listener to the root listeners, which will always be invoked before any other listener
      * @param rateRecordedListener The listener to register
      */
-    RateLimiterConfigurationRegistry<R> addRootRateExceededListener(RateRecordedListener rateRecordedListener);
+    RateLimiterConfigurationRegistry<R> addRootRateRecordedListener(RateRecordedListener rateRecordedListener);
 
     RateLimiterConfigurationRegistry<R> registerRateLimiterFactory(RateLimiterFactory<?> rateLimiterFactory);
 
