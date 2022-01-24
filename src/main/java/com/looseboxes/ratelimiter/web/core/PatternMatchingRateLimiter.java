@@ -101,12 +101,11 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
         final Object key = matcher.getIdIfMatchingOrDefault(request, null);
 
-        final boolean matched = key != null;
         if(log.isTraceEnabled()) {
-            log.trace("Name: {}, matched: {}, matcher: {}", nodeName, matched, matcher);
+            log.trace("Name: {}, matched: {}, matcher: {}", nodeName, key != null, matcher);
         }
 
-        if(!matched) {
+        if(key == null) {
             return RateLimitResult.NOMATCH;
         }
 
