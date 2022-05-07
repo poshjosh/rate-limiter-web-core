@@ -20,8 +20,8 @@ class GreetingResource {
     @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTE)
     @RateLimitGroup("limitBySession")
     @GetMapping("/greet")
-    String greet() {
-        return "Hello World!";
+    String greet(String name) {
+        return "Hello " + name;
     }
 }
 ```
@@ -77,6 +77,16 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
     }
 }
 ```
+
+## Naming Conventions for `RequestMatcher`s
+
+A `RequestMatcher` may be registered using either a class name, a method name, or a string name.
+When a string name is used, it should match one of the following:
+
+- __A group__ - The name of a `@RateLimitGroup` annotation.
+- __A class__ - The fully qualified name of a class e.g: `com.example.web.resources.GreetingResource`
+- __A method__ - The identifier of a method eg: `com.example.web.resources.GreetingResource.greet(java.lang.String)`
+- __A property__ - One of the keys in the `Map` returned by `RateLimitProperties#getRateLimitConfigs()`
 
 ## Ways and Means
 
