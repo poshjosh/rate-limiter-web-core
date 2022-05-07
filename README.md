@@ -48,10 +48,10 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
         // ------------------------------
 
         // If you do not register a listener, the default listener throws an exception
-        registry.registerRateRecordedListener(rateExceededEvent -> {
+        registry.registerRateRecordedListener((source, key, amount, exceededLimits) -> {
 
             // For example, log the limit that was exceeded
-            System.out.println("Limit exceeded: " + rateExceededEvent.getExceededLimit());
+            System.out.println("For " + key + ", the following limits are exceeded: " + exceededLimits);
         });
 
         // Register request matchers
