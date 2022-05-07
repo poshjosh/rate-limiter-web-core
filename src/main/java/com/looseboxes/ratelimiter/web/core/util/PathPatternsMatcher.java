@@ -25,8 +25,8 @@ public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>>{
     }
 
     @Override
-    public PathPatterns<String> getIdIfMatchingOrDefault(R target, PathPatterns<String> resultIfNone) {
-        return matches(target) ? pathPatterns : resultIfNone;
+    public PathPatterns<String> matchOrNull(R target) {
+        return matches(target) ? pathPatterns : null;
     }
 
     @Override

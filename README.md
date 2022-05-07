@@ -60,27 +60,18 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
         // The default behaviour is to return the relative request URI
         // Here are other examples:
 
-        // Rate limit by session id
-        registry.registerRequestMatcher("limitBySession", (request, resultIfNone) -> {
-            return request.getSession().getId();
-        });
+        // Identify resources to rate-limit by session id
+        registry.registerRequestMatcher("limitBySession", request -> request.getSession().getId());
 
-        // Rate limit by request parameter utm_source
-        registry.registerRequestMatcher("limitByParamUtmSource", (request, resultIfNone) -> {
-            return request.getParameter("utm_source");
-        });
+        // Identify resources to rate-limit by the presence of request parameter "utm_source"
+        registry.registerRequestMatcher("limitByUtmSource", request -> request.getParameter("utm_source"));
 
         // Rate limit users from a specific utm_source e.g facebook
-        registry.registerRequestMatcher("limitByParamUtmSourceIsFacebook", (request, resultIfNone) -> {
-            final String paramValue = request.getParameter("utm_source");
-            if ("facebook".equals(paramValue)) {
-                return paramValue;
-            } else {
-                return resultIfNone;
-            }
-        });
+        registry.registerRequestMatcher("limitByUtmSourceIsFacebook", request -> "facebook".equals(request.getParameter("utm_source")));
 
         // You could use a variety of Cache flavours
+        // -----------------------------------------
+      
         javax.cache.Cache javaxCache = null; // PROVIDE THIS
         registry.registerRateCache("", new JavaRateCache<>(javaxCache));
     }

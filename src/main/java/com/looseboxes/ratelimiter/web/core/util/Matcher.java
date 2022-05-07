@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public interface Matcher<T, R> {
 
-    Matcher<Object, Object> MATCH_NONE = (target, resultIfNone) -> resultIfNone;
+    Matcher<Object, Object> MATCH_NONE = (target) -> null;
 
     @SuppressWarnings("unchecked")
     static <T, K> Matcher<T, K> matchNone() {
@@ -12,10 +12,10 @@ public interface Matcher<T, R> {
     }
 
     default boolean matches(T target) {
-        return getIdIfMatchingOrDefault(target, null) != null;
+        return matchOrNull(target) != null;
     }
 
-    R getIdIfMatchingOrDefault(T target, R resultIfNone);
+    R matchOrNull(T target);
 
     /**
      * Returns a composed {@code Matcher} that performs, in sequence, this
@@ -31,14 +31,13 @@ public interface Matcher<T, R> {
      */
     default Matcher<T, R> andThen(Matcher<? super T, ? super R> after) {
         Objects.requireNonNull(after);
-        return (T t, R r) -> {
-            R result = getIdIfMatchingOrDefault(t, r);
+        return (T t) -> {
+            R result = matchOrNull(t);
             // If there was no match, do not continue
-            if(result == r) {
+            if(result == null) {
                 return result;
             }
-            return (R)after.getIdIfMatchingOrDefault(t, r);
+            return (R)after.matchOrNull(t);
         };
     }
-
 }
