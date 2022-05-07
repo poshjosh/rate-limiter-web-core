@@ -5,6 +5,7 @@ import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
+import com.looseboxes.ratelimiter.util.Nullable;
 import com.looseboxes.ratelimiter.web.core.util.Matcher;
 
 import java.lang.reflect.Method;
@@ -32,7 +33,7 @@ public class RateLimiterConfigurationSource<R> implements RateLimiterConfigurati
             MatcherRegistry<R> matcherRegistry,
             RateLimiterConfig<?, ?> rateLimiterConfig,
             RateLimiterFactory<?> rateLimiterFactory,
-            RateLimiterConfigurer<R> rateLimiterConfigurer) {
+            @Nullable RateLimiterConfigurer<R> rateLimiterConfigurer) {
         this.matcherRegistry = Objects.requireNonNull(matcherRegistry);
         this.configurations = new HashMap<>();
         this.defaultConfiguration = Objects.requireNonNull(rateLimiterConfig);

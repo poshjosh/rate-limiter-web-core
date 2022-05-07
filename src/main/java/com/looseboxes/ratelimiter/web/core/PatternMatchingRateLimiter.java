@@ -43,7 +43,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
     }
 
     @Override
-    public boolean increment(R request, int amount) {
+    public boolean increment(Object source, R request, int amount) {
 
         // We check this dynamically, to be able to respond to changes to this property dynamically
         if(!filter.test(request)) {
@@ -109,6 +109,6 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
             return RateLimitResult.NOMATCH;
         }
 
-        return rateLimiter.increment(key, amount) ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
+        return rateLimiter.increment(request, key, amount) ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
     }
 }

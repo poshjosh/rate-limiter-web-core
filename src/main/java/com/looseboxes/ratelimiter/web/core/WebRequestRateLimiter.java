@@ -27,14 +27,14 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
     }
 
     @Override
-    public boolean increment(R request, int amount) {
+    public boolean increment(Object source, R request, int amount) {
         int failCount = 0;
         try {
-            if(!this.rateLimiterFromProperties.increment(request, amount)) {
+            if(!this.rateLimiterFromProperties.increment(source, request, amount)) {
                 ++failCount;
             }
         }finally {
-            if(!this.rateLimiterFromAnnotations.increment(request, amount)) {
+            if(!this.rateLimiterFromAnnotations.increment(source, request, amount)) {
                 ++failCount;
             }
         }
