@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
@@ -19,17 +18,14 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
     private static final Logger log = LoggerFactory.getLogger(PatternMatchingRateLimiter.class);
 
-    private final Predicate<R> filter;
     private final BiFunction<String, NodeData<RateLimiter<?>>, Matcher<R, ?>> matcherProvider;
     private final Node<NodeData<RateLimiter<?>>> rootNode;
     private final List<Node<NodeData<RateLimiter<?>>>> leafNodes;
     private final boolean firstMatchOnly;
 
-    public PatternMatchingRateLimiter(Predicate<R> filter,
-                                      BiFunction<String, NodeData<RateLimiter<?>>, Matcher<R, ?>> matcherProvider,
+    public PatternMatchingRateLimiter(BiFunction<String, NodeData<RateLimiter<?>>, Matcher<R, ?>> matcherProvider,
                                       Node<NodeData<RateLimiter<?>>> rootNode,
                                       boolean firstMatchOnly) {
-        this.filter = Objects.requireNonNull(filter);
         this.matcherProvider = Objects.requireNonNull(matcherProvider);
         this.rootNode = Objects.requireNonNull(rootNode);
         Set<Node<NodeData<RateLimiter<?>>>> set = new LinkedHashSet<>();
@@ -44,11 +40,6 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
 
     @Override
     public boolean increment(Object source, R request, int amount) {
-
-        // We check this dynamically, to be able to respond to changes to this property dynamically
-        if(!filter.test(request)) {
-            return true;
-        }
 
         int globalFailureCount = 0;
 

@@ -18,8 +18,8 @@ public interface RateLimitProperties {
     List<String> getResourcePackages();
 
     /**
-     * Should rate limiting be disable?
-     * @return {@code true} if rate limiting should be disabled, otherwise return {@code false}
+     * Should automatic rate limiting be disable?
+     * @return {@code true} if automatic rate limiting should be disabled, otherwise return {@code false}
      */
     default Boolean getDisabled() {
         return Boolean.FALSE;
