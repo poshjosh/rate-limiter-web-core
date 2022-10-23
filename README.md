@@ -73,7 +73,7 @@ public class RateLimiterConfigurerImpl implements RateLimiterConfigurer<HttpServ
         // -----------------------------------------
       
         javax.cache.Cache javaxCache = null; // PROVIDE THIS
-        registry.registerRateCache("", new JavaRateCache<>(javaxCache));
+        registry.registerRateCache("limitBySession", new JavaRateCache<>(javaxCache));
     }
 }
 ```
