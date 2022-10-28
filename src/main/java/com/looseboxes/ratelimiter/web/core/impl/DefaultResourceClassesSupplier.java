@@ -1,13 +1,14 @@
-package com.looseboxes.ratelimiter.web.core;
+package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.util.ClassFilterForAnnotations;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
+import com.looseboxes.ratelimiter.web.core.ResourceClassesSupplier;
 
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
-public class DefaultResourceClassesSupplier implements ResourceClassesSupplier{
+public class DefaultResourceClassesSupplier implements ResourceClassesSupplier {
 
     private final List<Class<?>> classes;
 

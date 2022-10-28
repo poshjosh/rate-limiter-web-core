@@ -1,4 +1,4 @@
-package com.looseboxes.ratelimiter.web.core;
+package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.annotation.NodeData;
