@@ -7,7 +7,6 @@ import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.DefaultClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Nullable;
-import com.looseboxes.ratelimiter.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.*;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
@@ -43,8 +42,8 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         private MatcherRegistry<T> matcherRegistry;
         private ResourceClassesSupplier resourceClassesSupplier;
 
-        private NodeFactory<RateLimitProperties, RateConfigList> nodeFactoryForProperties;
-        private NodeFactory<List<Class<?>>, RateConfigList> nodeFactoryForAnnotations;
+        private NodeFactory<RateLimitProperties, Limit> nodeFactoryForProperties;
+        private NodeFactory<List<Class<?>>, Limit> nodeFactoryForAnnotations;
         private PatternMatchingRateLimiterFactory<T> patternMatchingRateLimiterFactoryForProperties;
         private PatternMatchingRateLimiterFactory<T> patternMatchingRateLimiterFactoryForAnnotations;
 
@@ -100,11 +99,11 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override public NodeFactory<RateLimitProperties, RateConfigList> getNodeFactoryForProperties() {
+        @Override public NodeFactory<RateLimitProperties, Limit> getNodeFactoryForProperties() {
             return nodeFactoryForProperties;
         }
 
-        @Override public NodeFactory<List<Class<?>>, RateConfigList> getNodeFactoryForAnnotations() {
+        @Override public NodeFactory<List<Class<?>>, Limit> getNodeFactoryForAnnotations() {
             return nodeFactoryForAnnotations;
         }
 
@@ -230,13 +229,13 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
     }
 
     @Override public WebRequestRateLimiterConfigBuilder<REQUEST> nodeFactoryForProperties(
-            NodeFactory<RateLimitProperties, RateConfigList> nodeFactoryForProperties) {
+            NodeFactory<RateLimitProperties, Limit> nodeFactoryForProperties) {
         configuration.nodeFactoryForProperties = nodeFactoryForProperties;
         return this;
     }
 
     @Override public WebRequestRateLimiterConfigBuilder<REQUEST> nodeFactoryForAnnotations(
-            NodeFactory<List<Class<?>>, RateConfigList> nodeFactoryForAnnotations) {
+            NodeFactory<List<Class<?>>, Limit> nodeFactoryForAnnotations) {
         configuration.nodeFactoryForAnnotations = nodeFactoryForAnnotations;
         return this;
     }

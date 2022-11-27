@@ -1,12 +1,12 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
+import com.looseboxes.ratelimiter.Limit;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.annotation.NodeData;
 import com.looseboxes.ratelimiter.annotation.NodeUtil;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
-import com.looseboxes.ratelimiter.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.NodeFactory;
 import com.looseboxes.ratelimiter.web.core.PatternMatchingRateLimiterFactory;
 import com.looseboxes.ratelimiter.web.core.RateLimiterRegistry;
@@ -27,15 +27,15 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
             DefaultPatternMatchingRateLimiterFactory.class);
 
     private final S sourceOfRateLimitRules;
-    private final NodeFactory<S, RateConfigList> nodeFactory;
+    private final NodeFactory<S, Limit> nodeFactory;
     private final RateLimiterRegistry<R> rateLimiterRegistry;
-    private final BiConsumer<Object, Node<NodeData<RateConfigList>>> defaultNodeConsumer;
+    private final BiConsumer<Object, Node<NodeData<Limit>>> defaultNodeConsumer;
 
     public DefaultPatternMatchingRateLimiterFactory(
             S sourceOfRateLimitRules,
-            NodeFactory<S, RateConfigList> nodeFactory,
+            NodeFactory<S, Limit> nodeFactory,
             RateLimiterRegistry<R> rateLimiterRegistry,
-            BiConsumer<Object, Node<NodeData<RateConfigList>>> defaultNodeConsumer) {
+            BiConsumer<Object, Node<NodeData<Limit>>> defaultNodeConsumer) {
         this.sourceOfRateLimitRules = Objects.requireNonNull(sourceOfRateLimitRules);
         this.nodeFactory = Objects.requireNonNull(nodeFactory);
         this.rateLimiterRegistry = Objects.requireNonNull(rateLimiterRegistry);
@@ -44,12 +44,12 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
 
     @Override
     public RateLimiter<R> createRateLimiter(String rootNodeName,
-            BiConsumer<Object, Node<NodeData<RateConfigList>>> nodeConsumer) {
+            BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer) {
 
         BiFunction<String, NodeData<RateLimiter<?>>, Matcher<R, ?>> matcherProvider =
                 (name, nodeData) -> rateLimiterRegistry.getMatcherOrDefault(name, nodeData.getSource());
 
-        Node<NodeData<RateConfigList>> rootNode =
+        Node<NodeData<Limit>> rootNode =
                 nodeFactory.createNode(
                         rootNodeName,
                         sourceOfRateLimitRules,
@@ -63,12 +63,12 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
     }
 
     private Node<NodeData<RateLimiter<K>>> toRateLimiterNode(
-            Node<NodeData<RateConfigList>> source) {
+            Node<NodeData<Limit>> source) {
 
-        final BiPredicate<String, NodeData<RateConfigList>> isRoot =
+        final BiPredicate<String, NodeData<Limit>> isRoot =
                 (nodeName, nodeData) -> NodeUtil.isEqual(source, nodeName, nodeData);
 
-        BiFunction<String, NodeData<RateConfigList>, NodeData<RateLimiter<K>>> nodeValueConverter =
+        BiFunction<String, NodeData<Limit>, NodeData<RateLimiter<K>>> nodeValueConverter =
                 (nodeName, nodeData) -> {
 
                     if (isRoot.test(nodeName, nodeData)) {
@@ -90,13 +90,13 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
     }
 
     private NodeData<RateLimiter<K>> convertToRateLimiterNode(
-            String name, NodeData<RateConfigList> nodeData) {
+            String name, NodeData<Limit> nodeData) {
 
-        RateConfigList config = nodeData.getValue();
+        Limit limit = nodeData.getValue();
 
         // One method with 3 @RateLimit annotations is a simple group (not really a group)
         // A true group spans either multiple methods/classes
-        if(!config.hasLimits()) { // This is a group node
+        if(!limit.hasLimits()) { // This is a group node
 
             // @TODO how do we handle this?
             // Do we create multiple rate limiters, one for each of the direct children of this group
@@ -109,7 +109,7 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
 
             RateLimiter<K> rateLimiter = rateLimiterRegistry
                     .getRateLimiterFactory(name)
-                    .createRateLimiter(rateLimiterConfig, config);
+                    .createRateLimiter(rateLimiterConfig, limit);
 
             return new NodeData<>(nodeData.getSource(), rateLimiter);
         }

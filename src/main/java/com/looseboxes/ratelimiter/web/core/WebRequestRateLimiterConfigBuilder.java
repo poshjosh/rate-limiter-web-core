@@ -1,11 +1,11 @@
 package com.looseboxes.ratelimiter.web.core;
 
+import com.looseboxes.ratelimiter.Limit;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
-import com.looseboxes.ratelimiter.util.RateConfigList;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -47,8 +47,8 @@ public interface WebRequestRateLimiterConfigBuilder<REQUEST> {
             Class<? extends Annotation>[] resourceAnnotationTypes);
 
     WebRequestRateLimiterConfigBuilder<REQUEST> nodeFactoryForProperties(
-            NodeFactory<RateLimitProperties, RateConfigList> nodeFactoryForProperties);
+            NodeFactory<RateLimitProperties, Limit> nodeFactoryForProperties);
 
     WebRequestRateLimiterConfigBuilder<REQUEST> nodeFactoryForAnnotations(
-            NodeFactory<List<Class<?>>, RateConfigList> nodeFactoryForAnnotations);
+            NodeFactory<List<Class<?>>, Limit> nodeFactoryForAnnotations);
 }
