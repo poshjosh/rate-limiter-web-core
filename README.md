@@ -43,7 +43,7 @@ import javax.servlet.http.HttpServletRequest;
 
   @Override public void configure(RateLimiterRegistry<HttpServletRequest> registry) {
 
-    // Register RateExceededListeners
+    // Register RateRecordedListeners
     // ------------------------------
 
     // If you do not register a listener, the default listener throws an exception
@@ -179,7 +179,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
   }
 
   private List<RateConfig> getRateLimits() {
-    return Collections.singletonList(new RateConfig().limit(1).duration(Duration.ofMinutes(1)));
+    return Collections.singletonList(RateConfig.of(1, Duration.ofMinutes(1)));
   }
 }
 ```
