@@ -55,15 +55,15 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
         this.rateLimiter = rateLimiterForProperties.andThen(rateLimiterForAnnotations);
     }
 
-    @Override public boolean increment(R resourceId) {
-        return rateLimiter.increment(resourceId);
+    @Override public boolean consume(R resourceId) {
+        return rateLimiter.consume(resourceId);
     }
 
-    @Override public boolean increment(R resourceId, int amount) {
-        return rateLimiter.increment(resourceId, amount);
+    @Override public boolean consume(R resourceId, int amount) {
+        return rateLimiter.consume(resourceId, amount);
     }
 
-    @Override public boolean increment(Object resource, R resourceId, int amount) {
-        return rateLimiter.increment(resource, resourceId, amount);
+    @Override public boolean consume(Object context, R resourceId, int amount) {
+        return rateLimiter.consume(context, resourceId, amount);
     }
 }

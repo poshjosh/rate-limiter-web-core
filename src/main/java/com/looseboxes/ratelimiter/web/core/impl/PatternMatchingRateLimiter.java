@@ -39,7 +39,7 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
     }
 
     @Override
-    public boolean increment(Object source, R request, int amount) {
+    public boolean consume(Object context, R request, int amount) {
 
         int globalFailureCount = 0;
 
@@ -100,6 +100,6 @@ public class PatternMatchingRateLimiter<R> implements RateLimiter<R>{
             return RateLimitResult.NOMATCH;
         }
 
-        return rateLimiter.increment(request, key, amount) ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
+        return rateLimiter.consume(request, key, amount) ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
     }
 }
