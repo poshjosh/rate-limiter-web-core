@@ -22,9 +22,9 @@ public class DefaultRateLimiterRegistry<R> implements RateLimiterRegistry<R> {
 
     private final MatcherRegistry<R> matcherRegistry;
 
-    private final Map<String, DefaultRateLimiterConfig<?, ?>> configurations;
+    private final Map<String, RateLimiterConfigBuilder<?, ?>> configurations;
 
-    private final DefaultRateLimiterConfig<?, ?> defaultConfiguration;
+    private final RateLimiterConfigBuilder<?, ?> defaultConfiguration;
 
     private RateRecordedListener rootRateRecordedListener;
 
@@ -39,7 +39,7 @@ public class DefaultRateLimiterRegistry<R> implements RateLimiterRegistry<R> {
             @Nullable RateLimiterConfigurer<R> rateLimiterConfigurer) {
         this.matcherRegistry = Objects.requireNonNull(matcherRegistry);
         this.configurations = new HashMap<>();
-        this.defaultConfiguration = new DefaultRateLimiterConfig<>(rateLimiterConfig);
+        this.defaultConfiguration = RateLimiterConfig.builder(rateLimiterConfig);
         this.rootRateRecordedListener = RateRecordedListener.NO_OP;
         this.rateLimiterFactories = new HashMap<>();
         this.defaultRateLimiterFactory = Objects.requireNonNull(rateLimiterFactory);
@@ -115,7 +115,7 @@ public class DefaultRateLimiterRegistry<R> implements RateLimiterRegistry<R> {
     }
 
     @Override public RateLimiterRegistry<R> registerRateFactory(String name, RateFactory rateFactory) {
-        getOrCreateConfigurationWithDefaults(name).setRateFactory(Objects.requireNonNull(rateFactory));
+        getOrCreateConfigurationWithDefaults(name).rateFactory(Objects.requireNonNull(rateFactory));
         return this;
     }
 
@@ -133,7 +133,7 @@ public class DefaultRateLimiterRegistry<R> implements RateLimiterRegistry<R> {
     }
 
     @Override public RateLimiterRegistry<R> registerRateRecordedListener(String name, RateRecordedListener rateRecordedListener) {
-        getOrCreateConfigurationWithDefaults(name).setRateRecordedListener(Objects.requireNonNull(rateRecordedListener));
+        getOrCreateConfigurationWithDefaults(name).rateRecordedListener(Objects.requireNonNull(rateRecordedListener));
         return this;
     }
 
@@ -183,14 +183,16 @@ public class DefaultRateLimiterRegistry<R> implements RateLimiterRegistry<R> {
      * @return A copy of the rate limiter config identified by the name argument
      */
     @Override public RateLimiterConfig<?, ?> getRateLimiterConfig(String name) {
-        DefaultRateLimiterConfig<?, ?> result = new DefaultRateLimiterConfig<>(configurations.getOrDefault(name, defaultConfiguration));
-        if(rootRateRecordedListener != RateRecordedListener.NO_OP) {
-            result.setRateRecordedListener(rootRateRecordedListener.andThen(result.getRateRecordedListener()));
+        RateLimiterConfig<?, ?> rateLimiterConfig = configurations.getOrDefault(name, defaultConfiguration).build();
+        if(rootRateRecordedListener == RateRecordedListener.NO_OP) {
+            return rateLimiterConfig;
         }
-        return result;
+        return RateLimiterConfig.builder(rateLimiterConfig)
+                .rateRecordedListener(rootRateRecordedListener.andThen(rateLimiterConfig.getRateRecordedListener()))
+                .build();
     }
 
-    private DefaultRateLimiterConfig<?, ?> getOrCreateConfigurationWithDefaults(String name) {
-        return configurations.computeIfAbsent(name, key -> new DefaultRateLimiterConfig<>(defaultConfiguration));
+    private RateLimiterConfigBuilder<?, ?> getOrCreateConfigurationWithDefaults(String name) {
+        return configurations.computeIfAbsent(name, key -> RateLimiterConfig.builder(defaultConfiguration.build()));
     }
 }

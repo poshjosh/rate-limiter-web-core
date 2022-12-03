@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.Limit;
+import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.rates.Logic;
 import com.looseboxes.ratelimiter.rates.Rate;
 

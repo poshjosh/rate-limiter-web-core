@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.Limit;
+import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;

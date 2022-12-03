@@ -1,11 +1,12 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.Limit;
+import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
+import com.looseboxes.ratelimiter.web.core.impl.DefaultWebRequestRateLimiterConfigBuilder;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -14,6 +15,10 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public interface WebRequestRateLimiterConfig<REQUEST> {
+
+    static <R> WebRequestRateLimiterConfigBuilder<R> builder() {
+        return new DefaultWebRequestRateLimiterConfigBuilder<>();
+    }
 
     RateLimiterRegistry<REQUEST> getRateLimiterRegistry();
 

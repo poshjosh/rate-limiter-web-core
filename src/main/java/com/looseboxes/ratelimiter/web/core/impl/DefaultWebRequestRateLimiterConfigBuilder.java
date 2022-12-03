@@ -4,6 +4,7 @@ import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.ClassAnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
+import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.DefaultClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Nullable;
@@ -127,7 +128,7 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             throw new IndexOutOfBoundsException("Index: 0");
         }
         if (configuration.rateLimiterConfig == null) {
-            rateLimiterConfig(new DefaultRateLimiterConfig<>());
+            rateLimiterConfig(RateLimiterConfig.newInstance());
         }
         if (configuration.rateLimiterFactory == null) {
             rateLimiterFactory(new DefaultRateLimiterFactory<>());

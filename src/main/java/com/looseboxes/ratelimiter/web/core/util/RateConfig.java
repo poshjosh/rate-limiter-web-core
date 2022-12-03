@@ -1,6 +1,5 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.rates.AmountPerDuration;
 import com.looseboxes.ratelimiter.rates.Rate;
 
 import java.io.Serializable;
@@ -30,7 +29,7 @@ public class RateConfig implements Serializable {
     }
 
     public Rate toRate() {
-        return AmountPerDuration.of(limit, duration.toMillis());
+        return Rate.of(limit, duration.toMillis());
     }
 
     public RateConfig limit(long limit) {
