@@ -1,5 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
+import com.looseboxes.ratelimiter.PatternMatchingRateLimiter;
 import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
@@ -10,7 +11,6 @@ import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
 import com.looseboxes.ratelimiter.web.core.NodeFactory;
 import com.looseboxes.ratelimiter.web.core.PatternMatchingRateLimiterFactory;
 import com.looseboxes.ratelimiter.web.core.RateLimiterRegistry;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +46,7 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
     public RateLimiter<R> createRateLimiter(String rootNodeName,
             BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer) {
 
-        BiFunction<String, NodeData<RateLimiter<?>>, Matcher<R, ?>> matcherProvider =
+        PatternMatchingRateLimiter.MatcherProvider<R> matcherProvider =
                 (name, nodeData) -> rateLimiterRegistry.getMatcherOrDefault(name, nodeData.getSource());
 
         Node<NodeData<Limit>> rootNode =

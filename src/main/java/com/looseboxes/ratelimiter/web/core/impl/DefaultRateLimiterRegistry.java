@@ -9,7 +9,7 @@ import com.looseboxes.ratelimiter.util.Nullable;
 import com.looseboxes.ratelimiter.web.core.MatcherRegistry;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
 import com.looseboxes.ratelimiter.web.core.RateLimiterRegistry;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
+import com.looseboxes.ratelimiter.util.Matcher;
 
 import java.lang.reflect.Method;
 import java.util.*;

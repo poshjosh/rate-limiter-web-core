@@ -4,7 +4,7 @@ import com.looseboxes.ratelimiter.rates.Limit;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.annotation.*;
 import com.looseboxes.ratelimiter.node.*;
-import com.looseboxes.ratelimiter.web.core.WebRequestRateLimiterConfig;
+import com.looseboxes.ratelimiter.web.core.PatternMatchingRateLimiterConfig;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -40,7 +40,7 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
 
     private final RateLimiter<R> rateLimiter;
 
-    public WebRequestRateLimiter(WebRequestRateLimiterConfig<R> webRequestRateLimiterConfig) {
+    public WebRequestRateLimiter(PatternMatchingRateLimiterConfig<R> webRequestRateLimiterConfig) {
 
         CollectNodeNames collectNodeNames = new CollectNodeNames();
         RateLimiter<R> rateLimiterForProperties = webRequestRateLimiterConfig
@@ -55,15 +55,18 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
         this.rateLimiter = rateLimiterForProperties.andThen(rateLimiterForAnnotations);
     }
 
-    @Override public boolean consume(R resourceId) {
+    @Override
+    public boolean consume(R resourceId) {
         return rateLimiter.consume(resourceId);
     }
 
-    @Override public boolean consume(R resourceId, int amount) {
+    @Override
+    public boolean consume(R resourceId, int amount) {
         return rateLimiter.consume(resourceId, amount);
     }
 
-    @Override public boolean consume(Object context, R resourceId, int amount) {
+    @Override
+    public boolean consume(Object context, R resourceId, int amount) {
         return rateLimiter.consume(context, resourceId, amount);
     }
 }

@@ -1,5 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
+import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.RequestToIdConverter;
 
 import java.util.Objects;
@@ -9,7 +10,7 @@ import java.util.Objects;
  *
  * @param <R> The type of the request for which a match will be checked for
  */
-public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>>{
+public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>> {
 
     private final PathPatterns<String> pathPatterns;
 

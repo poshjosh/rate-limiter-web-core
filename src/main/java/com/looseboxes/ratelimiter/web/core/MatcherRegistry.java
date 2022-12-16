@@ -1,7 +1,7 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.util.Nullable;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
+import com.looseboxes.ratelimiter.util.Matcher;
 
 import java.lang.reflect.Method;
 

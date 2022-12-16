@@ -5,7 +5,7 @@ import com.looseboxes.ratelimiter.RateRecordedListener;
 import com.looseboxes.ratelimiter.RateFactory;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.web.core.util.Matcher;
+import com.looseboxes.ratelimiter.util.Matcher;
 
 import java.lang.reflect.Method;
 

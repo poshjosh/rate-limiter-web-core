@@ -14,7 +14,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public interface WebRequestRateLimiterConfig<REQUEST> {
+public interface WebRequestRateLimiterConfig<REQUEST>
+        extends PatternMatchingRateLimiterConfig<REQUEST> {
 
     static <R> WebRequestRateLimiterConfigBuilder<R> builder() {
         return new DefaultWebRequestRateLimiterConfigBuilder<>();
@@ -50,7 +51,4 @@ public interface WebRequestRateLimiterConfig<REQUEST> {
 
     NodeFactory<RateLimitProperties, Limit> getNodeFactoryForProperties();
 
-    PatternMatchingRateLimiterFactory<REQUEST> getPatternMatchingRateLimiterFactoryForProperties();
-
-    PatternMatchingRateLimiterFactory<REQUEST> getPatternMatchingRateLimiterFactoryForAnnotations();
 }

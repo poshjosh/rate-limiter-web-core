@@ -3,6 +3,7 @@ package com.looseboxes.ratelimiter.web.core.impl;
 import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
+import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.MatcherRegistry;
 import com.looseboxes.ratelimiter.web.core.RequestToIdConverter;
 import com.looseboxes.ratelimiter.web.core.util.*;
