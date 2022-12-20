@@ -47,7 +47,7 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
             BiConsumer<Object, Node<NodeData<CompositeRate>>> nodeConsumer) {
 
         PatternMatchingRateLimiter.MatcherProvider<R> matcherProvider =
-                (name, nodeData) -> registries.matchers().getMatcherOrDefault(name, nodeData.getSource());
+                (name, nodeData) -> registries.matchers().getOrCreateMatcher(name, nodeData.getSource());
 
         Node<NodeData<CompositeRate>> rootNode =
                 nodeFactory.createNode(
@@ -73,9 +73,9 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
 
                     if (isRoot.test(nodeName, nodeData)) {
                         return new NodeData<>(nodeData.getSource(), RateLimiter.noop());
-                    }else{
-                        return convertToRateLimiterNode(nodeName, nodeData);
                     }
+
+                    return convertToRateLimiterNode(nodeName, nodeData);
                 };
 
         // Transform the root and it's children to rate limiter nodes
@@ -107,8 +107,7 @@ public class DefaultPatternMatchingRateLimiterFactory<R, K, S>
 
             RateLimiterConfig rateLimiterConfig = registries.configs().getOrDefault(name);
 
-            RateLimiter<K> rateLimiter = registries
-                    .factories()
+            RateLimiter<K> rateLimiter = registries.factories()
                     .getOrDefault(name)
                     .createRateLimiter(rateLimiterConfig, limit);
 

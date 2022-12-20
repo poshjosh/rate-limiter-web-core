@@ -2,6 +2,7 @@ package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.Matcher;
+import com.looseboxes.ratelimiter.util.Nullable;
 import com.looseboxes.ratelimiter.web.core.MatcherRegistry;
 import com.looseboxes.ratelimiter.web.core.RequestToIdConverter;
 import com.looseboxes.ratelimiter.web.core.util.*;
@@ -19,7 +20,8 @@ final class DefaultMatcherRegistry<R> extends SimpleRegistry<Matcher<R, ?>> impl
         private final IdProvider<E, PathPatterns<String>> pathPatternsProvider;
         private final RequestToIdConverter<T, String> requestToUriConverter;
 
-        private MatcherCreatorForAnnotatedElement(Map<String, Matcher<T, ?>> registeredMatchers,
+        private MatcherCreatorForAnnotatedElement(
+                Map<String, Matcher<T, ?>> registeredMatchers,
                 IdProvider<E, PathPatterns<String>> pathPatternsProvider,
                 RequestToIdConverter<T, String> requestToUriConverter) {
             this.registeredMatchers = Objects.requireNonNull(registeredMatchers);
@@ -61,12 +63,29 @@ final class DefaultMatcherRegistry<R> extends SimpleRegistry<Matcher<R, ?>> impl
     }
 
     @Override
-    public Matcher<R, ?> getOrCreateMatcher(String name, Class<?> source) {
-        return sourceElementMatchers.computeIfAbsent(name, key -> classMatcherCreator.createMatcher(name, source));
+    public Matcher<R, ?> getOrCreateMatcher(String name, @Nullable Object source) {
+        if (source instanceof Class) {
+            return getOrCreateMatcher(name, (Class) source);
+        } else if (source instanceof Method) {
+            return getOrCreateMatcher(name, (Method) source);
+        } else {
+            return getOrDefault(name);
+        }
     }
 
-    @Override
-    public Matcher<R, ?> getOrCreateMatcher(String name, Method source) {
-        return sourceElementMatchers.computeIfAbsent(name, key -> methodMatcherCreator.createMatcher(name, source));
+    private Matcher<R, ?> getOrCreateMatcher(String name, Class<?> source) {
+        return sourceElementMatchers.computeIfAbsent(name, key -> createMatcher(key, source));
+    }
+
+    private Matcher<R, ?> getOrCreateMatcher(String name, Method source) {
+        return sourceElementMatchers.computeIfAbsent(name, key -> createMatcher(key, source));
+    }
+
+    private Matcher<R, ?> createMatcher(String name, Class<?> source) {
+        return classMatcherCreator.createMatcher(name, source);
+    }
+
+    private Matcher<R, ?> createMatcher(String name, Method source) {
+        return methodMatcherCreator.createMatcher(name, source);
     }
 }
