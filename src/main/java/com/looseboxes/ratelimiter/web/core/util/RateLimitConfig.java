@@ -1,8 +1,8 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.rates.Limit;
-import com.looseboxes.ratelimiter.rates.Logic;
-import com.looseboxes.ratelimiter.rates.Rate;
+import com.looseboxes.ratelimiter.util.CompositeRate;
+import com.looseboxes.ratelimiter.util.Operator;
+import com.looseboxes.ratelimiter.Rate;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,41 +11,41 @@ import java.util.stream.Collectors;
 
 public class RateLimitConfig implements Serializable {
 
-    private static final long serialVersionUID = 9081726354000000006L;
+    private static final long serialVersionUID = 9081726354000000060L;
 
-    private Logic logic = Logic.OR;
+    private Operator operator = Operator.OR;
 
     private List<RateConfig> limits;
 
     public RateLimitConfig() { }
 
     public RateLimitConfig(RateLimitConfig rateLimitConfig) {
-        this.logic = rateLimitConfig.logic;
+        this.operator = rateLimitConfig.operator;
         this.limits = rateLimitConfig.limits == null ? null : rateLimitConfig.limits.stream()
                 .map(RateConfig::new).collect(Collectors.toList());
     }
 
-    public Limit toLimit() {
+    public CompositeRate toLimit() {
         if(limits == null || limits.isEmpty()) {
-            return Limit.empty(logic);
+            return CompositeRate.empty(operator);
         }else if(limits.size() == 1) {
-            return Limit.of(logic, limits.get(0).toRate());
+            return CompositeRate.of(operator, limits.get(0).toRate());
         }else {
-            return Limit.of(logic, limits.stream().map(RateConfig::toRate).toArray(Rate[]::new));
+            return CompositeRate.of(operator, limits.stream().map(RateConfig::toRate).toArray(Rate[]::new));
         }
     }
 
-    public RateLimitConfig logic(Logic logic) {
-        setLogic(logic);
+    public RateLimitConfig logic(Operator operator) {
+        setLogic(operator);
         return this;
     }
 
-    public Logic getLogic() {
-        return logic;
+    public Operator getLogic() {
+        return operator;
     }
 
-    public void setLogic(Logic logic) {
-        this.logic = logic;
+    public void setLogic(Operator operator) {
+        this.operator = operator;
     }
 
     public RateLimitConfig limits(List<RateConfig> limits) {
@@ -68,16 +68,16 @@ public class RateLimitConfig implements Serializable {
         if (o == null || getClass() != o.getClass())
             return false;
         RateLimitConfig that = (RateLimitConfig) o;
-        return logic == that.logic && Objects.equals(limits, that.limits);
+        return operator == that.operator && Objects.equals(limits, that.limits);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(logic, limits);
+        return Objects.hash(operator, limits);
     }
 
     @Override
     public String toString() {
-        return "RateLimitConfig{" + "logic=" + logic + ", limits=" + limits + '}';
+        return "RateLimitConfig{" + "operator=" + operator + ", limits=" + limits + '}';
     }
 }

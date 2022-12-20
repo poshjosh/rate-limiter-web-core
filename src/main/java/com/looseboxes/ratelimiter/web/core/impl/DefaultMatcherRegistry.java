@@ -1,8 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
-import com.looseboxes.ratelimiter.annotation.ClassNameProvider;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
-import com.looseboxes.ratelimiter.annotation.MethodNameProvider;
 import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.MatcherRegistry;
 import com.looseboxes.ratelimiter.web.core.RequestToIdConverter;
@@ -13,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class DefaultMatcherRegistry<R> implements MatcherRegistry<R> {
+final class DefaultMatcherRegistry<R> extends SimpleRegistry<Matcher<R, ?>> implements MatcherRegistry<R>{
 
     private static final class MatcherCreatorForAnnotatedElement<T, E> {
 
@@ -21,7 +19,7 @@ public class DefaultMatcherRegistry<R> implements MatcherRegistry<R> {
         private final IdProvider<E, PathPatterns<String>> pathPatternsProvider;
         private final RequestToIdConverter<T, String> requestToUriConverter;
 
-        public MatcherCreatorForAnnotatedElement(Map<String, Matcher<T, ?>> registeredMatchers,
+        private MatcherCreatorForAnnotatedElement(Map<String, Matcher<T, ?>> registeredMatchers,
                 IdProvider<E, PathPatterns<String>> pathPatternsProvider,
                 RequestToIdConverter<T, String> requestToUriConverter) {
             this.registeredMatchers = Objects.requireNonNull(registeredMatchers);
@@ -41,54 +39,25 @@ public class DefaultMatcherRegistry<R> implements MatcherRegistry<R> {
         }
     }
 
-    // TODO - Use shared instances of these. Both classes are used in DefaultRateLimiterRegistry
-    private final IdProvider<Class<?>, String> classNameProvider = new ClassNameProvider();
-    private final IdProvider<Method, String> methodNameProvider = new MethodNameProvider();
-
-    private final Map<String, Matcher<R, ?>> registeredMatchers;
-
     private final Map<String, Matcher<R, ?>> sourceElementMatchers;
-
-    private final Matcher<R, String> matcherForAllRequestUris;
 
     private final MatcherCreatorForAnnotatedElement<R, Class<?>> classMatcherCreator;
     private final MatcherCreatorForAnnotatedElement<R, Method> methodMatcherCreator;
 
-    public DefaultMatcherRegistry(
+    DefaultMatcherRegistry(
             RequestToIdConverter<R, String> requestToUriConverter,
+            IdProvider<Class<?>, String> classIdProvider,
+            IdProvider<Method, String> methodIdProvider,
             IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider,
             IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider) {
-        this.registeredMatchers = new HashMap<>();
+        super(new RequestUriMatcher<>(requestToUriConverter), classIdProvider, methodIdProvider);
         this.sourceElementMatchers = new HashMap<>();
-        this.matcherForAllRequestUris = new RequestUriMatcher<>(requestToUriConverter);
         this.classMatcherCreator = new MatcherCreatorForAnnotatedElement<>(
-            registeredMatchers, classPathPatternsProvider, requestToUriConverter
+            getRegistered(), classPathPatternsProvider, requestToUriConverter
         );
         this.methodMatcherCreator = new MatcherCreatorForAnnotatedElement<>(
-                registeredMatchers, methodPathPatternsProvider, requestToUriConverter
+                getRegistered(), methodPathPatternsProvider, requestToUriConverter
         );
-    }
-
-    @Override public DefaultMatcherRegistry<R> registerRequestMatcher(Class<?> clazz, Matcher<R, ?> matcher) {
-        return registerRequestMatcher(classNameProvider.getId(clazz), matcher);
-    }
-
-    @Override public DefaultMatcherRegistry<R> registerRequestMatcher(Method method, Matcher<R, ?> matcher) {
-        return registerRequestMatcher(methodNameProvider.getId(method), matcher);
-    }
-
-    @Override public DefaultMatcherRegistry<R> registerRequestMatcher(String name, Matcher<R, ?> matcher) {
-        registeredMatchers.put(name, Objects.requireNonNull(matcher));
-        return this;
-    }
-
-    /**
-     * Get a matcher, which matches all request URIs. The returned matcher is not part of the registry.
-     * @return A Matcher which matches all request URIs.
-     */
-    @Override
-    public Matcher<R, String> matchAllUris() {
-        return matcherForAllRequestUris;
     }
 
     @Override
@@ -99,10 +68,5 @@ public class DefaultMatcherRegistry<R> implements MatcherRegistry<R> {
     @Override
     public Matcher<R, ?> getOrCreateMatcher(String name, Method source) {
         return sourceElementMatchers.computeIfAbsent(name, key -> methodMatcherCreator.createMatcher(name, source));
-    }
-
-    @Override
-    public Matcher<R, ?> getMatcherOrDefault(String name, Matcher<R, ?> resultIfNone) {
-        return registeredMatchers.getOrDefault(name, resultIfNone);
     }
 }

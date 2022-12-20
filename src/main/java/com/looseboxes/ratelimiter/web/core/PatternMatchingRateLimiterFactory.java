@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.rates.Limit;
+import com.looseboxes.ratelimiter.util.CompositeRate;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.annotation.NodeData;
 import com.looseboxes.ratelimiter.node.Node;
@@ -14,5 +14,5 @@ public interface PatternMatchingRateLimiterFactory<R> {
     }
 
     RateLimiter<R> createRateLimiter(String rootNodeName,
-            BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer);
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> nodeConsumer);
 }

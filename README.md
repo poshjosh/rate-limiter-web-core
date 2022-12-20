@@ -32,22 +32,24 @@ __Configure rate limiting__
 package com.looseboxes.ratelimiter.web.spring;
 
 import com.looseboxes.ratelimiter.cache.JavaRateCache;
-import com.looseboxes.ratelimiter.web.core.RateLimiterRegistry;
+import com.looseboxes.ratelimiter.web.core.Registries;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Configuration public class RateLimiterConfigurerImpl
+@Configuration 
+public class RateLimiterConfigurerImpl
         implements RateLimiterConfigurer<HttpServletRequest> {
 
-  @Override public void configure(RateLimiterRegistry<HttpServletRequest> registry) {
+  @Override 
+  public void configure(Registries<HttpServletRequest> registry) {
 
     // Register RateRecordedListeners
     // ------------------------------
 
     // If you do not register a listener, the default listener throws an exception
-    registry.registerRateRecordedListener((resource, resourceId, amount, exceededLimits) -> {
+    registry.listeners().register((resource, resourceId, amount, exceededLimits) -> {
 
       // For example, log the limit that was exceeded
       System.out.println(
@@ -61,21 +63,20 @@ import javax.servlet.http.HttpServletRequest;
     // Here are other examples:
 
     // Identify resources to rate-limit by session id
-    registry.registerRequestMatcher("limitBySession", request -> request.getSession().getId());
+    registry.matchers().register("limitBySession", request -> request.getSession().getId());
 
     // Identify resources to rate-limit by the presence of request parameter "utm_source"
-    registry.registerRequestMatcher("limitByUtmSource",
-            request -> request.getParameter("utm_source"));
+    registry.matchers().register("limitByUtmSource", request -> request.getParameter("utm_source"));
 
     // Rate limit users from a specific utm_source e.g facebook
-    registry.registerRequestMatcher("limitByUtmSourceIsFacebook",
+    registry.matchers().register("limitByUtmSourceIsFacebook",
             request -> "facebook".equals(request.getParameter("utm_source")));
 
     // You could use a variety of Cache flavours
     // -----------------------------------------
 
     javax.cache.Cache javaxCache = null; // PROVIDE THIS
-    registry.registerRateCache("limitBySession", new JavaRateCache<>(javaxCache));
+    registry.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
   }
 }
 ```
@@ -146,7 +147,6 @@ Example class that implements the required properties.
 ```java
 package com.example.web;
 
-import com.looseboxes.ratelimiter.rates.Logic;
 import com.looseboxes.ratelimiter.web.core.util.RateConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
@@ -158,17 +158,18 @@ import java.util.Map;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-  @Override public List<String> getResourcePackages() {
-    return Collections.singletonList("com.example.web.resources");
-  }
+    @Override public List<String> getResourcePackages() {
+        return Collections.singletonList("com.example.web.resources");
+    }
 
-  @Override public Map<String, RateLimitConfig> getRateLimitConfigs() {
-    return Collections.singletonMap("limitBySession", new RateLimitConfig().limits(getRateConfigs()));
-  }
+    @Override public Map<String, RateLimitConfig> getRateLimitConfigs() {
+        return Collections
+                .singletonMap("limitBySession", new RateLimitConfig().limits(getRateConfigs()));
+    }
 
-  private List<RateConfig> getRateConfigs() {
-    return Collections.singletonList(RateConfig.of(1, Duration.ofMinutes(1)));
-  }
+    private List<RateConfig> getRateConfigs() {
+        return Collections.singletonList(RateConfig.of(1, Duration.ofMinutes(1)));
+    }
 }
 ```
 

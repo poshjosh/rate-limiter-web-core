@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.rates.Rate;
+import com.looseboxes.ratelimiter.Rate;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class RateConfig implements Serializable {
 
-    private static final long serialVersionUID = 9081726354000000005L;
+    private static final long serialVersionUID = 9081726354000000050L;
 
     public static RateConfig of(long limit, Duration duration) {
         return new RateConfig(limit, duration);

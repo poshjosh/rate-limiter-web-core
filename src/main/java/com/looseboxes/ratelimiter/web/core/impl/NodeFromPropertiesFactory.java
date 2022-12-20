@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
-import com.looseboxes.ratelimiter.rates.Limit;
+import com.looseboxes.ratelimiter.util.CompositeRate;
 import com.looseboxes.ratelimiter.annotation.NodeData;
 import com.looseboxes.ratelimiter.annotation.NodeUtil;
 import com.looseboxes.ratelimiter.node.Node;
@@ -13,17 +13,17 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-public class NodeFromPropertiesFactory implements NodeFactory<RateLimitProperties, Limit> {
+public class NodeFromPropertiesFactory implements NodeFactory<RateLimitProperties, CompositeRate> {
 
     private static final Logger LOG = LoggerFactory.getLogger(NodeFromPropertiesFactory.class);
 
     @Override
-    public Node<NodeData<Limit>> createNode(
+    public Node<NodeData<CompositeRate>> createNode(
             String name,
             RateLimitProperties properties,
-            BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer) {
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> nodeConsumer) {
 
-        final Node<NodeData<Limit>> rootNode = addNodesToRoot(
+        final Node<NodeData<CompositeRate>> rootNode = addNodesToRoot(
                 name, properties.getLimits(), nodeConsumer);
 
         if(LOG.isTraceEnabled()) {
@@ -33,31 +33,31 @@ public class NodeFromPropertiesFactory implements NodeFactory<RateLimitPropertie
         return rootNode;
     }
 
-    private Node<NodeData<Limit>> addNodesToRoot(
+    private Node<NodeData<CompositeRate>> addNodesToRoot(
             String rootNodeName,
-            Map<String, Limit> limits,
-            BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer) {
-        Map<String, Limit> configsWithoutParent = new LinkedHashMap<>(limits);
-        Limit rootNodeConfig = configsWithoutParent.remove(rootNodeName);
-        NodeData<Limit> nodeData = rootNodeConfig == null ? null : new NodeData<>(rootNodeConfig, rootNodeConfig);
-        Node<NodeData<Limit>> rootNode = NodeUtil.createNode(rootNodeName, nodeData, null);
+            Map<String, CompositeRate> limits,
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> nodeConsumer) {
+        Map<String, CompositeRate> configsWithoutParent = new LinkedHashMap<>(limits);
+        CompositeRate rootNodeConfig = configsWithoutParent.remove(rootNodeName);
+        NodeData<CompositeRate> nodeData = rootNodeConfig == null ? null : new NodeData<>(rootNodeConfig, rootNodeConfig);
+        Node<NodeData<CompositeRate>> rootNode = NodeUtil.createNode(rootNodeName, nodeData, null);
         nodeConsumer.accept(rootNodeConfig, rootNode);
         createNodes(rootNode, configsWithoutParent, nodeConsumer);
         return rootNode;
     }
 
     private void createNodes(
-            Node<NodeData<Limit>> parent,
-            Map<String, Limit> limits,
-            BiConsumer<Object, Node<NodeData<Limit>>> nodeConsumer) {
-        Set<Map.Entry<String, Limit>> entrySet = limits.entrySet();
-        for (Map.Entry<String, Limit> entry : entrySet) {
+            Node<NodeData<CompositeRate>> parent,
+            Map<String, CompositeRate> limits,
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> nodeConsumer) {
+        Set<Map.Entry<String, CompositeRate>> entrySet = limits.entrySet();
+        for (Map.Entry<String, CompositeRate> entry : entrySet) {
             String name = entry.getKey();
             if(name.equals(parent.getName())) {
                 throw new IllegalStateException("Parent and child nodes both have the same name: " + name);
             }
-            Limit nodeConfig = entry.getValue();
-            Node<NodeData<Limit>> node = NodeUtil.createNode(parent, name, nodeConfig, nodeConfig);
+            CompositeRate nodeConfig = entry.getValue();
+            Node<NodeData<CompositeRate>> node = NodeUtil.createNode(parent, name, nodeConfig, nodeConfig);
             nodeConsumer.accept(nodeConfig, node);
         }
     }

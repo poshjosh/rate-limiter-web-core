@@ -1,20 +1,21 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
-import com.looseboxes.ratelimiter.rates.Limit;
+import com.looseboxes.ratelimiter.util.CompositeRate;
 import com.looseboxes.ratelimiter.RateLimiter;
 import com.looseboxes.ratelimiter.annotation.*;
 import com.looseboxes.ratelimiter.node.*;
 import com.looseboxes.ratelimiter.web.core.PatternMatchingRateLimiterConfig;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 public class WebRequestRateLimiter<R> implements RateLimiter<R>{
 
     private static class CollectNodeNames implements
-            BiConsumer<Object, Node<NodeData<Limit>>> {
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> {
         private Set<String> nodeNames;
-        @Override public void accept(Object o, Node<NodeData<Limit>> node) {
+        @Override public void accept(Object o, Node<NodeData<CompositeRate>> node) {
             if (nodeNames == null) {
                 nodeNames = new HashSet<>();
             }
@@ -26,12 +27,12 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
     }
 
     private static class RequireUniqueName implements
-            BiConsumer<Object, Node<NodeData<Limit>>> {
+            BiConsumer<Object, Node<NodeData<CompositeRate>>> {
         private final Set<String> alreadyUsedNodeName;
         public RequireUniqueName(Set<String> alreadyUsedNodeName) {
             this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
         }
-        @Override public void accept(Object source, Node<NodeData<Limit>> node) {
+        @Override public void accept(Object source, Node<NodeData<CompositeRate>> node) {
             if(node != null && alreadyUsedNodeName.contains(node.getName())) {
                 throw new IllegalStateException("Already used. Node name: " + node.getName());
             }
@@ -56,17 +57,7 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
     }
 
     @Override
-    public boolean consume(R resourceId) {
-        return rateLimiter.consume(resourceId);
-    }
-
-    @Override
-    public boolean consume(R resourceId, int amount) {
-        return rateLimiter.consume(resourceId, amount);
-    }
-
-    @Override
-    public boolean consume(Object context, R resourceId, int amount) {
-        return rateLimiter.consume(context, resourceId, amount);
+    public boolean tryConsume(Object context, R resourceId, int permits, long timeout, TimeUnit unit) {
+        return rateLimiter.tryConsume(context, resourceId, permits, timeout, unit);
     }
 }

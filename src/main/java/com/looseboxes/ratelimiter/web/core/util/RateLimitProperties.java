@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
-import com.looseboxes.ratelimiter.rates.Limit;
+import com.looseboxes.ratelimiter.util.CompositeRate;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,9 +13,9 @@ import java.util.Map;
  */
 public interface RateLimitProperties {
 
-    default Map<String, Limit> getLimits() {
+    default Map<String, CompositeRate> getLimits() {
         Map<String, RateLimitConfig> configs = getRateLimitConfigs();
-        Map<String, Limit> limits = new HashMap<>(configs.size() * 4/3);
+        Map<String, CompositeRate> limits = new HashMap<>(configs.size() * 4/3);
         for(String name : configs.keySet()) {
             limits.put(name, configs.get(name).toLimit());
         }
