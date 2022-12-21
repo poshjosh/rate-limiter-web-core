@@ -1,9 +1,9 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.util.CompositeRate;
+import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
-import com.looseboxes.ratelimiter.annotation.AnnotationTreeBuilder;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.web.core.impl.DefaultWebRequestRateLimiterConfigBuilder;
@@ -53,16 +53,16 @@ public interface WebRequestRateLimiterConfig<REQUEST>
                 ClassesInPackageFinder classesInPackageFinder);
 
         Builder<REQUEST> annotationProcessor(
-                AnnotationTreeBuilder<Class<?>> annotationTreeBuilder);
+                AnnotationProcessor<Class<?>> annotationProcessor);
 
         Builder<REQUEST> resourceAnnotationTypes(
                 Class<? extends Annotation>[] resourceAnnotationTypes);
 
         Builder<REQUEST> nodeFactoryForProperties(
-                NodeFactory<RateLimitProperties, CompositeRate> nodeFactoryForProperties);
+                NodeFactory<RateLimitProperties, Bandwidths> nodeFactoryForProperties);
 
         Builder<REQUEST> nodeFactoryForAnnotations(
-                NodeFactory<List<Class<?>>, CompositeRate> nodeFactoryForAnnotations);
+                NodeFactory<List<Class<?>>, Bandwidths> nodeFactoryForAnnotations);
     }
 
     Registries<REQUEST> getRateLimiterRegistry();
@@ -91,11 +91,11 @@ public interface WebRequestRateLimiterConfig<REQUEST>
 
     ClassesInPackageFinder getClassesInPackageFinder();
 
-    AnnotationTreeBuilder<Class<?>> getAnnotationProcessor();
+    AnnotationProcessor<Class<?>> getAnnotationProcessor();
 
     Class<? extends Annotation>[] getResourceAnnotationTypes();
 
-    NodeFactory<List<Class<?>>, CompositeRate> getNodeFactoryForAnnotations();
+    NodeFactory<List<Class<?>>, Bandwidths> getNodeFactoryForAnnotations();
 
-    NodeFactory<RateLimitProperties, CompositeRate> getNodeFactoryForProperties();
+    NodeFactory<RateLimitProperties, Bandwidths> getNodeFactoryForProperties();
 }

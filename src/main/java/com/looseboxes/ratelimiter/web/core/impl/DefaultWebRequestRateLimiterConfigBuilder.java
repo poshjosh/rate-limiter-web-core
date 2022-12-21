@@ -1,10 +1,9 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.annotation.AnnotationTreeBuilder;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
-import com.looseboxes.ratelimiter.annotation.RateLimitTreeBuilder;
-import com.looseboxes.ratelimiter.util.CompositeRate;
+import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Nullable;
 import com.looseboxes.ratelimiter.web.core.*;
@@ -34,15 +33,15 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         private IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider;
         private RateLimiterFactory<Object> rateLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
-        private AnnotationTreeBuilder<Class<?>> annotationTreeBuilder;
+        private AnnotationProcessor<Class<?>> annotationProcessor;
         private Class<? extends Annotation> [] resourceAnnotationTypes;
 
         private Registries<T> registries;
         private MatcherRegistry<T> matcherRegistry;
         private ResourceClassesSupplier resourceClassesSupplier;
 
-        private NodeFactory<RateLimitProperties, CompositeRate> nodeFactoryForProperties;
-        private NodeFactory<List<Class<?>>, CompositeRate> nodeFactoryForAnnotations;
+        private NodeFactory<RateLimitProperties, Bandwidths> nodeFactoryForProperties;
+        private NodeFactory<List<Class<?>>, Bandwidths> nodeFactoryForAnnotations;
         private PatternMatchingRateLimiterFactory<T> patternMatchingRateLimiterFactoryForProperties;
         private PatternMatchingRateLimiterFactory<T> patternMatchingRateLimiterFactoryForAnnotations;
 
@@ -86,8 +85,8 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return classesInPackageFinder;
         }
 
-        @Override public AnnotationTreeBuilder<Class<?>> getAnnotationProcessor() {
-            return annotationTreeBuilder;
+        @Override public AnnotationProcessor<Class<?>> getAnnotationProcessor() {
+            return annotationProcessor;
         }
 
         @Override public Class<? extends Annotation>[] getResourceAnnotationTypes() {
@@ -106,11 +105,11 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override public NodeFactory<RateLimitProperties, CompositeRate> getNodeFactoryForProperties() {
+        @Override public NodeFactory<RateLimitProperties, Bandwidths> getNodeFactoryForProperties() {
             return nodeFactoryForProperties;
         }
 
-        @Override public NodeFactory<List<Class<?>>, CompositeRate> getNodeFactoryForAnnotations() {
+        @Override public NodeFactory<List<Class<?>>, Bandwidths> getNodeFactoryForAnnotations() {
             return nodeFactoryForAnnotations;
         }
 
@@ -142,14 +141,14 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         if (configuration.classesInPackageFinder == null) {
             classesInPackageFinder(ClassesInPackageFinder.newInstance());
         }
-        if (configuration.annotationTreeBuilder == null) {
-            annotationProcessor(RateLimitTreeBuilder.newInstance(configuration.rateLimiterConfig.getRateFactory()));
+        if (configuration.annotationProcessor == null) {
+            annotationProcessor(AnnotationProcessor.newInstance());
         }
         if (configuration.nodeFactoryForProperties == null) {
             nodeFactoryForProperties(new NodeFromPropertiesFactory());
         }
         if (configuration.nodeFactoryForAnnotations == null) {
-            nodeFactoryForAnnotations(new NodeFromAnnotationsFactory(configuration.annotationTreeBuilder));
+            nodeFactoryForAnnotations(new NodeFromAnnotationsFactory(configuration.annotationProcessor));
         }
         if (configuration.classIdProvider == null) {
             configuration.classIdProvider = IdProvider.forClass();
@@ -248,8 +247,8 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
     }
 
     @Override public WebRequestRateLimiterConfig.Builder<REQUEST> annotationProcessor(
-            AnnotationTreeBuilder<Class<?>> annotationTreeBuilder) {
-        configuration.annotationTreeBuilder = annotationTreeBuilder;
+            AnnotationProcessor<Class<?>> annotationProcessor) {
+        configuration.annotationProcessor = annotationProcessor;
         return this;
     }
 
@@ -260,13 +259,13 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
     }
 
     @Override public WebRequestRateLimiterConfig.Builder<REQUEST> nodeFactoryForProperties(
-            NodeFactory<RateLimitProperties, CompositeRate> nodeFactoryForProperties) {
+            NodeFactory<RateLimitProperties, Bandwidths> nodeFactoryForProperties) {
         configuration.nodeFactoryForProperties = nodeFactoryForProperties;
         return this;
     }
 
     @Override public WebRequestRateLimiterConfig.Builder<REQUEST> nodeFactoryForAnnotations(
-            NodeFactory<List<Class<?>>, CompositeRate> nodeFactoryForAnnotations) {
+            NodeFactory<List<Class<?>>, Bandwidths> nodeFactoryForAnnotations) {
         configuration.nodeFactoryForAnnotations = nodeFactoryForAnnotations;
         return this;
     }
