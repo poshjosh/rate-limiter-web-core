@@ -18,7 +18,7 @@ public class RequestUriMatcher<R> implements Matcher<R, String> {
     }
 
     @Override
-    public String matchOrNull(R target) {
+    public String matchingKeyOrNull(R target) {
         return requestToUriConverter.convert(target);
     }
 }

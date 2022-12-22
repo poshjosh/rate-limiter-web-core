@@ -20,16 +20,20 @@ public class RateLimitConfig{
                 .map(RateConfig::new).collect(Collectors.toList());
     }
 
-    public RateLimitConfig logic(Operator operator) {
-        setLogic(operator);
+    public boolean hasLimits() {
+        return this.limits != null && limits.size() > 0;
+    }
+
+    public RateLimitConfig operator(Operator operator) {
+        setOperator(operator);
         return this;
     }
 
-    public Operator getLogic() {
+    public Operator getOperator() {
         return operator;
     }
 
-    public void setLogic(Operator operator) {
+    public void setOperator(Operator operator) {
         this.operator = operator;
     }
 

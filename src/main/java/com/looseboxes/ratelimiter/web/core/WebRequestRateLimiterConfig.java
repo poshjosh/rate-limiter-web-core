@@ -1,6 +1,5 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.RateLimiterConfig;
 import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
@@ -8,14 +7,14 @@ import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.web.core.impl.DefaultWebRequestRateLimiterConfigBuilder;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public interface WebRequestRateLimiterConfig<REQUEST>
-        extends PatternMatchingRateLimiterConfig<REQUEST> {
+public interface WebRequestRateLimiterConfig<REQUEST>{
 
     static <R> Builder<R> builder() {
         return new DefaultWebRequestRateLimiterConfigBuilder<>();
@@ -53,19 +52,19 @@ public interface WebRequestRateLimiterConfig<REQUEST>
                 ClassesInPackageFinder classesInPackageFinder);
 
         Builder<REQUEST> annotationProcessor(
-                AnnotationProcessor<Class<?>> annotationProcessor);
+                AnnotationProcessor<Class<?>, RateLimitConfig> annotationProcessor);
 
         Builder<REQUEST> resourceAnnotationTypes(
                 Class<? extends Annotation>[] resourceAnnotationTypes);
 
         Builder<REQUEST> nodeFactoryForProperties(
-                NodeFactory<RateLimitProperties, Bandwidths> nodeFactoryForProperties);
+                NodeBuilder<RateLimitProperties, RateLimitConfig> nodeBuilderForProperties);
 
         Builder<REQUEST> nodeFactoryForAnnotations(
-                NodeFactory<List<Class<?>>, Bandwidths> nodeFactoryForAnnotations);
+                NodeBuilder<List<Class<?>>, RateLimitConfig> nodeBuilderForAnnotations);
     }
 
-    Registries<REQUEST> getRateLimiterRegistry();
+    Registries<REQUEST> getRegistries();
 
     MatcherRegistry<REQUEST> getMatcherRegistry();
 
@@ -91,11 +90,11 @@ public interface WebRequestRateLimiterConfig<REQUEST>
 
     ClassesInPackageFinder getClassesInPackageFinder();
 
-    AnnotationProcessor<Class<?>> getAnnotationProcessor();
+    AnnotationProcessor<Class<?>, RateLimitConfig> getAnnotationProcessor();
 
     Class<? extends Annotation>[] getResourceAnnotationTypes();
 
-    NodeFactory<List<Class<?>>, Bandwidths> getNodeFactoryForAnnotations();
+    NodeBuilder<List<Class<?>>, RateLimitConfig> getNodeFactoryForAnnotations();
 
-    NodeFactory<RateLimitProperties, Bandwidths> getNodeFactoryForProperties();
+    NodeBuilder<RateLimitProperties, RateLimitConfig> getNodeFactoryForProperties();
 }

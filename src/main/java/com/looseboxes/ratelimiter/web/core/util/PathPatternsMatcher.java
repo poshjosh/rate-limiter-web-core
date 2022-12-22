@@ -26,7 +26,7 @@ public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>> 
     }
 
     @Override
-    public PathPatterns<String> matchOrNull(R target) {
+    public PathPatterns<String> matchingKeyOrNull(R target) {
         return matches(target) ? pathPatterns : null;
     }
 

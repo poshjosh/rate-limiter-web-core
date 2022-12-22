@@ -15,7 +15,7 @@ class MatcherRegistryTest extends AbstractRegistryTest<Matcher<String, ?>> {
 
     private static final class MatcherImpl implements Matcher<String, String>{
         @Override
-        public String matchOrNull(String target) {
+        public String matchingKeyOrNull(String target) {
             return target;
         }
     }
