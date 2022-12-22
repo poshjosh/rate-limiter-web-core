@@ -5,9 +5,9 @@ import com.looseboxes.ratelimiter.RateLimiterFactory;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
+import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.impl.DefaultWebRequestRateLimiterConfigBuilder;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.lang.annotation.Annotation;
@@ -52,16 +52,16 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
                 ClassesInPackageFinder classesInPackageFinder);
 
         Builder<REQUEST> annotationProcessor(
-                AnnotationProcessor<Class<?>, RateLimitConfig> annotationProcessor);
+                AnnotationProcessor<Class<?>, Rates> annotationProcessor);
 
         Builder<REQUEST> resourceAnnotationTypes(
                 Class<? extends Annotation>[] resourceAnnotationTypes);
 
         Builder<REQUEST> nodeFactoryForProperties(
-                NodeBuilder<RateLimitProperties, RateLimitConfig> nodeBuilderForProperties);
+                NodeBuilder<RateLimitProperties, Rates> nodeBuilderForProperties);
 
         Builder<REQUEST> nodeFactoryForAnnotations(
-                NodeBuilder<List<Class<?>>, RateLimitConfig> nodeBuilderForAnnotations);
+                NodeBuilder<List<Class<?>>, Rates> nodeBuilderForAnnotations);
     }
 
     Registries<REQUEST> getRegistries();
@@ -90,11 +90,11 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     ClassesInPackageFinder getClassesInPackageFinder();
 
-    AnnotationProcessor<Class<?>, RateLimitConfig> getAnnotationProcessor();
+    AnnotationProcessor<Class<?>, Rates> getAnnotationProcessor();
 
     Class<? extends Annotation>[] getResourceAnnotationTypes();
 
-    NodeBuilder<List<Class<?>>, RateLimitConfig> getNodeFactoryForAnnotations();
+    NodeBuilder<List<Class<?>>, Rates> getNodeFactoryForAnnotations();
 
-    NodeBuilder<RateLimitProperties, RateLimitConfig> getNodeFactoryForProperties();
+    NodeBuilder<RateLimitProperties, Rates> getNodeFactoryForProperties();
 }

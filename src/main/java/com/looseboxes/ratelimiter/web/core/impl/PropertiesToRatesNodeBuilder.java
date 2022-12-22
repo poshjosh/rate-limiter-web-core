@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-public class PropertiesToRateLimitConfigNodeBuilder implements NodeBuilder<RateLimitProperties, Rates> {
+public class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitProperties, Rates> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PropertiesToRateLimitConfigNodeBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PropertiesToRatesNodeBuilder.class);
     
-    public PropertiesToRateLimitConfigNodeBuilder() {}
+    public PropertiesToRatesNodeBuilder() {}
 
     @Override
     public Node<NodeData<Rates>> buildNode(String name, RateLimitProperties sourceOfRateLimitInfo,

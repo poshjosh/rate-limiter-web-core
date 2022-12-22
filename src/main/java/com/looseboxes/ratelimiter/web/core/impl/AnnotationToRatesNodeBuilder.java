@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
-public class AnnotationToRateLimitConfigNodeBuilder implements NodeBuilder<List<Class<?>>, Rates> {
+public class AnnotationToRatesNodeBuilder implements NodeBuilder<List<Class<?>>, Rates> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AnnotationToRateLimitConfigNodeBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AnnotationToRatesNodeBuilder.class);
 
     private final AnnotationProcessor<Class<?>, Rates> annotationProcessor;
 
-    public AnnotationToRateLimitConfigNodeBuilder(AnnotationProcessor<Class<?>, Rates> annotationProcessor) {
+    public AnnotationToRatesNodeBuilder(AnnotationProcessor<Class<?>, Rates> annotationProcessor) {
         this.annotationProcessor = Objects.requireNonNull(annotationProcessor);
     }
 

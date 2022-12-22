@@ -147,8 +147,8 @@ Example class that implements the required properties.
 ```java
 package com.example.web;
 
-import com.looseboxes.ratelimiter.web.core.util.RateConfig;
-import com.looseboxes.ratelimiter.web.core.util.RateLimitConfig;
+import com.looseboxes.ratelimiter.util.Rate;
+import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.time.Duration;
@@ -158,18 +158,20 @@ import java.util.Map;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-    @Override public List<String> getResourcePackages() {
-        return Collections.singletonList("com.example.web.resources");
-    }
+  @Override
+  public List<String> getResourcePackages() {
+    return Collections.singletonList("com.example.web.resources");
+  }
 
-    @Override public Map<String, RateLimitConfig> getRateLimitConfigs() {
-        return Collections
-                .singletonMap("limitBySession", new RateLimitConfig().limits(getRateConfigs()));
-    }
+  @Override
+  public Map<String, Rates> getRateLimitConfigs() {
+    return Collections
+            .singletonMap("limitBySession", Rates.of(getRates()));
+  }
 
-    private List<RateConfig> getRateConfigs() {
-        return Collections.singletonList(RateConfig.of(1, Duration.ofMinutes(1)));
-    }
+  private Rate[] getRates() {
+    return new Rate[]{Rate.of(1, Duration.ofMinutes(1))};
+  }
 }
 ```
 
