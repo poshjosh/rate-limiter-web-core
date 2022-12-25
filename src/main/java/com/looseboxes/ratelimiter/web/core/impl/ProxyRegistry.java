@@ -14,7 +14,7 @@ final class ProxyRegistry<I, O> implements Registry<O> {
         }
         O get(I input);
         I set(I input, O output);
-        I newInstance();
+        I createNewProxied();
     }
 
     private final Registry<I> delegate;
@@ -49,7 +49,7 @@ final class ProxyRegistry<I, O> implements Registry<O> {
 
     private Registry<O> register(I input, O what) {
         if (input == null) {
-            input = proxy.newInstance();
+            input = proxy.createNewProxied();
         }
         delegate.register(proxy.set(input, what));
         return this;

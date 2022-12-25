@@ -12,7 +12,7 @@ import java.util.function.BiConsumer;
 
 public class WebRequestRateLimiter<R> implements RateLimiter<R>{
 
-    private static class CollectNodeNames implements
+    private static class NodeNamesCollector implements
             BiConsumer<Object, Node<NodeData<Rates>>> {
         private Set<String> nodeNames;
         @Override public void accept(Object o, Node<NodeData<Rates>> node) {
@@ -26,15 +26,17 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
         }
     }
 
-    private static class RequireUniqueName implements
+    private static class UniqueNameEnforcer implements
             BiConsumer<Object, Node<NodeData<Rates>>> {
         private final Set<String> alreadyUsedNodeName;
-        public RequireUniqueName(Set<String> alreadyUsedNodeName) {
+        private final String source;
+        public UniqueNameEnforcer(Set<String> alreadyUsedNodeName, String source) {
             this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
+            this.source = source;
         }
         @Override public void accept(Object source, Node<NodeData<Rates>> node) {
             if(node != null && alreadyUsedNodeName.contains(node.getName())) {
-                throw new IllegalStateException("Already used. Node name: " + node.getName());
+                throw new IllegalStateException("Already used at " + source + ". Node name: " + node.getName());
             }
         }
     }
@@ -42,19 +44,24 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
     private final RateLimiter<R> compositeRateLimiter;
 
     public WebRequestRateLimiter(WebRequestRateLimiterConfig<R> webRequestRateLimiterConfig) {
-        CollectNodeNames collectNodeNames = new CollectNodeNames();
+        NodeNamesCollector nodeNamesCollector = new NodeNamesCollector();
         RateLimiter<R> rateLimiterForProperties = new PatternMatchingRateLimiterFactory<>(
                 webRequestRateLimiterConfig.getProperties(),
-                webRequestRateLimiterConfig.getNodeFactoryForProperties(),
-                webRequestRateLimiterConfig.getRegistries()
-        ).createRateLimiter("root.properties", collectNodeNames);
+                webRequestRateLimiterConfig.getNodeBuilderForProperties(),
+                webRequestRateLimiterConfig.getRegistries(),
+                (name, clazz) -> Optional.empty(),
+                (name, method) -> Optional.empty()
+        ).createRateLimiter("root.properties", nodeNamesCollector);
 
-        RequireUniqueName requireUniqueName = new RequireUniqueName(collectNodeNames.getNodeNames());
+        UniqueNameEnforcer uniqueNameEnforcer = new UniqueNameEnforcer(
+                nodeNamesCollector.getNodeNames(), webRequestRateLimiterConfig.getProperties().getClass().getName());
         RateLimiter<R> rateLimiterForAnnotations = new PatternMatchingRateLimiterFactory<>(
                 webRequestRateLimiterConfig.getResourceClassesSupplier().get(),
-                webRequestRateLimiterConfig.getNodeFactoryForAnnotations(),
-                webRequestRateLimiterConfig.getRegistries()
-        ).createRateLimiter("root.annotations", requireUniqueName);
+                webRequestRateLimiterConfig.getNodeBuilderForAnnotations(),
+                webRequestRateLimiterConfig.getRegistries(),
+                webRequestRateLimiterConfig.getClassMatcherFactory(),
+                webRequestRateLimiterConfig.getMethodMatcherFactory()
+        ).createRateLimiter("root.annotations", uniqueNameEnforcer);
 
         this.compositeRateLimiter = rateLimiterForProperties.andThen(rateLimiterForAnnotations);
     }

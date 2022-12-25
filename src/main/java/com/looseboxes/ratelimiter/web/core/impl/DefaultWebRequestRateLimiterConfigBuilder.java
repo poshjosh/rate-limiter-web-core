@@ -2,10 +2,9 @@ package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
-import com.looseboxes.ratelimiter.annotation.AnnotationToRatesConverter;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
-import com.looseboxes.ratelimiter.util.Nullable;
+import com.looseboxes.ratelimiter.annotations.Nullable;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.*;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
@@ -32,13 +31,14 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         private IdProvider<Method, String> methodIdProvider;
         private IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider;
         private IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider;
+        private MatcherFactory<T, Class<?>> classMatcherFactory;
+        private MatcherFactory<T, Method> methodMatcherFactory;
         private RateLimiterFactory<Object> rateLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
         private AnnotationProcessor<Class<?>, Rates> annotationProcessor;
         private Class<? extends Annotation> [] resourceAnnotationTypes;
 
         private Registries<T> registries;
-        private MatcherRegistry<T> matcherRegistry;
         private ResourceClassesSupplier resourceClassesSupplier;
 
         private NodeBuilder<RateLimitProperties, Rates> nodeBuilderForProperties;
@@ -76,6 +76,12 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return methodPathPatternsProvider;
         }
 
+        @Override
+        public MatcherFactory<T, Class<?>> getClassMatcherFactory() { return classMatcherFactory; }
+
+        @Override
+        public MatcherFactory<T, Method> getMethodMatcherFactory() { return methodMatcherFactory; }
+
         @Override public RateLimiterFactory<Object> getRateLimiterFactory() {
             return rateLimiterFactory;
         }
@@ -96,19 +102,15 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return registries;
         }
 
-        @Override public MatcherRegistry<T> getMatcherRegistry() {
-            return matcherRegistry;
-        }
-
         @Override public ResourceClassesSupplier getResourceClassesSupplier() {
             return resourceClassesSupplier;
         }
 
-        @Override public NodeBuilder<RateLimitProperties, Rates> getNodeFactoryForProperties() {
+        @Override public NodeBuilder<RateLimitProperties, Rates> getNodeBuilderForProperties() {
             return nodeBuilderForProperties;
         }
 
-        @Override public NodeBuilder<List<Class<?>>, Rates> getNodeFactoryForAnnotations() {
+        @Override public NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations() {
             return nodeBuilderForAnnotations;
         }
     }
@@ -124,43 +126,48 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             throw new IndexOutOfBoundsException("Index: 0");
         }
         if (configuration.rateLimiterConfig == null) {
-            rateLimiterConfig(RateLimiterConfig.newInstance());
+            rateLimiterConfig(RateLimiterConfig.of());
         }
         if (configuration.rateLimiterFactory == null) {
-            rateLimiterFactory(RateLimiterFactory.newInstance());
+            rateLimiterFactory(RateLimiterFactory.of());
         }
         if (configuration.classesInPackageFinder == null) {
-            classesInPackageFinder(ClassesInPackageFinder.newInstance());
+            classesInPackageFinder(ClassesInPackageFinder.of());
         }
         if (configuration.classIdProvider == null) {
-            configuration.classIdProvider = IdProvider.forClass();
+            configuration.classIdProvider = IdProvider.ofClass();
         }
         if (configuration.methodIdProvider == null) {
-            configuration.methodIdProvider = IdProvider.forMethod();
+            configuration.methodIdProvider = IdProvider.ofMethod();
         }
         if (configuration.annotationProcessor == null) {
-            annotationProcessor(AnnotationProcessor.newInstance(
-                    configuration.classIdProvider, configuration.methodIdProvider,
-                    new AnnotationToRatesConverter()));
+            annotationProcessor(AnnotationProcessor.ofRates(
+                    configuration.classIdProvider, configuration.methodIdProvider));
         }
         if (configuration.nodeBuilderForProperties == null) {
             nodeFactoryForProperties(new PropertiesToRatesNodeBuilder());
         }
         if (configuration.nodeBuilderForAnnotations == null) {
-            nodeFactoryForAnnotations(new AnnotationToRatesNodeBuilder(configuration.annotationProcessor));
+            nodeFactoryForAnnotations(new ClassesToRatesNodeBuilder(configuration.annotationProcessor));
         }
 
-        configuration.matcherRegistry = new DefaultMatcherRegistry<>(
-                configuration.requestToIdConverter,
-                configuration.classIdProvider, configuration.methodIdProvider,
-                configuration.classPathPatternsProvider, configuration.methodPathPatternsProvider);
+        if (configuration.classMatcherFactory == null) {
+            classMatcherFactory(new DefaultMatcherFactory<>(
+                    configuration.classPathPatternsProvider, configuration.requestToIdConverter));
+        }
+        if (configuration.methodMatcherFactory == null) {
+            methodMatcherFactory(new DefaultMatcherFactory<>(
+                    configuration.methodPathPatternsProvider, configuration.requestToIdConverter));
+        }
 
         configuration.registries = new DefaultRegistries<>(
                 configuration.classIdProvider, configuration.methodIdProvider,
-                configuration.matcherRegistry, configuration.rateLimiterConfig,
-                configuration.rateLimiterFactory, configuration.configurer);
+                configuration.rateLimiterConfig, configuration.rateLimiterFactory, configuration.configurer);
+
         configuration.resourceClassesSupplier = new DefaultResourceClassesSupplier(
-                configuration.classesInPackageFinder, configuration.properties.getResourcePackages(), configuration.resourceAnnotationTypes);
+                configuration.classesInPackageFinder,
+                configuration.properties.getResourcePackages(),
+                configuration.resourceAnnotationTypes);
 
         return configuration;
     }
@@ -210,6 +217,18 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
     @Override public WebRequestRateLimiterConfig.Builder<REQUEST> methodPathPatternsProvider(
             IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider) {
         configuration.methodPathPatternsProvider = methodPathPatternsProvider;
+        return this;
+    }
+
+    @Override
+    public WebRequestRateLimiterConfig.Builder<REQUEST> classMatcherFactory(MatcherFactory<REQUEST, Class<?>> matcherFactory) {
+        configuration.classMatcherFactory = matcherFactory;
+        return this;
+    }
+
+    @Override
+    public WebRequestRateLimiterConfig.Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory) {
+        configuration.methodMatcherFactory = matcherFactory;
         return this;
     }
 

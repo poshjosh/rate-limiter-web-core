@@ -3,18 +3,17 @@ package com.looseboxes.ratelimiter.web.core.impl;
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.util.Nullable;
-import com.looseboxes.ratelimiter.web.core.MatcherRegistry;
+import com.looseboxes.ratelimiter.annotations.Nullable;
+import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
 import com.looseboxes.ratelimiter.web.core.Registries;
 import com.looseboxes.ratelimiter.web.core.Registry;
 
 import java.lang.reflect.Method;
-import java.util.*;
 
 final class DefaultRegistries<R> implements Registries<R> {
 
-    private final MatcherRegistry<R> matcherRegistry;
+    private final Registry<Matcher<R, ?>> matcherRegistry;
 
     private final Registry<RateLimiterConfig<?, ?>> rateLimiterConfigRegistry;
 
@@ -23,11 +22,10 @@ final class DefaultRegistries<R> implements Registries<R> {
     DefaultRegistries(
             IdProvider<Class<?>, String> classIdProvider,
             IdProvider<Method, String> methodIdProvider,
-            MatcherRegistry<R> matcherRegistry,
             RateLimiterConfig<?, ?> rateLimiterConfig,
             RateLimiterFactory<?> rateLimiterFactory,
             @Nullable RateLimiterConfigurer<R> rateLimiterConfigurer) {
-        this.matcherRegistry = Objects.requireNonNull(matcherRegistry);
+        this.matcherRegistry = SimpleRegistry.of(Matcher.matchNone(), classIdProvider, methodIdProvider);
         this.rateLimiterConfigRegistry = SimpleRegistry.of(rateLimiterConfig, classIdProvider, methodIdProvider);
         this.rateLimiterFactoryRegistry = SimpleRegistry.of(rateLimiterFactory, classIdProvider, methodIdProvider);
         if(rateLimiterConfigurer != null) {
@@ -36,7 +34,7 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public MatcherRegistry<R> matchers() {
+    public Registry<Matcher<R, ?>> matchers() {
         return matcherRegistry;
     }
 
@@ -57,8 +55,8 @@ final class DefaultRegistries<R> implements Registries<R> {
         @Override public RateLimiterConfig<K, V> set(RateLimiterConfig<K, V> input, RateCache<K, V> output) {
             return RateLimiterConfig.builder(input).rateCache(output).build();
         }
-        @Override public RateLimiterConfig<K, V> newInstance() {
-            return RateLimiterConfig.newInstance();
+        @Override public RateLimiterConfig<K, V> createNewProxied() {
+            return RateLimiterConfig.of();
         }
     }
 
@@ -69,8 +67,8 @@ final class DefaultRegistries<R> implements Registries<R> {
         @Override public RateLimiterConfig<K, V> set(RateLimiterConfig<K, V> input, RateRecordedListener output) {
             return RateLimiterConfig.builder(input).rateRecordedListener(output).build();
         }
-        @Override public RateLimiterConfig<K, V> newInstance() {
-            return RateLimiterConfig.newInstance();
+        @Override public RateLimiterConfig<K, V> createNewProxied() {
+            return RateLimiterConfig.of();
         }
     }
 

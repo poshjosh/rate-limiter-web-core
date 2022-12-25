@@ -10,7 +10,7 @@ Please first read the [rate-limiter documentation](https://github.com/poshjosh/r
 __Annotate the resource you want to rate imit__
 
 ```java
-import com.looseboxes.ratelimiter.annotation.RateLimit;
+import com.looseboxes.ratelimiter.annotations.RateLimit;
 
 @Controller
 @RequestMapping("/api")
@@ -59,9 +59,6 @@ public class RateLimiterConfigurerImpl
     // Register request matchers
     // -------------------------
 
-    // The default behaviour is to return the relative request URI
-    // Here are other examples:
-
     // Identify resources to rate-limit by session id
     registry.matchers().register("limitBySession", request -> request.getSession().getId());
 
@@ -91,6 +88,52 @@ When a string name is used, it should match one of the following:
 - __A method__ - The identifier of a method eg: `com.example.web.resources.GreetingResource.greet(java.lang.String)`
 - __A property__ - One of the keys in the `Map` returned by `RateLimitProperties#getRateLimitConfigs()`
 
+When rate limits are specified via annotations, then the corresponding matcher for the annotated class
+or method is automatically created. However, this automatic creation does not happen when rate limits are 
+specified via properties. This means you need to explicitly register a matcher for each key in the `Map`
+returned by `RateLimitProperties#getRateLimitConfigs()`. 
+
+The following code will not lead to any rate limiting. Unless, we explicitly register a matcher
+for each key in the returned map.
+
+```java
+public class RateLimitPropertiesImpl implements RateLimitProperties {
+
+  // other code
+
+  @Override
+  public Map<String, Rates> getRateLimitConfigs() {
+    return Collections.singletonMap("default", Rates.of(Rate.of(10, Duration.ofMinutes(1))));
+  }
+}
+```
+
+You could bind rate limits from properties to a class or method. For example to bind to 
+class `MyRateLimitedResource.class`. To bind to a method replace `IdProvider.ofClass()` 
+with `IdProvider.ofMethod()`.
+
+```java
+public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer<HttpServletRequest> {
+
+    private final String resourceId = IdProvider.ofClass().getId(MyRateLimitedResource.class);
+    
+    @Override
+    public void configure(Registries<HttpServletRequest> registries) {
+        registries.matchers().register(resourceId, request -> request.getRequestURI());
+    }
+    
+    @Override
+    public List<String> getResourcePackages() {
+        return Collections.singletonList(this.getClass().getPackage().getName());
+    }
+
+    @Override
+    public Map<String, Rates> getRateLimitConfigs() {
+        return Collections.singletonMap(resourceId, Rates.of(Rate.of(10, Duration.ofMinutes(1))));
+    }
+}
+```
+
 ## Ways and Means
 
 There are 2 ways to rate limit a web application:
@@ -106,7 +149,7 @@ In addition, the following applies:
 __Example using Springframework__
 
 ```java
-import com.looseboxes.ratelimiter.annotation.RateLimit;
+import com.looseboxes.ratelimiter.annotations.RateLimit;
 
 @Controller
 @RequestMapping("/api")
@@ -124,7 +167,7 @@ class GreetingResource {
 __Example using JAX-RS__
 
 ```java
-import com.looseboxes.ratelimiter.annotation.RateLimit;
+import com.looseboxes.ratelimiter.annotations.RateLimit;
 
 @Path("/api")
 class GreetingResource {

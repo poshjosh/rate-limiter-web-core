@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 class SimpleRegistry<T> implements Registry<T> {
 
     public static <T> Registry<T> of(T defaultInstance) {
-        return of(defaultInstance, IdProvider.forClass(), IdProvider.forMethod());
+        return of(defaultInstance, IdProvider.ofClass(), IdProvider.ofMethod());
     }
 
     public static <T> Registry<T> of(

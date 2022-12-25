@@ -1,5 +1,6 @@
 package com.looseboxes.ratelimiter.web.core.util;
 
+import com.looseboxes.ratelimiter.annotations.RateLimit;
 import com.looseboxes.ratelimiter.util.Rates;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Map;
 /**
  * The class allows for the customization of a {@link com.looseboxes.ratelimiter.RateLimiter} via properties.
  * The properties defined here will be used to create a {@link com.looseboxes.ratelimiter.RateLimiter} independent
- * of those created from the various {@link com.looseboxes.ratelimiter.annotation.RateLimit} annotations.
+ * of those created from the various {@link RateLimit} annotations.
  */
 public interface RateLimitProperties {
 

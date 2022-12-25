@@ -45,6 +45,10 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
         Builder<REQUEST> methodPathPatternsProvider(
                 IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider);
 
+        Builder<REQUEST> classMatcherFactory(MatcherFactory<REQUEST, Class<?>> matcherFactory);
+
+        Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory);
+
         Builder<REQUEST> rateLimiterFactory(
                 RateLimiterFactory<Object> rateLimiterFactory);
 
@@ -66,8 +70,6 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     Registries<REQUEST> getRegistries();
 
-    MatcherRegistry<REQUEST> getMatcherRegistry();
-
     ResourceClassesSupplier getResourceClassesSupplier();
 
     RateLimitProperties getProperties();
@@ -86,6 +88,10 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     IdProvider<Method, PathPatterns<String>> getMethodPathPatternsProvider();
 
+    MatcherFactory<REQUEST, Class<?>> getClassMatcherFactory();
+
+    MatcherFactory<REQUEST, Method> getMethodMatcherFactory();
+
     RateLimiterFactory<Object> getRateLimiterFactory();
 
     ClassesInPackageFinder getClassesInPackageFinder();
@@ -94,7 +100,7 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     Class<? extends Annotation>[] getResourceAnnotationTypes();
 
-    NodeBuilder<List<Class<?>>, Rates> getNodeFactoryForAnnotations();
+    NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations();
 
-    NodeBuilder<RateLimitProperties, Rates> getNodeFactoryForProperties();
+    NodeBuilder<RateLimitProperties, Rates> getNodeBuilderForProperties();
 }
