@@ -70,6 +70,10 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     Registries<REQUEST> getRegistries();
 
+    default List<Class<?>> getResourceClasses() {
+        return getResourceClassesSupplier().get();
+    }
+
     ResourceClassesSupplier getResourceClassesSupplier();
 
     RateLimitProperties getProperties();

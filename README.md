@@ -78,6 +78,28 @@ public class RateLimiterConfigurerImpl
 }
 ```
 
+## Path binding
+
+The `@RateLimit` and `@RateLimitGroup` annotations are bound to paths.
+
+For the specification of these annotations, please read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
+In addition, the following applies:
+
+- The `@RateLimit` annotation must be placed together with path related annotations e.g:
+  Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
+
+- The `@RateLimit` annotation is bound to the path with which it is co-located, not the resource.
+  This means that the `@RateLimit` annotation below will match all request paths beginning with `/api/v1`
+  even those paths specified on other resources and methods.
+
+```java
+@Path("/api/v1")
+@RateLimit(limit = 20, duration = 1, timeUnit = TimeUnit.MINUTES)
+class RateLimitedResource{
+    
+}
+```
+
 ## Naming Conventions for `RequestMatcher`s
 
 A `RequestMatcher` may be registered using either a class name, a method name, or a string name.
@@ -139,12 +161,6 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
 There are 2 ways to rate limit a web application:
 
 ### 1. Use the `@RateLimit` and/or `@RateLimitGroup` annotation
-
-For the specification of these annotations, please read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
-In addition, the following applies:
-
-- The `@RateLimit` annotation must be placed together with path related annotations e.g:
-  Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
 
 __Example using Springframework__
 

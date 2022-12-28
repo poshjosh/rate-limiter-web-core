@@ -1,8 +1,7 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
-import com.looseboxes.ratelimiter.annotation.NodeData;
-import com.looseboxes.ratelimiter.annotation.NodeUtil;
+import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
 import com.looseboxes.ratelimiter.web.core.NodeBuilder;
@@ -12,25 +11,24 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 
-public class ClassesToRatesNodeBuilder implements NodeBuilder<List<Class<?>>, Rates> {
+final class ClassesToRatesNodeBuilder implements NodeBuilder<List<Class<?>>, Rates> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClassesToRatesNodeBuilder.class);
 
     private final AnnotationProcessor<Class<?>, Rates> annotationProcessor;
 
-    public ClassesToRatesNodeBuilder(AnnotationProcessor<Class<?>, Rates> annotationProcessor) {
+    ClassesToRatesNodeBuilder(AnnotationProcessor<Class<?>, Rates> annotationProcessor) {
         this.annotationProcessor = Objects.requireNonNull(annotationProcessor);
     }
 
     @Override
-    public Node<NodeData<Rates>> buildNode(String name, List<Class<?>> sourceOfRateLimitInfo,
-                                           BiConsumer<Object, Node<NodeData<Rates>>> nodeConsumer) {
+    public Node<NodeValue<Rates>> buildNode(String name, List<Class<?>> sourceOfRateLimitInfo,
+                                            AnnotationProcessor.NodeConsumer<Rates> nodeConsumer) {
 
-        Node<NodeData<Rates>> rootNode = NodeUtil.createNode(name);
+        Node<NodeValue<Rates>> rootNode = Node.of(name);
 
-        annotationProcessor.process(rootNode, sourceOfRateLimitInfo, nodeConsumer);
+        annotationProcessor.processAll(rootNode, nodeConsumer, sourceOfRateLimitInfo);
 
         if(LOG.isTraceEnabled()) {
             LOG.trace("Element nodes: {}", NodeFormatters.indentedHeirarchy().format(rootNode));

@@ -1,11 +1,10 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.annotation.NodeData;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
+import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
-
-import java.util.function.BiConsumer;
 
 public interface NodeBuilder<S, V> {
 
-    Node<NodeData<V>> buildNode(String name, S source, BiConsumer<Object, Node<NodeData<V>>> nodeConsumer);
+    Node<NodeValue<V>> buildNode(String name, S source, AnnotationProcessor.NodeConsumer<V> nodeConsumer);
 }

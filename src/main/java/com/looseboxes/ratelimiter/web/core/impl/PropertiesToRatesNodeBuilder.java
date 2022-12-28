@@ -1,7 +1,7 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
-import com.looseboxes.ratelimiter.annotation.NodeData;
-import com.looseboxes.ratelimiter.annotation.NodeUtil;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
+import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
 import com.looseboxes.ratelimiter.util.Rates;
@@ -11,19 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 
-public class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitProperties, Rates> {
+final class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitProperties, Rates> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PropertiesToRatesNodeBuilder.class);
     
-    public PropertiesToRatesNodeBuilder() {}
+    PropertiesToRatesNodeBuilder() {}
 
     @Override
-    public Node<NodeData<Rates>> buildNode(String name, RateLimitProperties sourceOfRateLimitInfo,
-                                           BiConsumer<Object, Node<NodeData<Rates>>> nodeConsumer) {
+    public Node<NodeValue<Rates>> buildNode(String name, RateLimitProperties sourceOfRateLimitInfo,
+                                            AnnotationProcessor.NodeConsumer<Rates> nodeConsumer) {
 
-        final Node<NodeData<Rates>> rootNode = addNodesToRoot(
+        final Node<NodeValue<Rates>> rootNode = addNodesToRoot(
                 name, sourceOfRateLimitInfo.getRateLimitConfigs(), nodeConsumer);
 
         if(LOG.isTraceEnabled()) {
@@ -34,23 +33,23 @@ public class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitProper
     }
 
 
-    private Node<NodeData<Rates>> addNodesToRoot(
+    private Node<NodeValue<Rates>> addNodesToRoot(
             String rootNodeName,
             Map<String, Rates> limits,
-            BiConsumer<Object, Node<NodeData<Rates>>> nodeConsumer) {
+            AnnotationProcessor.NodeConsumer<Rates> nodeConsumer) {
         Map<String, Rates> configsWithoutParent = new LinkedHashMap<>(limits);
         Rates rootNodeConfig = configsWithoutParent.remove(rootNodeName);
-        NodeData<Rates> nodeData = rootNodeConfig == null ? null : new NodeData<>(rootNodeConfig, rootNodeConfig);
-        Node<NodeData<Rates>> rootNode = NodeUtil.createNode(rootNodeName, nodeData, null);
+        NodeValue<Rates> nodeValue = rootNodeConfig == null ? null : NodeValue.of(rootNodeConfig, rootNodeConfig);
+        Node<NodeValue<Rates>> rootNode = Node.of(rootNodeName, nodeValue);
         nodeConsumer.accept(rootNodeConfig, rootNode);
         createNodes(rootNode, configsWithoutParent, nodeConsumer);
         return rootNode;
     }
 
     private void createNodes(
-            Node<NodeData<Rates>> parent,
+            Node<NodeValue<Rates>> parent,
             Map<String, Rates> limits,
-            BiConsumer<Object, Node<NodeData<Rates>>> nodeConsumer) {
+            AnnotationProcessor.NodeConsumer<Rates> nodeConsumer) {
         Set<Map.Entry<String, Rates>> entrySet = limits.entrySet();
         for (Map.Entry<String, Rates> entry : entrySet) {
             String name = entry.getKey();
@@ -58,7 +57,7 @@ public class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitProper
                 throw new IllegalStateException("Parent and child nodes both have the same name: " + name);
             }
             Rates nodeConfig = entry.getValue();
-            Node<NodeData<Rates>> node = NodeUtil.createNode(parent, name, nodeConfig, nodeConfig);
+            Node<NodeValue<Rates>> node = Node.of(name, NodeValue.of(nodeConfig, nodeConfig), parent);
             nodeConsumer.accept(nodeConfig, node);
         }
     }

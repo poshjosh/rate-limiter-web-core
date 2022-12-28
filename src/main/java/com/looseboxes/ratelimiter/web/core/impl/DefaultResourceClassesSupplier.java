@@ -8,12 +8,12 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 
-public class DefaultResourceClassesSupplier implements ResourceClassesSupplier {
+final class DefaultResourceClassesSupplier implements ResourceClassesSupplier {
 
     private final List<Class<?>> classes;
 
     @SafeVarargs
-    public DefaultResourceClassesSupplier(
+    DefaultResourceClassesSupplier(
             ClassesInPackageFinder classesInPackageFinder,
             List<String> resourcePackages,
             Class<? extends Annotation>... annotations) {
