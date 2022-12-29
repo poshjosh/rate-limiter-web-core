@@ -3,7 +3,7 @@ package com.looseboxes.ratelimiter.web.core.impl;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
-import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
+import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.NodeBuilder;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
@@ -26,7 +26,7 @@ final class PropertiesToRatesNodeBuilder implements NodeBuilder<RateLimitPropert
                 name, sourceOfRateLimitInfo.getRateLimitConfigs(), nodeConsumer);
 
         if(LOG.isTraceEnabled()) {
-            LOG.trace("Element nodes: {}", NodeFormatters.indentedHeirarchy().format(rootNode));
+            LOG.trace("Element nodes: {}", NodeFormatter.indentedHeirarchy().format(rootNode));
         }
 
         return rootNode;

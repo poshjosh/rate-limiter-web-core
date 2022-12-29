@@ -8,11 +8,11 @@ public interface Registries<REQUEST> {
 
     Registry<Matcher<REQUEST, ?>> matchers();
 
-    Registry<RateLimiterFactory<?>> factories();
+    Registry<ResourceLimiterFactory<?>> factories();
 
-    Registry<RateLimiterConfig<?, ?>> configs();
+    Registry<ResourceLimiterConfig<?, ?>> configs();
 
     <K, V> Registry<RateCache<K, V>> caches();
 
-    Registry<RateRecordedListener> listeners();
+    Registry<ResourceUsageListener> listeners();
 }

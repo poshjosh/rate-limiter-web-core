@@ -1,18 +1,18 @@
 package com.looseboxes.ratelimiter.web.core.impl;
 
-import com.looseboxes.ratelimiter.RateLimiter;
+import com.looseboxes.ratelimiter.ResourceLimiter;
 import com.looseboxes.ratelimiter.annotation.*;
 import com.looseboxes.ratelimiter.node.*;
 import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.MatcherFactory;
-import com.looseboxes.ratelimiter.web.core.WebRequestRateLimiterConfig;
+import com.looseboxes.ratelimiter.web.core.WebResourceLimiterConfig;
 
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class WebRequestRateLimiter<R> implements RateLimiter<R>{
+public class WebResourceLimiter<R> implements ResourceLimiter<R> {
 
     private static class NodeNamesCollector implements AnnotationProcessor.NodeConsumer<Rates> {
         private Set<String> nodeNames;
@@ -61,30 +61,30 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
         }
     }
 
-    private final RateLimiter<R> compositeRateLimiter;
+    private final ResourceLimiter<R> compositeResourceLimiter;
 
-    public WebRequestRateLimiter(WebRequestRateLimiterConfig<R> webRequestRateLimiterConfig) {
+    public WebResourceLimiter(WebResourceLimiterConfig<R> webResourceLimiterConfig) {
 
         NodeNamesCollector nodeNamesCollector = new NodeNamesCollector();
-        Node<NodeValue<Rates>> propertiesRootNode = webRequestRateLimiterConfig.getNodeBuilderForProperties()
-                .buildNode("root.properties", webRequestRateLimiterConfig.getProperties(), nodeNamesCollector);
+        Node<NodeValue<Rates>> propertiesRootNode = webResourceLimiterConfig.getNodeBuilderForProperties()
+                .buildNode("root.properties", webResourceLimiterConfig.getProperties(), nodeNamesCollector);
 
         UniqueNameEnforcer uniqueNameEnforcer = new UniqueNameEnforcer(nodeNamesCollector.getNodeNames());
         ElementCollector elementCollector = new ElementCollector(
-                webRequestRateLimiterConfig.getClassIdProvider(), webRequestRateLimiterConfig.getMethodIdProvider()
+                webResourceLimiterConfig.getClassIdProvider(), webResourceLimiterConfig.getMethodIdProvider()
         );
         AnnotationProcessor.NodeConsumer<Rates> consumer = uniqueNameEnforcer.andThen(elementCollector);
-        Node<NodeValue<Rates>> annotationsRootNode = webRequestRateLimiterConfig.getNodeBuilderForAnnotations()
-                .buildNode("root.annotations", webRequestRateLimiterConfig.getResourceClasses(), consumer);
+        Node<NodeValue<Rates>> annotationsRootNode = webResourceLimiterConfig.getNodeBuilderForAnnotations()
+                .buildNode("root.annotations", webResourceLimiterConfig.getResourceClasses(), consumer);
 
         MatcherFactory<R, Object> annotationsMatcherFactory = new MatcherFactory<R, Object>() {
             @Override
             public Optional<Matcher<R, ?>> createMatcher(String name, Object source) {
                 if (source instanceof Class) {
-                    return webRequestRateLimiterConfig.getClassMatcherFactory().createMatcher(name, (Class<?>)source);
+                    return webResourceLimiterConfig.getClassMatcherFactory().createMatcher(name, (Class<?>)source);
                 }
                 if (source instanceof Method) {
-                    return webRequestRateLimiterConfig.getMethodMatcherFactory().createMatcher(name, (Method)source);
+                    return webResourceLimiterConfig.getMethodMatcherFactory().createMatcher(name, (Method)source);
                 }
                 return Optional.empty();
             }
@@ -104,26 +104,26 @@ public class WebRequestRateLimiter<R> implements RateLimiter<R>{
             }
         };
 
-        RateLimiter<R> rateLimiterForProperties = new PatternMatchingRateLimiterFactory<>(
+        ResourceLimiter<R> resourceLimiterForProperties = new PatternMatchingResourceLimiterFactory<>(
                 propertiesRootNode,
-                webRequestRateLimiterConfig.getRegistries(),
+                webResourceLimiterConfig.getRegistries(),
                 propertiesMatcherFactory,
                 true
         ).createRateLimiter();
 
 
-        RateLimiter<R> rateLimiterForAnnotations = new PatternMatchingRateLimiterFactory<>(
+        ResourceLimiter<R> resourceLimiterForAnnotations = new PatternMatchingResourceLimiterFactory<>(
                 annotationsRootNode,
-                webRequestRateLimiterConfig.getRegistries(),
+                webResourceLimiterConfig.getRegistries(),
                 annotationsMatcherFactory,
                 false
         ).createRateLimiter();
 
-        this.compositeRateLimiter = rateLimiterForProperties.andThen(rateLimiterForAnnotations);
+        this.compositeResourceLimiter = resourceLimiterForProperties.andThen(resourceLimiterForAnnotations);
     }
 
     @Override
     public boolean tryConsume(Object context, R resourceId, int permits, long timeout, TimeUnit unit) {
-        return compositeRateLimiter.tryConsume(context, resourceId, permits, timeout, unit);
+        return compositeResourceLimiter.tryConsume(context, resourceId, permits, timeout, unit);
     }
 }

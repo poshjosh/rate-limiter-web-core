@@ -1,12 +1,11 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.RateLimiterConfig;
-import com.looseboxes.ratelimiter.RateLimiterFactory;
+import com.looseboxes.ratelimiter.ResourceLimiterConfig;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Rates;
-import com.looseboxes.ratelimiter.web.core.impl.DefaultWebRequestRateLimiterConfigBuilder;
+import com.looseboxes.ratelimiter.web.core.impl.WebResourceLimiterConfigBuilder;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -14,26 +13,26 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public interface WebRequestRateLimiterConfig<REQUEST>{
+public interface WebResourceLimiterConfig<REQUEST>{
 
     static <R> Builder<R> builder() {
-        return new DefaultWebRequestRateLimiterConfigBuilder<>();
+        return new WebResourceLimiterConfigBuilder<>();
     }
 
     interface Builder<REQUEST> {
 
-        WebRequestRateLimiterConfig<REQUEST> build();
+        WebResourceLimiterConfig<REQUEST> build();
 
         Builder<REQUEST> properties(RateLimitProperties properties);
 
         Builder<REQUEST> configurer(
-                RateLimiterConfigurer<REQUEST> configurer);
+                ResourceLimiterConfigurer<REQUEST> configurer);
 
         Builder<REQUEST> requestToIdConverter(
                 RequestToIdConverter<REQUEST, String> requestToIdConverter);
 
         Builder<REQUEST> rateLimiterConfig(
-                RateLimiterConfig<Object, Object> rateLimiterConfig);
+                ResourceLimiterConfig<Object, Object> resourceLimiterConfig);
 
         Builder<REQUEST> classIdProvider(IdProvider<Class<?>, String> classIdProvider);
 
@@ -50,7 +49,7 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
         Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory);
 
         Builder<REQUEST> rateLimiterFactory(
-                RateLimiterFactory<Object> rateLimiterFactory);
+                ResourceLimiterFactory<Object> resourceLimiterFactory);
 
         Builder<REQUEST> classesInPackageFinder(
                 ClassesInPackageFinder classesInPackageFinder);
@@ -78,11 +77,11 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     RateLimitProperties getProperties();
 
-    RateLimiterConfigurer<REQUEST> getConfigurer();
+    ResourceLimiterConfigurer<REQUEST> getConfigurer();
 
     RequestToIdConverter<REQUEST, String> getRequestToIdConverter();
 
-    RateLimiterConfig<Object, Object> getRateLimiterConfig();
+    ResourceLimiterConfig<Object, Object> getRateLimiterConfig();
 
     IdProvider<Class<?>, String> getClassIdProvider();
 
@@ -96,7 +95,7 @@ public interface WebRequestRateLimiterConfig<REQUEST>{
 
     MatcherFactory<REQUEST, Method> getMethodMatcherFactory();
 
-    RateLimiterFactory<Object> getRateLimiterFactory();
+    ResourceLimiterFactory<Object> getRateLimiterFactory();
 
     ClassesInPackageFinder getClassesInPackageFinder();
 

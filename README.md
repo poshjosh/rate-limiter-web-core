@@ -1,28 +1,28 @@
 # rate limiter web core
 
 Light-weight rate limiting library for java web apps, based on
-[rate-limiter](https://github.com/poshjosh/rate-limiter).
+[rate-limiter-annotation](https://github.com/poshjosh/rate-limiter-annotation).
 
-Please first read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
+Please first read the [rate-limiter-annotation documentation](https://github.com/poshjosh/rate-limiter-annotation).
+
 
 ## Quick Start
 
 __Annotate the resource you want to rate imit__
 
 ```java
-import com.looseboxes.ratelimiter.annotations.RateLimit;
+
 
 @Controller
 @RequestMapping("/api")
 class GreetingResource {
 
-    // Only 99 calls to this path is allowed per minute
-    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTE)
-    @RateLimitGroup("limitBySession")
-    @GetMapping("/greet")
-    String greet(String name) {
-        return "Hello " + name;
-    }
+  // Only 99 calls to this path is allowed per minute
+  @RateLimitGroup("limitBySession")
+  @GetMapping("/greet")
+  String greet(String name) {
+    return "Hello " + name;
+  }
 }
 ```
 
@@ -31,21 +31,21 @@ __Configure rate limiting__
 ```java
 package com.looseboxes.ratelimiter.web.spring;
 
-import com.looseboxes.ratelimiter.cache.JavaRateCache;
+import JavaRateCache;
 import com.looseboxes.ratelimiter.web.core.Registries;
-import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
+import com.looseboxes.ratelimiter.web.core.ResourceLimiterConfigurer;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Configuration 
+@Configuration
 public class RateLimiterConfigurerImpl
-        implements RateLimiterConfigurer<HttpServletRequest> {
+        implements ResourceLimiterConfigurer<HttpServletRequest> {
 
-  @Override 
+  @Override
   public void configure(Registries<HttpServletRequest> registry) {
 
-    // Register RateRecordedListeners
+    // Register consumption listeners
     // ------------------------------
 
     // If you do not register a listener, the default listener throws an exception
@@ -165,37 +165,35 @@ There are 2 ways to rate limit a web application:
 __Example using Springframework__
 
 ```java
-import com.looseboxes.ratelimiter.annotations.RateLimit;
+
 
 @Controller
 @RequestMapping("/api")
 class GreetingResource {
 
-    // Only 99 calls to this path is allowed per minute
-    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTES)
-    @GetMapping("/greet")
-    String greet() {
-        return "Hello World!";
-    }
+  // Only 99 calls to this path is allowed per minute
+  @GetMapping("/greet")
+  String greet() {
+    return "Hello World!";
+  }
 }
 ```
 
 __Example using JAX-RS__
 
 ```java
-import com.looseboxes.ratelimiter.annotations.RateLimit;
+
 
 @Path("/api")
 class GreetingResource {
 
-    // Only 99 calls to this path is allowed per minute
-    @RateLimit(limit = 99, duration = 1, timeUnit = TimeUnit.MINUTES)
-    @GET
-    @Path("/greet")
-    @Produces("text/plan")
-    String greet() {
-        return "Hello World!";
-    }
+  // Only 99 calls to this path is allowed per minute
+  @GET
+  @Path("/greet")
+  @Produces("text/plan")
+  String greet() {
+    return "Hello World!";
+  }
 }
 ```
   
@@ -206,8 +204,6 @@ Example class that implements the required properties.
 ```java
 package com.example.web;
 
-import com.looseboxes.ratelimiter.util.Rate;
-import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.time.Duration;
@@ -238,5 +234,14 @@ _Make sure this class is available for injection into other resources/beans._
 
 The properties the user defines should be used to create a rate limiter which will be automatically applied to
 every request the web application handles. 
+
+## Dependents
+
+The following depend on this library:
+
+- [rate-limiter-spring](https://github.com/poshjosh/rate-limiter-spring).
+
+- [rate-limiter-javaee](https://github.com/poshjosh/rate-limiter-javaee).
+
 
 Enjoy! :wink:

@@ -5,9 +5,10 @@ import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.annotations.Nullable;
 import com.looseboxes.ratelimiter.util.Matcher;
-import com.looseboxes.ratelimiter.web.core.RateLimiterConfigurer;
+import com.looseboxes.ratelimiter.web.core.ResourceLimiterConfigurer;
 import com.looseboxes.ratelimiter.web.core.Registries;
 import com.looseboxes.ratelimiter.web.core.Registry;
+import com.looseboxes.ratelimiter.web.core.ResourceLimiterFactory;
 
 import java.lang.reflect.Method;
 
@@ -15,21 +16,21 @@ final class DefaultRegistries<R> implements Registries<R> {
 
     private final Registry<Matcher<R, ?>> matcherRegistry;
 
-    private final Registry<RateLimiterConfig<?, ?>> rateLimiterConfigRegistry;
+    private final Registry<ResourceLimiterConfig<?, ?>> rateLimiterConfigRegistry;
 
-    private final Registry<RateLimiterFactory<?>> rateLimiterFactoryRegistry;
+    private final Registry<ResourceLimiterFactory<?>> rateLimiterFactoryRegistry;
 
     DefaultRegistries(
             IdProvider<Class<?>, String> classIdProvider,
             IdProvider<Method, String> methodIdProvider,
-            RateLimiterConfig<?, ?> rateLimiterConfig,
-            RateLimiterFactory<?> rateLimiterFactory,
-            @Nullable RateLimiterConfigurer<R> rateLimiterConfigurer) {
+            ResourceLimiterConfig<?, ?> resourceLimiterConfig,
+            ResourceLimiterFactory<?> resourceLimiterFactory,
+            @Nullable ResourceLimiterConfigurer<R> resourceLimiterConfigurer) {
         this.matcherRegistry = SimpleRegistry.of(Matcher.matchNone(), classIdProvider, methodIdProvider);
-        this.rateLimiterConfigRegistry = SimpleRegistry.of(rateLimiterConfig, classIdProvider, methodIdProvider);
-        this.rateLimiterFactoryRegistry = SimpleRegistry.of(rateLimiterFactory, classIdProvider, methodIdProvider);
-        if(rateLimiterConfigurer != null) {
-            rateLimiterConfigurer.configure(this);
+        this.rateLimiterConfigRegistry = SimpleRegistry.of(resourceLimiterConfig, classIdProvider, methodIdProvider);
+        this.rateLimiterFactoryRegistry = SimpleRegistry.of(resourceLimiterFactory, classIdProvider, methodIdProvider);
+        if(resourceLimiterConfigurer != null) {
+            resourceLimiterConfigurer.configure(this);
         }
     }
 
@@ -39,44 +40,44 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public Registry<RateLimiterFactory<?>> factories() {
+    public Registry<ResourceLimiterFactory<?>> factories() {
         return rateLimiterFactoryRegistry;
     }
 
     @Override
-    public Registry<RateLimiterConfig<?, ?>> configs() {
+    public Registry<ResourceLimiterConfig<?, ?>> configs() {
         return rateLimiterConfigRegistry;
     }
 
-    private static final class RateCacheProxy<K, V> implements ProxyRegistry.Proxy<RateLimiterConfig<K, V>, RateCache<K, V>> {
-        @Override public RateCache<K, V> get(RateLimiterConfig<K, V> input) {
-            return input.getRateCache();
+    private static final class CacheProxy<K, V> implements ProxyRegistry.Proxy<ResourceLimiterConfig<K, V>, RateCache<K, V>> {
+        @Override public RateCache<K, V> get(ResourceLimiterConfig<K, V> input) {
+            return input.getCache();
         }
-        @Override public RateLimiterConfig<K, V> set(RateLimiterConfig<K, V> input, RateCache<K, V> output) {
-            return RateLimiterConfig.builder(input).rateCache(output).build();
+        @Override public ResourceLimiterConfig<K, V> set(ResourceLimiterConfig<K, V> input, RateCache<K, V> output) {
+            return ResourceLimiterConfig.builder(input).cache(output).build();
         }
-        @Override public RateLimiterConfig<K, V> createNewProxied() {
-            return RateLimiterConfig.of();
+        @Override public ResourceLimiterConfig<K, V> createNewProxied() {
+            return ResourceLimiterConfig.of();
         }
     }
 
-    private static final class RateRecordedListenerProxy<K, V> implements ProxyRegistry.Proxy<RateLimiterConfig<K, V>, RateRecordedListener> {
-        @Override public RateRecordedListener get(RateLimiterConfig<K, V> input) {
-            return input.getRateRecordedListener();
+    private static final class UsageListenerProxy<K, V> implements ProxyRegistry.Proxy<ResourceLimiterConfig<K, V>, ResourceUsageListener> {
+        @Override public ResourceUsageListener get(ResourceLimiterConfig<K, V> input) {
+            return input.getUsageListener();
         }
-        @Override public RateLimiterConfig<K, V> set(RateLimiterConfig<K, V> input, RateRecordedListener output) {
-            return RateLimiterConfig.builder(input).rateRecordedListener(output).build();
+        @Override public ResourceLimiterConfig<K, V> set(ResourceLimiterConfig<K, V> input, ResourceUsageListener output) {
+            return ResourceLimiterConfig.builder(input).usageListener(output).build();
         }
-        @Override public RateLimiterConfig<K, V> createNewProxied() {
-            return RateLimiterConfig.of();
+        @Override public ResourceLimiterConfig<K, V> createNewProxied() {
+            return ResourceLimiterConfig.of();
         }
     }
 
     public <K, V> Registry<RateCache<K, V>> caches() {
-        return new ProxyRegistry(rateLimiterConfigRegistry, new RateCacheProxy<K, V>());
+        return new ProxyRegistry(rateLimiterConfigRegistry, new CacheProxy<K, V>());
     }
 
-    public Registry<RateRecordedListener> listeners() {
-        return new ProxyRegistry(rateLimiterConfigRegistry, new RateRecordedListenerProxy<>());
+    public Registry<ResourceUsageListener> listeners() {
+        return new ProxyRegistry(rateLimiterConfigRegistry, new UsageListenerProxy<>());
     }
 }

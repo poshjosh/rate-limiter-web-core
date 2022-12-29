@@ -4,7 +4,7 @@ import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.annotations.Nullable;
 import com.looseboxes.ratelimiter.node.Node;
-import com.looseboxes.ratelimiter.node.formatters.NodeFormatters;
+import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Matcher;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.MatcherFactory;
@@ -16,16 +16,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-final class PatternMatchingRateLimiterFactory<R, K>{
+final class PatternMatchingResourceLimiterFactory<R, K>{
 
-    private static final Logger LOG = LoggerFactory.getLogger(PatternMatchingRateLimiterFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PatternMatchingResourceLimiterFactory.class);
 
     private final Node<NodeValue<Rates>> rootNode;
     private final Registries<R> registries;
     private final MatcherFactory<R, Object> matcherFactory;
     private final boolean firstMatchOnly;
 
-    PatternMatchingRateLimiterFactory(
+    PatternMatchingResourceLimiterFactory(
             Node<NodeValue<Rates>> rootNode, Registries<R> registries,
             MatcherFactory<R, Object> matcherFactory, boolean firstMatchOnly) {
         this.rootNode = Objects.requireNonNull(rootNode);
@@ -34,44 +34,44 @@ final class PatternMatchingRateLimiterFactory<R, K>{
         this.firstMatchOnly = firstMatchOnly;
     }
 
-    public RateLimiter<R> createRateLimiter() {
+    public ResourceLimiter<R> createRateLimiter() {
 
-        PatternMatchingRateLimiter.MatcherProvider<R> matcherProvider =
+        PatternMatchingResourceLimiter.MatcherProvider<R> matcherProvider =
                 (name, nodeData) -> registries.matchers().getOrDefault(name);
 
-        Node<NodeValue<RateLimiter<K>>> rootRateLimiterNode = toRateLimiterNode(rootNode);
+        Node<NodeValue<ResourceLimiter<K>>> rootRateLimiterNode = toRateLimiterNode(rootNode);
 
-        return new PatternMatchingRateLimiter<>(matcherProvider, (Node)rootRateLimiterNode, firstMatchOnly);
+        return new PatternMatchingResourceLimiter<>(matcherProvider, (Node)rootRateLimiterNode, firstMatchOnly);
     }
 
-    private Node<NodeValue<RateLimiter<K>>> toRateLimiterNode(Node<NodeValue<Rates>> root) {
+    private Node<NodeValue<ResourceLimiter<K>>> toRateLimiterNode(Node<NodeValue<Rates>> root) {
 
-        BiFunction<String, NodeValue<Rates>, NodeValue<RateLimiter<K>>> nodeValueConverter =
+        BiFunction<String, NodeValue<Rates>, NodeValue<ResourceLimiter<K>>> nodeValueConverter =
                 (nodeName, nodeData) -> toRateLimiterNode(root, nodeName, nodeData);
 
         // Transform the root and it's children to rate limiter nodes
-        final Node<NodeValue<RateLimiter<K>>> rateLimiterRootNode = root.transform(nodeValueConverter);
+        final Node<NodeValue<ResourceLimiter<K>>> rateLimiterRootNode = root.transform(nodeValueConverter);
 
         if(LOG.isDebugEnabled()) {
-            LOG.debug("RateLimiter nodes: {}", NodeFormatters.indentedHeirarchy().format(rateLimiterRootNode));
+            LOG.debug("ResourceLimiter nodes: {}", NodeFormatter.indentedHeirarchy().format(rateLimiterRootNode));
         }
 
         return rateLimiterRootNode;
     }
 
-    private NodeValue<RateLimiter<K>> toRateLimiterNode(
+    private NodeValue<ResourceLimiter<K>> toRateLimiterNode(
             Node<NodeValue<Rates>> root, String nodeName, NodeValue<Rates> nodeValue) {
 
         if (isEqual(root, nodeName, nodeValue)) {
 
             registries.matchers().register(nodeName, Matcher.matchNone());
 
-            return NodeValue.of(nodeValue.getSource(), RateLimiter.noop());
+            return NodeValue.of(nodeValue.getSource(), ResourceLimiter.noop());
         }
 
         final Rates rates = nodeValue.getValue();
 
-        //System.out.printf("%s PatternMatchingRateLimiterFactory rates: %s\n", java.time.LocalTime.now(), rates);
+        //System.out.printf("%s PatternMatchingResourceLimiterFactory rates: %s\n", java.time.LocalTime.now(), rates);
 
         // One method with 3 @RateLimit annotations is a simple group (not really a group)
         // A true group spans either multiple methods/classes
@@ -82,18 +82,18 @@ final class PatternMatchingRateLimiterFactory<R, K>{
             // @TODO how do we handle this?
             // Do we create multiple rate limiters, one for each of the direct children of this group
             // Do we re-use the rate limiters of the children ? They must already exist since we create children first
-            return NodeValue.of(nodeValue.getSource(), RateLimiter.noop());
+            return NodeValue.of(nodeValue.getSource(), ResourceLimiter.noop());
         }
 
         createMatcher(nodeName, nodeValue.getSource())
                 .ifPresent(matcher -> registries.matchers().register(nodeName, matcher));
 
-        final RateLimiterConfig rateLimiterConfig = registries.configs().getOrDefault(nodeName);
+        final ResourceLimiterConfig resourceLimiterConfig = registries.configs().getOrDefault(nodeName);
 
-        final RateLimiter<K> rateLimiter = registries.factories()
-                .getOrDefault(nodeName).createNew(rateLimiterConfig, rates);
+        final ResourceLimiter<K> resourceLimiter = registries.factories()
+                .getOrDefault(nodeName).createNew(resourceLimiterConfig, rates);
 
-        return NodeValue.of(nodeValue.getSource(), rateLimiter);
+        return NodeValue.of(nodeValue.getSource(), resourceLimiter);
     }
 
     private boolean isEqual(Node<NodeValue<Rates>> node, String name, NodeValue<Rates> nodeValue) {

@@ -30,7 +30,7 @@
     <dependencies>
         <dependency>
             <groupId>com.looseboxes</groupId>
-            <artifactId>rate-limiter</artifactId>
+            <artifactId>rate-limiter-annotation</artifactId>
             <version>${rate-limiter.version}</version>
         </dependency>
         <dependency>

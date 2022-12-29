@@ -3,8 +3,8 @@ package com.looseboxes.ratelimiter.web.core.impl;
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.IdProvider;
-import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.annotations.Nullable;
+import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.*;
 import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
@@ -17,23 +17,23 @@ import java.util.List;
 /**
  * @param <REQUEST> The type of the request related object
  */
-public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
-        implements WebRequestRateLimiterConfig.Builder<REQUEST> {
+public class WebResourceLimiterConfigBuilder<REQUEST>
+        implements WebResourceLimiterConfig.Builder<REQUEST> {
 
-    private static class WebRequestRateLimiterConfigImpl<T> implements
-            WebRequestRateLimiterConfig<T> {
+    private static class WebResourceLimiterConfigImpl<T> implements
+            WebResourceLimiterConfig<T> {
 
         private RateLimitProperties properties;
-        @Nullable private RateLimiterConfigurer<T> configurer;
+        @Nullable private ResourceLimiterConfigurer<T> configurer;
         private RequestToIdConverter<T, String> requestToIdConverter;
-        private RateLimiterConfig<Object, Object> rateLimiterConfig;
+        private ResourceLimiterConfig<Object, Object> resourceLimiterConfig;
         private IdProvider<Class<?>, String> classIdProvider;
         private IdProvider<Method, String> methodIdProvider;
         private IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider;
         private IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider;
         private MatcherFactory<T, Class<?>> classMatcherFactory;
         private MatcherFactory<T, Method> methodMatcherFactory;
-        private RateLimiterFactory<Object> rateLimiterFactory;
+        private ResourceLimiterFactory<Object> resourceLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
         private AnnotationProcessor<Class<?>, Rates> annotationProcessor;
         private Class<? extends Annotation> [] resourceAnnotationTypes;
@@ -48,7 +48,7 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return properties;
         }
 
-        @Override public RateLimiterConfigurer<T> getConfigurer() {
+        @Override public ResourceLimiterConfigurer<T> getConfigurer() {
             return configurer;
         }
 
@@ -56,8 +56,8 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
             return requestToIdConverter;
         }
 
-        @Override public RateLimiterConfig<Object, Object> getRateLimiterConfig() {
-            return rateLimiterConfig;
+        @Override public ResourceLimiterConfig<Object, Object> getRateLimiterConfig() {
+            return resourceLimiterConfig;
         }
 
         @Override public IdProvider<Class<?>, String> getClassIdProvider() {
@@ -82,8 +82,8 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         @Override
         public MatcherFactory<T, Method> getMethodMatcherFactory() { return methodMatcherFactory; }
 
-        @Override public RateLimiterFactory<Object> getRateLimiterFactory() {
-            return rateLimiterFactory;
+        @Override public ResourceLimiterFactory<Object> getRateLimiterFactory() {
+            return resourceLimiterFactory;
         }
 
         @Override public ClassesInPackageFinder getClassesInPackageFinder() {
@@ -115,21 +115,21 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         }
     }
 
-    private final WebRequestRateLimiterConfigImpl<REQUEST> configuration;
+    private final WebResourceLimiterConfigImpl<REQUEST> configuration;
 
-    public DefaultWebRequestRateLimiterConfigBuilder() {
-        this.configuration = new WebRequestRateLimiterConfigImpl<>();
+    public WebResourceLimiterConfigBuilder() {
+        this.configuration = new WebResourceLimiterConfigImpl<>();
     }
 
-    @Override public WebRequestRateLimiterConfig<REQUEST> build() {
+    @Override public WebResourceLimiterConfig<REQUEST> build() {
         if (configuration.resourceAnnotationTypes.length == 0) {
             throw new IndexOutOfBoundsException("Index: 0");
         }
-        if (configuration.rateLimiterConfig == null) {
-            rateLimiterConfig(RateLimiterConfig.of());
+        if (configuration.resourceLimiterConfig == null) {
+            rateLimiterConfig(ResourceLimiterConfig.of());
         }
-        if (configuration.rateLimiterFactory == null) {
-            rateLimiterFactory(RateLimiterFactory.of());
+        if (configuration.resourceLimiterFactory == null) {
+            rateLimiterFactory(ResourceLimiterFactory.of());
         }
         if (configuration.classesInPackageFinder == null) {
             classesInPackageFinder(ClassesInPackageFinder.of());
@@ -162,7 +162,7 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
 
         configuration.registries = new DefaultRegistries<>(
                 configuration.classIdProvider, configuration.methodIdProvider,
-                configuration.rateLimiterConfig, configuration.rateLimiterFactory, configuration.configurer);
+                configuration.resourceLimiterConfig, configuration.resourceLimiterFactory, configuration.configurer);
 
         configuration.resourceClassesSupplier = new DefaultResourceClassesSupplier(
                 configuration.classesInPackageFinder,
@@ -172,97 +172,97 @@ public class DefaultWebRequestRateLimiterConfigBuilder<REQUEST>
         return configuration;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> properties(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> properties(
             RateLimitProperties properties) {
         configuration.properties = properties;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> configurer(
-            @Nullable RateLimiterConfigurer<REQUEST> configurer) {
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> configurer(
+            @Nullable ResourceLimiterConfigurer<REQUEST> configurer) {
         configuration.configurer = configurer;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> requestToIdConverter(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> requestToIdConverter(
             RequestToIdConverter<REQUEST, String> requestToIdConverter) {
         configuration.requestToIdConverter = requestToIdConverter;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> rateLimiterConfig(
-            RateLimiterConfig<Object, Object> rateLimiterConfig) {
-        configuration.rateLimiterConfig = rateLimiterConfig;
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> rateLimiterConfig(
+            ResourceLimiterConfig<Object, Object> resourceLimiterConfig) {
+        configuration.resourceLimiterConfig = resourceLimiterConfig;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> classIdProvider(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> classIdProvider(
             IdProvider<Class<?>, String> classIdProvider) {
         configuration.classIdProvider = classIdProvider;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> methodIdProvider(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> methodIdProvider(
             IdProvider<Method, String> methodIdProvider) {
         configuration.methodIdProvider = methodIdProvider;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> classPathPatternsProvider(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> classPathPatternsProvider(
             IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider) {
         configuration.classPathPatternsProvider = classPathPatternsProvider;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> methodPathPatternsProvider(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> methodPathPatternsProvider(
             IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider) {
         configuration.methodPathPatternsProvider = methodPathPatternsProvider;
         return this;
     }
 
     @Override
-    public WebRequestRateLimiterConfig.Builder<REQUEST> classMatcherFactory(MatcherFactory<REQUEST, Class<?>> matcherFactory) {
+    public WebResourceLimiterConfig.Builder<REQUEST> classMatcherFactory(MatcherFactory<REQUEST, Class<?>> matcherFactory) {
         configuration.classMatcherFactory = matcherFactory;
         return this;
     }
 
     @Override
-    public WebRequestRateLimiterConfig.Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory) {
+    public WebResourceLimiterConfig.Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory) {
         configuration.methodMatcherFactory = matcherFactory;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> rateLimiterFactory(
-            RateLimiterFactory<Object> rateLimiterFactory) {
-        configuration.rateLimiterFactory = rateLimiterFactory;
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> rateLimiterFactory(
+            ResourceLimiterFactory<Object> resourceLimiterFactory) {
+        configuration.resourceLimiterFactory = resourceLimiterFactory;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> classesInPackageFinder(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> classesInPackageFinder(
             ClassesInPackageFinder classesInPackageFinder) {
         configuration.classesInPackageFinder = classesInPackageFinder;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> annotationProcessor(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> annotationProcessor(
             AnnotationProcessor<Class<?>, Rates> annotationProcessor) {
         configuration.annotationProcessor = annotationProcessor;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> resourceAnnotationTypes(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> resourceAnnotationTypes(
             Class<? extends Annotation>[] resourceAnnotationTypes) {
         configuration.resourceAnnotationTypes = resourceAnnotationTypes;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> nodeFactoryForProperties(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> nodeFactoryForProperties(
             NodeBuilder<RateLimitProperties, Rates> nodeBuilderForProperties) {
         configuration.nodeBuilderForProperties = nodeBuilderForProperties;
         return this;
     }
 
-    @Override public WebRequestRateLimiterConfig.Builder<REQUEST> nodeFactoryForAnnotations(
+    @Override public WebResourceLimiterConfig.Builder<REQUEST> nodeFactoryForAnnotations(
             NodeBuilder<List<Class<?>>, Rates> nodeBuilderForAnnotations) {
         configuration.nodeBuilderForAnnotations = nodeBuilderForAnnotations;
         return this;
