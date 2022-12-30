@@ -71,8 +71,6 @@ final class PatternMatchingResourceLimiterFactory<R, K>{
 
         final Rates rates = nodeValue.getValue();
 
-        //System.out.printf("%s PatternMatchingResourceLimiterFactory rates: %s\n", java.time.LocalTime.now(), rates);
-
         // One method with 3 @RateLimit annotations is a simple group (not really a group)
         // A true group spans either multiple methods/classes
         if(!rates.hasLimits()) { // This is a group node
