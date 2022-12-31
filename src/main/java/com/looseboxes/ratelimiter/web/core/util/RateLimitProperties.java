@@ -6,14 +6,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The class allows for the customization of a {@link ResourceLimiter} via properties.
- * The properties defined here will be used to create a {@link ResourceLimiter} independent
- * of those created from the various {@link RateLimit} annotations.
+ * The class allows for the customization of a {@link com.looseboxes.ratelimiter.ResourceLimiter} via properties.
+ * The properties defined here will be used to create a {@link com.looseboxes.ratelimiter.ResourceLimiter} independent
+ * of those created from the various {@link com.looseboxes.ratelimiter.annotations.RateLimit} annotations.
  */
 public interface RateLimitProperties {
 
     /**
-     * @return The packages to search for resource classes
+     * If using annotations, you have to specify the list packages where resources containing
+     * rate-limit related annotations should be scanned for.
+     *
+     * If not using annotations, simply return an empty list.
+     *
+     * @return the packages containing resources having rate-limit related annotations.
      */
     List<String> getResourcePackages();
 
@@ -26,7 +31,9 @@ public interface RateLimitProperties {
     }
 
     /**
-     * @return Configurations for building a customizable {@link ResourceLimiter}
+     * If not using properties, simply return an empty map
+     *
+     * @return Configurations for building a customizable {@link com.looseboxes.ratelimiter.ResourceLimiter}
      */
     Map<String, Rates> getRateLimitConfigs();
 }

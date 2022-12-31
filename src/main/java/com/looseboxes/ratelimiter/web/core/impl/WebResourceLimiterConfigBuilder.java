@@ -48,7 +48,11 @@ public class WebResourceLimiterConfigBuilder<REQUEST>
             return properties;
         }
 
-        @Override public ResourceLimiterConfigurer<T> getConfigurer() {
+        //We don't want this exposed this way.
+        //A user could manually call getConfigure()r#configure() expecting some meaningful side effects
+        //The configure method is called once behind the scenes. The user should never have to.
+        //
+        ResourceLimiterConfigurer<T> getConfigurer() {
             return configurer;
         }
 

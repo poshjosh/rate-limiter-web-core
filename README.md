@@ -43,42 +43,42 @@ public class RateLimiterConfigurerImpl
         implements ResourceLimiterConfigurer<HttpServletRequest> {
 
   @Override
-  public void configure(Registries<HttpServletRequest> registry) {
+  public void configure(Registries<HttpServletRequest> registries) {
 
     // Register consumption listeners
     // ------------------------------
 
-    // If you do not register a listener, the default listener throws an exception
-    registry.listeners().register((resource, resourceId, amount, exceededLimits) -> {
+    registries.listeners().register((context, resourceId, hits, limit) -> {
 
       // For example, log the limit that was exceeded
-      System.out.println(
-              "For " + resourceId + ", the following limits are exceeded: " + exceededLimits);
+      System.out.println("For " + resourceId + ", the following limits are exceeded: " + limit);
     });
 
     // Register request matchers
     // -------------------------
 
     // Identify resources to rate-limit by session id
-    registry.matchers().register("limitBySession", request -> request.getSession().getId());
+    registries.matchers().register("limitBySession", request -> request.getSession().getId());
 
     // Identify resources to rate-limit by the presence of request parameter "utm_source"
-    registry.matchers().register("limitByUtmSource", request -> request.getParameter("utm_source"));
+    registries.matchers().register("limitByUtmSource", request -> request.getParameter("utm_source"));
 
     // Rate limit users from a specific utm_source e.g facebook
-    registry.matchers().register("limitByUtmSourceIsFacebook",
+    registries.matchers().register("limitByUtmSourceIsFacebook",
             request -> "facebook".equals(request.getParameter("utm_source")));
 
     // You could use a variety of Cache flavours
     // -----------------------------------------
 
     javax.cache.Cache javaxCache = null; // PROVIDE THIS
-    registry.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
+    registries.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
   }
 }
 ```
 
 ## Path binding
+
+Please first read the [annotation specs](https://github.com/poshjosh/rate-limiter-annotation/blob/main/docs/ANNOTATION_SPECS.md). It is concise.
 
 The `@RateLimit` and `@RateLimitGroup` annotations are bound to paths.
 

@@ -77,7 +77,11 @@ public interface WebResourceLimiterConfig<REQUEST>{
 
     RateLimitProperties getProperties();
 
-    ResourceLimiterConfigurer<REQUEST> getConfigurer();
+    //We don't want this exposed this way.
+    //A user could manually call getConfigurer()#configure() expecting some meaningful side effects
+    //The configure method is called once behind the scenes. The user should never have to.
+    //
+    //ResourceLimiterConfigurer<REQUEST> getConfigurer();
 
     RequestToIdConverter<REQUEST, String> getRequestToIdConverter();
 
