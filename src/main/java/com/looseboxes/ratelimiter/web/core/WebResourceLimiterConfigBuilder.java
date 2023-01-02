@@ -23,7 +23,6 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
         private RateLimitProperties properties;
         private ResourceLimiterConfigurer<T> configurer;
         private RequestToIdConverter<T, String> requestToIdConverter;
-        private ResourceLimiterConfig<Object, Object> resourceLimiterConfig;
         private PathPatternsProvider pathPatternsProvider;
         private MatcherFactory<T, Element> matcherFactory;
         private ResourceLimiterFactory<Object> resourceLimiterFactory;
@@ -75,9 +74,6 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
         if (configuration.resourceAnnotationTypes.length == 0) {
             throw new IndexOutOfBoundsException("Index: 0");
         }
-        if (configuration.resourceLimiterConfig == null) {
-            resourceLimiterConfig(ResourceLimiterConfig.ofDefaults());
-        }
         if (configuration.resourceLimiterFactory == null) {
             resourceLimiterFactory(ResourceLimiterFactory.ofDefaults());
         }
@@ -101,7 +97,7 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
 
         configuration.registries = new DefaultRegistries<>(
                 ResourceLimiter.noop(), Matcher.matchNone(),
-                configuration.resourceLimiterConfig, configuration.resourceLimiterFactory);
+                configuration.resourceLimiterFactory);
 
         configuration.resourceClassesSupplier = new DefaultResourceClassesSupplier(
                 configuration.classesInPackageFinder,
@@ -130,12 +126,6 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
     @Override public WebResourceLimiterConfig.Builder<REQUEST> requestToIdConverter(
             RequestToIdConverter<REQUEST, String> requestToIdConverter) {
         configuration.requestToIdConverter = requestToIdConverter;
-        return this;
-    }
-
-    @Override public WebResourceLimiterConfig.Builder<REQUEST> resourceLimiterConfig(
-            ResourceLimiterConfig<Object, Object> resourceLimiterConfig) {
-        configuration.resourceLimiterConfig = resourceLimiterConfig;
         return this;
     }
 

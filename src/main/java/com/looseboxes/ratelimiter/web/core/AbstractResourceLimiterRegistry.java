@@ -142,7 +142,7 @@ public abstract class AbstractResourceLimiterRegistry<R> {
                 node -> registries.matchers().getOrDefault(node.getName());
 
         PatternMatchingResourceLimiter.LimiterProvider<Rates> limiterProvider =
-                node -> registries.resourceLimiters().getOrDefault(node.getName());
+                node -> registries.limiters().getOrDefault(node.getName());
 
         return new PatternMatchingResourceLimiter<>(
                 matcherProvider, limiterProvider, rootNode, firstMatchOnly);

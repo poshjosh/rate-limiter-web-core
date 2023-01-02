@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 
-final class InternalRegistry<R, K, S>{
+final class InternalRegistry<R, S>{
 
     private static final Logger LOG = LoggerFactory.getLogger(InternalRegistry.class);
 
@@ -59,17 +59,15 @@ final class InternalRegistry<R, K, S>{
         createMatcher(nodeName, nodeValue.getSource())
                 .ifPresent(matcher -> registries.matchers().register(nodeName, matcher));
 
-        final ResourceLimiterConfig resourceLimiterConfig = registries.configs().getOrDefault(nodeName);
+        final ResourceLimiter resourceLimiter = registries.factories()
+                .getOrDefault(nodeName).createNew(rates);
 
-        final ResourceLimiter<K> resourceLimiter = registries.factories()
-                .getOrDefault(nodeName).createNew(resourceLimiterConfig, rates);
-
-        registries.resourceLimiters().register(nodeName, resourceLimiter);
+        registries.limiters().register(nodeName, resourceLimiter);
     }
 
     private void noop(String nodeName) {
         registries.matchers().register(nodeName, Matcher.matchNone());
-        registries.resourceLimiters().register(nodeName, ResourceLimiter.noop());
+        registries.limiters().register(nodeName, ResourceLimiter.noop());
     }
 
     private boolean isEqual(Node<NodeValue<Rates>> node, String name, NodeValue<Rates> nodeValue) {

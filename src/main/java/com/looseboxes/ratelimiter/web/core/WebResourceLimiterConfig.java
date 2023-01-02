@@ -1,6 +1,5 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.ResourceLimiterConfig;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.Element;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
@@ -28,9 +27,6 @@ public abstract class WebResourceLimiterConfig<REQUEST>{
 
         Builder<REQUEST> requestToIdConverter(
                 RequestToIdConverter<REQUEST, String> requestToIdConverter);
-
-        Builder<REQUEST> resourceLimiterConfig(
-                ResourceLimiterConfig<Object, Object> resourceLimiterConfig);
 
         Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
 

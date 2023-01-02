@@ -2,7 +2,7 @@ package com.looseboxes.ratelimiter.web.core;
 
 import org.junit.jupiter.api.Test;
 
-class SimpleRegistryTest extends AbstractRegistryTest<String> {
+class SimpleAccessibleRegistryTest extends AbstractRegistryTest<String> {
 
     @Test
     void shouldRegister() {
@@ -15,7 +15,7 @@ class SimpleRegistryTest extends AbstractRegistryTest<String> {
     }
 
     @Override
-    protected Registry<String> getInstance() {
-        return SimpleRegistry.of("default");
+    protected AccessibleRegistry<String> getInstance() {
+        return SimpleAccessibleRegistry.of("default");
     }
 }
