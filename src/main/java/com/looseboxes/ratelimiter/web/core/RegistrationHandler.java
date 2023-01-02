@@ -2,6 +2,7 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
+import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Matcher;
@@ -12,16 +13,20 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 
-final class InternalRegistry<R, S>{
+final class RegistrationHandler<R, S>{
 
-    private static final Logger LOG = LoggerFactory.getLogger(InternalRegistry.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RegistrationHandler.class);
 
     private final Registries<R> registries;
     private final MatcherFactory<R, S> matcherFactory;
+    private final ResourceLimiterFactory<Object> resourceLimiterFactory;
 
-    InternalRegistry(Registries<R> registries, MatcherFactory<R, S> matcherFactory) {
+    RegistrationHandler(Registries<R> registries,
+                     MatcherFactory<R, S> matcherFactory,
+                     ResourceLimiterFactory<Object> resourceLimiterFactory) {
         this.registries = Objects.requireNonNull(registries);
         this.matcherFactory = Objects.requireNonNull(matcherFactory);
+        this.resourceLimiterFactory = Objects.requireNonNull(resourceLimiterFactory);
     }
 
     public void registerMatchersAndRateLimiters(Node<NodeValue<Rates>> root) {
@@ -59,8 +64,10 @@ final class InternalRegistry<R, S>{
         createMatcher(nodeName, nodeValue.getSource())
                 .ifPresent(matcher -> registries.matchers().register(nodeName, matcher));
 
-        final ResourceLimiter resourceLimiter = registries.factories()
-                .getOrDefault(nodeName).createNew(rates);
+        ResourceLimiter<Object> resourceLimiter = resourceLimiterFactory
+                .createNew(rates)
+                .cache(registries.<Object, Bandwidths>caches().getOrDefault(nodeName))
+                .listener(registries.listeners().getOrDefault(nodeName));
 
         registries.limiters().register(nodeName, resourceLimiter);
     }

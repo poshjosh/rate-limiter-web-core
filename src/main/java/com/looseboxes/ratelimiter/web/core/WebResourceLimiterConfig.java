@@ -68,4 +68,6 @@ public abstract class WebResourceLimiterConfig<REQUEST>{
     abstract NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations();
 
     abstract NodeBuilder<RateLimitProperties, Rates> getNodeBuilderForProperties();
+
+    abstract ResourceLimiterFactory<Object> getResourceLimiterFactory();
 }

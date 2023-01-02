@@ -59,6 +59,10 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
         @Override NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations() {
             return nodeBuilderForAnnotations;
         }
+
+        @Override ResourceLimiterFactory<Object> getResourceLimiterFactory() {
+            return resourceLimiterFactory;
+        }
     }
 
     private final WebResourceLimiterConfigImpl<REQUEST> configuration;
@@ -95,9 +99,7 @@ final class WebResourceLimiterConfigBuilder<REQUEST>
                     configuration.pathPatternsProvider, configuration.requestToIdConverter));
         }
 
-        configuration.registries = new DefaultRegistries<>(
-                ResourceLimiter.noop(), Matcher.matchNone(),
-                configuration.resourceLimiterFactory);
+        configuration.registries = new DefaultRegistries<>(ResourceLimiter.noop(), Matcher.matchNone());
 
         configuration.resourceClassesSupplier = new DefaultResourceClassesSupplier(
                 configuration.classesInPackageFinder,

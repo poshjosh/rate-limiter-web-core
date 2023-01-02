@@ -6,13 +6,11 @@ import com.looseboxes.ratelimiter.util.Matcher;
 
 public interface Registries<REQUEST> {
 
-    AccessibleRegistry<ResourceLimiter<?>> limiters();
+    Registry<ResourceLimiter<?>> limiters();
 
-    AccessibleRegistry<Matcher<REQUEST, ?>> matchers();
-
-    AccessibleRegistry<ResourceLimiterFactory<?>> factories();
+    Registry<Matcher<REQUEST, ?>> matchers();
 
     <K, V> Registry<RateCache<K, V>> caches();
 
-    Registry<ResourceUsageListener> listeners();
+    Registry<UsageListener> listeners();
 }

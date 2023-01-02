@@ -124,14 +124,16 @@ public abstract class AbstractResourceLimiterRegistry<R> {
             }
         };
 
-        new InternalRegistry<>(
+        new RegistrationHandler<>(
                 webResourceLimiterConfig.getRegistries(),
-                propertiesMatcherFactory
+                propertiesMatcherFactory,
+                webResourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(propertiesRootNode);
 
-        new InternalRegistry<>(
+        new RegistrationHandler<>(
                 webResourceLimiterConfig.getRegistries(),
-                webResourceLimiterConfig.getMatcherFactory()
+                webResourceLimiterConfig.getMatcherFactory(),
+                webResourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(annotationsRootNode);
     }
 
