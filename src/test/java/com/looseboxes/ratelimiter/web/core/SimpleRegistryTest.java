@@ -1,7 +1,5 @@
-package com.looseboxes.ratelimiter.web.core.impl;
+package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.web.core.AbstractRegistryTest;
-import com.looseboxes.ratelimiter.web.core.Registry;
 import org.junit.jupiter.api.Test;
 
 class SimpleRegistryTest extends AbstractRegistryTest<String> {

@@ -1,11 +1,10 @@
-package com.looseboxes.ratelimiter.web.core.impl;
+package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Rates;
-import com.looseboxes.ratelimiter.web.core.NodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

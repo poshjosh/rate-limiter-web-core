@@ -6,6 +6,8 @@ import com.looseboxes.ratelimiter.util.Matcher;
 
 public interface Registries<REQUEST> {
 
+    Registry<ResourceLimiter<?>> resourceLimiters();
+
     Registry<Matcher<REQUEST, ?>> matchers();
 
     Registry<ResourceLimiterFactory<?>> factories();

@@ -1,18 +1,12 @@
-package com.looseboxes.ratelimiter.web.core.impl;
+package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.annotation.IdProvider;
 import com.looseboxes.ratelimiter.cache.RateCache;
-import com.looseboxes.ratelimiter.annotations.Nullable;
 import com.looseboxes.ratelimiter.util.Matcher;
-import com.looseboxes.ratelimiter.web.core.ResourceLimiterConfigurer;
-import com.looseboxes.ratelimiter.web.core.Registries;
-import com.looseboxes.ratelimiter.web.core.Registry;
-import com.looseboxes.ratelimiter.web.core.ResourceLimiterFactory;
-
-import java.lang.reflect.Method;
 
 final class DefaultRegistries<R> implements Registries<R> {
+
+    private final Registry<ResourceLimiter<?>> resourceLimiterRegistry;
 
     private final Registry<Matcher<R, ?>> matcherRegistry;
 
@@ -21,17 +15,19 @@ final class DefaultRegistries<R> implements Registries<R> {
     private final Registry<ResourceLimiterFactory<?>> rateLimiterFactoryRegistry;
 
     DefaultRegistries(
-            IdProvider<Class<?>, String> classIdProvider,
-            IdProvider<Method, String> methodIdProvider,
+            ResourceLimiter<?> resourceLimiter,
+            Matcher<R, ?> matcher,
             ResourceLimiterConfig<?, ?> resourceLimiterConfig,
-            ResourceLimiterFactory<?> resourceLimiterFactory,
-            @Nullable ResourceLimiterConfigurer<R> resourceLimiterConfigurer) {
-        this.matcherRegistry = SimpleRegistry.of(Matcher.matchNone(), classIdProvider, methodIdProvider);
-        this.rateLimiterConfigRegistry = SimpleRegistry.of(resourceLimiterConfig, classIdProvider, methodIdProvider);
-        this.rateLimiterFactoryRegistry = SimpleRegistry.of(resourceLimiterFactory, classIdProvider, methodIdProvider);
-        if(resourceLimiterConfigurer != null) {
-            resourceLimiterConfigurer.configure(this);
-        }
+            ResourceLimiterFactory<?> resourceLimiterFactory) {
+        this.resourceLimiterRegistry = SimpleRegistry.of(resourceLimiter);
+        this.matcherRegistry = SimpleRegistry.of(matcher);
+        this.rateLimiterConfigRegistry = SimpleRegistry.of(resourceLimiterConfig);
+        this.rateLimiterFactoryRegistry = SimpleRegistry.of(resourceLimiterFactory);
+    }
+
+    @Override
+    public Registry<ResourceLimiter<?>> resourceLimiters() {
+        return resourceLimiterRegistry;
     }
 
     @Override
@@ -57,7 +53,7 @@ final class DefaultRegistries<R> implements Registries<R> {
             return ResourceLimiterConfig.builder(input).cache(output).build();
         }
         @Override public ResourceLimiterConfig<K, V> createNewProxied() {
-            return ResourceLimiterConfig.of();
+            return ResourceLimiterConfig.ofDefaults();
         }
     }
 
@@ -69,7 +65,7 @@ final class DefaultRegistries<R> implements Registries<R> {
             return ResourceLimiterConfig.builder(input).usageListener(output).build();
         }
         @Override public ResourceLimiterConfig<K, V> createNewProxied() {
-            return ResourceLimiterConfig.of();
+            return ResourceLimiterConfig.ofDefaults();
         }
     }
 

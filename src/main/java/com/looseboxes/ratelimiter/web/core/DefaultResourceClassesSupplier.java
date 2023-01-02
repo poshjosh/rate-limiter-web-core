@@ -1,4 +1,4 @@
-package com.looseboxes.ratelimiter.web.core.impl;
+package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.util.ClassFilterForAnnotations;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;

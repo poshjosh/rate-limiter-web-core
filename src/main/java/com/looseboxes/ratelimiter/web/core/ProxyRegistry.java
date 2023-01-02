@@ -1,8 +1,5 @@
-package com.looseboxes.ratelimiter.web.core.impl;
+package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.web.core.Registry;
-
-import java.lang.reflect.Method;
 import java.util.Objects;
 
 final class ProxyRegistry<I, O> implements Registry<O> {
@@ -32,16 +29,6 @@ final class ProxyRegistry<I, O> implements Registry<O> {
         return this;
     }
 
-    @Override public Registry<O> register(Class<?> name, O what) {
-        I input = delegate.getOrDefault(name, null);
-        return register(input, what);
-    }
-
-    @Override public Registry<O> register(Method name, O what) {
-        I input = delegate.getOrDefault(name, null);
-        return register(input, what);
-    }
-
     @Override public Registry<O> register(String name, O what) {
         I input = delegate.getOrDefault(name, null);
         return register(input, what);
@@ -61,16 +48,6 @@ final class ProxyRegistry<I, O> implements Registry<O> {
 
     @Override public O getDefault() {
         return proxy.get(delegate.getDefault());
-    }
-
-    @Override public O getOrDefault(Class<?> name, O resultIfNone) {
-        I instance = delegate.getOrDefault(name, null);
-        return getOrDefault(instance, resultIfNone);
-    }
-
-    @Override public O getOrDefault(Method name, O resultIfNone) {
-        I instance = delegate.getOrDefault(name, null);
-        return getOrDefault(instance, resultIfNone);
     }
 
     @Override public O getOrDefault(String name, O resultIfNone) {

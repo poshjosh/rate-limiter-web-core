@@ -2,24 +2,22 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.ResourceLimiterConfig;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
-import com.looseboxes.ratelimiter.annotation.IdProvider;
+import com.looseboxes.ratelimiter.annotation.Element;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Rates;
-import com.looseboxes.ratelimiter.web.core.impl.WebResourceLimiterConfigBuilder;
-import com.looseboxes.ratelimiter.web.core.util.PathPatterns;
+import com.looseboxes.ratelimiter.web.core.util.PathPatternsProvider;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.List;
 
-public interface WebResourceLimiterConfig<REQUEST>{
+public abstract class WebResourceLimiterConfig<REQUEST>{
 
-    static <R> Builder<R> builder() {
+    public static <R> Builder<R> builder() {
         return new WebResourceLimiterConfigBuilder<>();
     }
 
-    interface Builder<REQUEST> {
+    public interface Builder<REQUEST> {
 
         WebResourceLimiterConfig<REQUEST> build();
 
@@ -31,24 +29,14 @@ public interface WebResourceLimiterConfig<REQUEST>{
         Builder<REQUEST> requestToIdConverter(
                 RequestToIdConverter<REQUEST, String> requestToIdConverter);
 
-        Builder<REQUEST> rateLimiterConfig(
+        Builder<REQUEST> resourceLimiterConfig(
                 ResourceLimiterConfig<Object, Object> resourceLimiterConfig);
 
-        Builder<REQUEST> classIdProvider(IdProvider<Class<?>, String> classIdProvider);
+        Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
 
-        Builder<REQUEST> methodIdProvider(IdProvider<Method, String> methodIdProvider);
+        Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST, Element> matcherFactory);
 
-        Builder<REQUEST> classPathPatternsProvider(
-                IdProvider<Class<?>, PathPatterns<String>> classPathPatternsProvider);
-
-        Builder<REQUEST> methodPathPatternsProvider(
-                IdProvider<Method, PathPatterns<String>> methodPathPatternsProvider);
-
-        Builder<REQUEST> classMatcherFactory(MatcherFactory<REQUEST, Class<?>> matcherFactory);
-
-        Builder<REQUEST> methodMatcherFactory(MatcherFactory<REQUEST, Method> matcherFactory);
-
-        Builder<REQUEST> rateLimiterFactory(
+        Builder<REQUEST> resourceLimiterFactory(
                 ResourceLimiterFactory<Object> resourceLimiterFactory);
 
         Builder<REQUEST> classesInPackageFinder(
@@ -67,47 +55,21 @@ public interface WebResourceLimiterConfig<REQUEST>{
                 NodeBuilder<List<Class<?>>, Rates> nodeBuilderForAnnotations);
     }
 
-    Registries<REQUEST> getRegistries();
+    public abstract RateLimitProperties getProperties();
 
-    default List<Class<?>> getResourceClasses() {
+    public abstract Registries<REQUEST> getRegistries();
+
+    public List<Class<?>> getResourceClasses() {
         return getResourceClassesSupplier().get();
     }
 
-    ResourceClassesSupplier getResourceClassesSupplier();
-
-    RateLimitProperties getProperties();
-
-    //We don't want this exposed this way.
-    //A user could manually call getConfigurer()#configure() expecting some meaningful side effects
-    //The configure method is called once behind the scenes. The user should never have to.
+    // Package access getters
     //
-    //ResourceLimiterConfigurer<REQUEST> getConfigurer();
+    abstract ResourceClassesSupplier getResourceClassesSupplier();
 
-    RequestToIdConverter<REQUEST, String> getRequestToIdConverter();
+    abstract MatcherFactory<REQUEST, Element> getMatcherFactory();
 
-    ResourceLimiterConfig<Object, Object> getRateLimiterConfig();
+    abstract NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations();
 
-    IdProvider<Class<?>, String> getClassIdProvider();
-
-    IdProvider<Method, String> getMethodIdProvider();
-
-    IdProvider<Class<?>, PathPatterns<String>> getClassPathPatternsProvider();
-
-    IdProvider<Method, PathPatterns<String>> getMethodPathPatternsProvider();
-
-    MatcherFactory<REQUEST, Class<?>> getClassMatcherFactory();
-
-    MatcherFactory<REQUEST, Method> getMethodMatcherFactory();
-
-    ResourceLimiterFactory<Object> getRateLimiterFactory();
-
-    ClassesInPackageFinder getClassesInPackageFinder();
-
-    AnnotationProcessor<Class<?>, Rates> getAnnotationProcessor();
-
-    Class<? extends Annotation>[] getResourceAnnotationTypes();
-
-    NodeBuilder<List<Class<?>>, Rates> getNodeBuilderForAnnotations();
-
-    NodeBuilder<RateLimitProperties, Rates> getNodeBuilderForProperties();
+    abstract NodeBuilder<RateLimitProperties, Rates> getNodeBuilderForProperties();
 }
