@@ -10,7 +10,7 @@ public interface Registries<REQUEST> {
 
     Registry<Matcher<REQUEST, ?>> matchers();
 
-    <K, V> Registry<RateCache<K, V>> caches();
+    <K, V> Registry<RateCache<K>> caches();
 
     Registry<UsageListener> listeners();
 }

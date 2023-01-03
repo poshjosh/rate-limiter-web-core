@@ -2,7 +2,6 @@ package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
 import com.looseboxes.ratelimiter.annotation.NodeValue;
-import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Matcher;
@@ -66,7 +65,7 @@ final class RegistrationHandler<R, S>{
 
         ResourceLimiter<Object> resourceLimiter = resourceLimiterFactory
                 .createNew(rates)
-                .cache(registries.<Object, Bandwidths>caches().getOrDefault(nodeName))
+                .cache(registries.caches().getOrDefault(nodeName))
                 .listener(registries.listeners().getOrDefault(nodeName));
 
         registries.limiters().register(nodeName, resourceLimiter);

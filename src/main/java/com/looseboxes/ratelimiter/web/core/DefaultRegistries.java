@@ -1,7 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.util.Matcher;
 
@@ -29,11 +28,11 @@ final class DefaultRegistries<R> implements Registries<R> {
         return matcherRegistry;
     }
 
-    private static final class CacheProxy<K, V> implements ProxyRegistry.Proxy<ResourceLimiter<?>, RateCache<K, V>> {
-        @Override public RateCache<K, V> get(ResourceLimiter<?> input) {
+    private static final class CacheProxy<K, V> implements ProxyRegistry.Proxy<ResourceLimiter<?>, RateCache<K>> {
+        @Override public RateCache<K> get(ResourceLimiter<?> input) {
             return ((ModifiableResourceLimiter)input).cache;
         }
-        @Override public ResourceLimiter<?> set(ResourceLimiter<?> input, RateCache<K, V> output) {
+        @Override public ResourceLimiter<?> set(ResourceLimiter<?> input, RateCache<K> output) {
             return input.cache((RateCache)output);
         }
     }
@@ -48,7 +47,7 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public <K, V> Registry<RateCache<K, V>> caches() {
+    public <K, V> Registry<RateCache<K>> caches() {
         return new ProxyRegistry<>(resourceLimiterRegistry, new CacheProxy<K, V>());
     }
 
@@ -60,15 +59,15 @@ final class DefaultRegistries<R> implements Registries<R> {
     private static final class ModifiableResourceLimiter<R> implements ResourceLimiter<R> {
 
         private final ResourceLimiter<R> delegate;
-        private RateCache<?, Bandwidths> cache;
+        private RateCache<?> cache;
         private UsageListener listener;
 
         private ModifiableResourceLimiter(ResourceLimiter<R> delegate) {
-            this(delegate, RateCache.noop(), UsageListener.NO_OP);
+            this(delegate, RateCache.ofMap(), UsageListener.NO_OP);
         }
         private ModifiableResourceLimiter(
                 ResourceLimiter<R> delegate,
-                RateCache<?, Bandwidths> cache,
+                RateCache<?> cache,
                 UsageListener listener) {
             this.delegate = Objects.requireNonNull(delegate);
             this.cache = Objects.requireNonNull(cache);
@@ -78,7 +77,7 @@ final class DefaultRegistries<R> implements Registries<R> {
         @Override public boolean tryConsume(R resource, int permits, long timeout, TimeUnit unit) {
             return delegate.tryConsume(resource, permits, timeout, unit);
         }
-        @Override public ResourceLimiter<R> cache(RateCache<?, Bandwidths> cache) {
+        @Override public ResourceLimiter<R> cache(RateCache<?> cache) {
             this.cache = Objects.requireNonNull(cache);
             return new ModifiableResourceLimiter<>(delegate.cache(cache), cache, listener);
         }
