@@ -1,7 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
-import com.looseboxes.ratelimiter.annotation.Element;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.util.Rates;
 import com.looseboxes.ratelimiter.web.core.util.PathPatternsProvider;
@@ -25,7 +24,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         private ResourceLimiterConfigurer<T> configurer;
         private RequestToIdConverter<T, String> requestToIdConverter;
         private PathPatternsProvider pathPatternsProvider;
-        private MatcherFactory<T, Element> matcherFactory;
+        private MatcherFactory<T> matcherFactory;
         private ResourceLimiterFactory<Object> resourceLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
         private AnnotationProcessor<Class<?>> annotationProcessor;
@@ -46,7 +45,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override MatcherFactory<T, Element> getMatcherFactory() { return matcherFactory; }
+        @Override MatcherFactory<T> getMatcherFactory() { return matcherFactory; }
 
         @Override ResourceLimiterFactory<Object> getResourceLimiterFactory() {
             return resourceLimiterFactory;
@@ -122,7 +121,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
     }
 
     @Override
-    public ResourceLimiterConfig.Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST, Element> matcherFactory) {
+    public ResourceLimiterConfig.Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST> matcherFactory) {
         configuration.matcherFactory = matcherFactory;
         return this;
     }

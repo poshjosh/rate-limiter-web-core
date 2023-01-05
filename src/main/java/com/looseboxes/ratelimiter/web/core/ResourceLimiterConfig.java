@@ -1,7 +1,6 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
-import com.looseboxes.ratelimiter.annotation.Element;
 import com.looseboxes.ratelimiter.util.ClassesInPackageFinder;
 import com.looseboxes.ratelimiter.web.core.util.PathPatternsProvider;
 import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
@@ -29,7 +28,7 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
         Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
 
-        Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST, Element> matcherFactory);
+        Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST> matcherFactory);
 
         Builder<REQUEST> resourceLimiterFactory(
                 ResourceLimiterFactory<Object> resourceLimiterFactory);
@@ -48,7 +47,7 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
     abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
 
-    abstract MatcherFactory<REQUEST, Element> getMatcherFactory();
+    abstract MatcherFactory<REQUEST> getMatcherFactory();
 
     abstract ResourceLimiterFactory<Object> getResourceLimiterFactory();
 

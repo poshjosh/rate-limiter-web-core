@@ -49,11 +49,12 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
         public void accept(Object source, Node<RateConfig> node) {
             if (source instanceof Element) {
                 Element element = (Element)source;
+                System.out.println("AbstractResourceLimiterRegistry collecting element " + element);
                 nameToElementMap.putIfAbsent(element.getId(), element);
             }
         }
-        public Element getElement(String name) {
-            return nameToElementMap.get(name);
+        public Optional<Element> get(String name) {
+            return Optional.ofNullable(nameToElementMap.get(name));
         }
     }
 
@@ -89,32 +90,29 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
             Node<RateConfig> annotationsRootNode,
             ElementCollector elementCollector) {
 
-        MatcherFactory<R, Object> propertiesMatcherFactory = new MatcherFactory<R, Object>() {
-            @Override
-            public Optional<Matcher<R, ?>> createMatcher(String name, Object source) {
-                // If the name matches an element source (e.g class/method) name,
-                // then use the MatcherFactory for that element
-                // This means that if the a property has a name that matches
-                Element elementSource = elementCollector.getElement(name);
-                if (elementSource != null) {
-                    return resourceLimiterConfig
-                            .getMatcherFactory().createMatcher(name, elementSource);
-                }
-                return Optional.empty();
-            }
+        MatcherFactory<R> propertiesMatcherFactory = (name, rateConfig) -> {
+            // If the name matches an element source (e.g class/method) name,
+            // then use the MatcherFactory for that element
+            // This means that if the a property has a name that matches
+            return elementCollector.get(name)
+                    .map(element -> RateConfig.of(element, rateConfig.getValue()))
+                    .flatMap(config ->
+                            resourceLimiterConfig.getMatcherFactory().createMatcher(name, config));
         };
+
+        // Annotation based comes before properties, so they can be overwritten by properties
+        //
+        new RegistrationHandler<>(
+                registries,
+                resourceLimiterConfig.getMatcherFactory(),
+                resourceLimiterConfig.getResourceLimiterFactory()
+        ).registerMatchersAndRateLimiters(annotationsRootNode);
 
         new RegistrationHandler<>(
                 registries,
                 propertiesMatcherFactory,
                 resourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(propertiesRootNode);
-
-        new RegistrationHandler<>(
-                registries,
-                resourceLimiterConfig.getMatcherFactory(),
-                resourceLimiterConfig.getResourceLimiterFactory()
-        ).registerMatchersAndRateLimiters(annotationsRootNode);
     }
 
     public boolean isRateLimited(Class<?> clazz) {

@@ -12,16 +12,16 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 import java.util.Optional;
 
-final class RegistrationHandler<R, S>{
+final class RegistrationHandler<R>{
 
     private static final Logger LOG = LoggerFactory.getLogger(RegistrationHandler.class);
 
     private final Registries<R> registries;
-    private final MatcherFactory<R, S> matcherFactory;
+    private final MatcherFactory<R> matcherFactory;
     private final ResourceLimiterFactory<Object> resourceLimiterFactory;
 
     RegistrationHandler(Registries<R> registries,
-                     MatcherFactory<R, S> matcherFactory,
+                     MatcherFactory<R> matcherFactory,
                      ResourceLimiterFactory<Object> resourceLimiterFactory) {
         this.registries = Objects.requireNonNull(registries);
         this.matcherFactory = Objects.requireNonNull(matcherFactory);
@@ -61,7 +61,7 @@ final class RegistrationHandler<R, S>{
         }
 
         if (!registries.matchers().get(nodeName).isPresent()) {
-            createMatcher(nodeName, rateConfig.getSource()).ifPresent(matcher -> {
+            createMatcher(nodeName, rateConfig).ifPresent(matcher -> {
                 registries.matchers().register(nodeName, matcher);
             });
         } else {
@@ -87,11 +87,11 @@ final class RegistrationHandler<R, S>{
                 rateConfig);
     }
 
-    private Optional<Matcher<R, ?>> createMatcher(String name, Object source) {
-        if (source == null) {
+    private Optional<Matcher<R, ?>> createMatcher(String name, RateConfig rateConfig) {
+        if (rateConfig == null) {
             return Optional.empty();
         }
-        return matcherFactory.createMatcher(name, (S)source);
+        return matcherFactory.createMatcher(name, rateConfig);
     }
 
     private Optional<ResourceLimiter<?>> createLimiter(String name, Rates rates) {
