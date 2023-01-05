@@ -1,50 +1,52 @@
 package com.looseboxes.ratelimiter.web.core;
 
-import com.looseboxes.ratelimiter.PatternMatchingResourceLimiter;
+import com.looseboxes.ratelimiter.MatchedResourceLimiter;
 import com.looseboxes.ratelimiter.ResourceLimiter;
+import com.looseboxes.ratelimiter.UsageListener;
 import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
 import com.looseboxes.ratelimiter.annotation.Element;
-import com.looseboxes.ratelimiter.annotation.NodeValue;
+import com.looseboxes.ratelimiter.annotation.ElementId;
+import com.looseboxes.ratelimiter.annotation.RateConfig;
+import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.Matcher;
-import com.looseboxes.ratelimiter.util.Rates;
+import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
-public abstract class AbstractResourceLimiterRegistry<R> {
+public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R> {
 
-    private static class NodeNamesCollector implements AnnotationProcessor.NodeConsumer<Rates> {
-        private Set<String> nodeNames;
-        @Override public void accept(Object source, Node<NodeValue<Rates>> node) {
-            if (nodeNames == null) {
-                nodeNames = new HashSet<>();
-            }
+    private static class NodeNamesCollector implements AnnotationProcessor.NodeConsumer {
+        private final Set<String> nodeNames = new HashSet<>();
+        @Override public void accept(Object source, Node<RateConfig> node) {
             nodeNames.add(node.getName());
         }
         public Set<String> getNodeNames() {
-            return nodeNames == null ? Collections.emptySet() : Collections.unmodifiableSet(nodeNames);
+            return Collections.unmodifiableSet(nodeNames);
         }
     }
 
-    private static class UniqueNameEnforcer implements AnnotationProcessor.NodeConsumer<Rates> {
+    private static class UniqueNameEnforcer implements AnnotationProcessor.NodeConsumer {
         private final Set<String> alreadyUsedNodeName;
         public UniqueNameEnforcer(Set<String> alreadyUsedNodeName) {
             this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
         }
-        @Override public void accept(Object source, Node<NodeValue<Rates>> node) {
-            if(node != null && alreadyUsedNodeName.contains(node.getName())) {
-                throw new IllegalStateException("Node name: " + node.getName() + ", already used at: " + source);
+        @Override public void accept(Object source, Node<RateConfig> node) {
+            if(!node.isEmpty() && alreadyUsedNodeName.contains(node.getName())) {
+                throw new IllegalStateException("Node name: " + node.getName() +
+                        ", already used at: " + source);
             }
         }
     }
 
-    private static class ElementCollector implements AnnotationProcessor.NodeConsumer<Rates> {
+    private static class ElementCollector implements AnnotationProcessor.NodeConsumer {
         private final Map<String, Element> nameToElementMap;
         public ElementCollector() {
             this.nameToElementMap = new HashMap<>();
         }
         @Override
-        public void accept(Object source, Node<NodeValue<Rates>> node) {
+        public void accept(Object source, Node<RateConfig> node) {
             if (source instanceof Element) {
                 Element element = (Element)source;
                 nameToElementMap.putIfAbsent(element.getId(), element);
@@ -55,60 +57,37 @@ public abstract class AbstractResourceLimiterRegistry<R> {
         }
     }
 
-    private static final class Registration<R> {
-        private final Node<NodeValue<Rates>> propertiesRootNode;
-        private final Node<NodeValue<Rates>> annotationsRootNode;
-        private Registration(
-                Node<NodeValue<Rates>> propertiesRootNode,
-                Node<NodeValue<Rates>> annotationsRootNode) {
-            this.propertiesRootNode = Objects.requireNonNull(propertiesRootNode);
-            this.annotationsRootNode = Objects.requireNonNull(annotationsRootNode);
-        }
-    }
+    private final RateLimitProperties properties;
+    private final Registries<R> registries;
+    private final Node<RateConfig> propertiesRootNode;
+    private final Node<RateConfig> annotationsRootNode;
 
-    private final WebResourceLimiterConfig<R> webResourceLimiterConfig;
+    protected AbstractResourceLimiterRegistry(ResourceLimiterConfig<R> resourceLimiterConfig) {
+        properties = resourceLimiterConfig.getProperties();
 
-    protected AbstractResourceLimiterRegistry(WebResourceLimiterConfig<R> webResourceLimiterConfig) {
-        this.webResourceLimiterConfig = Objects.requireNonNull(webResourceLimiterConfig);
-    }
+        registries = new DefaultRegistries<>(ResourceLimiter.noop(), Matcher.matchNone());
 
-    public ResourceLimiter<R> createResourceLimiter() {
+        resourceLimiterConfig.getConfigurer()
+                .ifPresent(configurer -> configurer.configure(registries));
 
-        Registration<R> registration = register();
-
-        ResourceLimiter<R> resourceLimiterForProperties = createRateLimiter(
-                webResourceLimiterConfig.getRegistries(), registration.propertiesRootNode, true
-        );
-
-        ResourceLimiter<R> resourceLimiterForAnnotations = createRateLimiter(
-                webResourceLimiterConfig.getRegistries(), registration.annotationsRootNode, false
-        );
-
-        return resourceLimiterForProperties.andThen(resourceLimiterForAnnotations);
-    }
-
-    public Registries<R> init() {
-        register();
-        return webResourceLimiterConfig.getRegistries();
-    }
-
-    private Registration<R> register() {
         NodeNamesCollector nodeNamesCollector = new NodeNamesCollector();
-        Node<NodeValue<Rates>> propertiesRootNode = webResourceLimiterConfig.getNodeBuilderForProperties()
-                .buildNode("root.properties", webResourceLimiterConfig.getProperties(), nodeNamesCollector);
+        propertiesRootNode = NodeBuilder.ofProperties()
+                .buildNode("root.properties", properties, nodeNamesCollector);
 
         UniqueNameEnforcer uniqueNameEnforcer = new UniqueNameEnforcer(nodeNamesCollector.getNodeNames());
         ElementCollector elementCollector = new ElementCollector();
-        AnnotationProcessor.NodeConsumer<Rates> consumer = uniqueNameEnforcer.andThen(elementCollector);
-        Node<NodeValue<Rates>> annotationsRootNode = webResourceLimiterConfig.getNodeBuilderForAnnotations()
-                .buildNode("root.annotations", webResourceLimiterConfig.getResourceClasses(), consumer);
-        register(propertiesRootNode, annotationsRootNode, elementCollector);
-        return new Registration<>(propertiesRootNode, annotationsRootNode);
+        AnnotationProcessor.NodeConsumer consumer = uniqueNameEnforcer.andThen(elementCollector);
+        annotationsRootNode = NodeBuilder.ofClasses(resourceLimiterConfig.getAnnotationProcessor())
+                .buildNode("root.annotations", resourceLimiterConfig.getResourceClasses(), consumer);
+
+        register(resourceLimiterConfig, propertiesRootNode, annotationsRootNode, elementCollector);
     }
 
-    private void register(Node<NodeValue<Rates>> propertiesRootNode,
-                               Node<NodeValue<Rates>> annotationsRootNode,
-                               ElementCollector elementCollector) {
+    private void register(
+            ResourceLimiterConfig<R> resourceLimiterConfig,
+            Node<RateConfig> propertiesRootNode,
+            Node<RateConfig> annotationsRootNode,
+            ElementCollector elementCollector) {
 
         MatcherFactory<R, Object> propertiesMatcherFactory = new MatcherFactory<R, Object>() {
             @Override
@@ -118,35 +97,88 @@ public abstract class AbstractResourceLimiterRegistry<R> {
                 // This means that if the a property has a name that matches
                 Element elementSource = elementCollector.getElement(name);
                 if (elementSource != null) {
-                    return webResourceLimiterConfig.getMatcherFactory().createMatcher(name, elementSource);
+                    return resourceLimiterConfig
+                            .getMatcherFactory().createMatcher(name, elementSource);
                 }
                 return Optional.empty();
             }
         };
 
         new RegistrationHandler<>(
-                webResourceLimiterConfig.getRegistries(),
+                registries,
                 propertiesMatcherFactory,
-                webResourceLimiterConfig.getResourceLimiterFactory()
+                resourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(propertiesRootNode);
 
         new RegistrationHandler<>(
-                webResourceLimiterConfig.getRegistries(),
-                webResourceLimiterConfig.getMatcherFactory(),
-                webResourceLimiterConfig.getResourceLimiterFactory()
+                registries,
+                resourceLimiterConfig.getMatcherFactory(),
+                resourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(annotationsRootNode);
     }
 
-    private ResourceLimiter<R> createRateLimiter(
-            Registries<R> registries, Node<NodeValue<Rates>> rootNode, boolean firstMatchOnly) {
+    public boolean isRateLimited(Class<?> clazz) {
+        return isRateLimited(ElementId.of(clazz));
+    }
 
-        PatternMatchingResourceLimiter.MatcherProvider<Rates, R> matcherProvider =
-                node -> registries.matchers().getOrDefault(node.getName());
+    public boolean isRateLimited(Method method) {
+        return isRateLimited(ElementId.of(method));
+    }
 
-        PatternMatchingResourceLimiter.LimiterProvider<Rates> limiterProvider =
-                node -> registries.limiters().getOrDefault(node.getName());
+    public boolean isRateLimited(String id) {
+        return propertiesRootNode.findFirstChild(node -> node.getName().equals(id)).isPresent()
+                || annotationsRootNode.findFirstChild(node -> node.getName().equals(id)).isPresent();
+    }
 
-        return new PatternMatchingResourceLimiter<>(
-                matcherProvider, limiterProvider, rootNode, firstMatchOnly);
+    public ResourceLimiter<R> createResourceLimiter() {
+
+        MatchedResourceLimiter.MatcherProvider<R> matcherProvider = node -> {
+            if (isRateLimitingEnabled()) {
+                return registries.matchers().getOrDefault(node.getName());
+            }
+            return Matcher.matchNone();
+        };
+
+        MatchedResourceLimiter.LimiterProvider limiterProvider = node -> {
+            if (isRateLimitingEnabled()) {
+                return registries.limiters().getOrDefault(node.getName());
+            }
+            return ResourceLimiter.noop();
+        };
+
+        ResourceLimiter<R> limiterForProperties = MatchedResourceLimiter.ofProperties(
+                matcherProvider, limiterProvider, propertiesRootNode
+        );
+
+        ResourceLimiter<R> limiterForAnnotations = MatchedResourceLimiter.ofAnnotations(
+                matcherProvider, limiterProvider, annotationsRootNode
+        );
+
+        return limiterForProperties.andThen(limiterForAnnotations);
+    }
+
+    public boolean isRateLimitingEnabled() {
+        final Boolean disabled = properties().getDisabled();
+        return disabled == null || Boolean.FALSE.equals(disabled);
+    }
+
+    public RateLimitProperties properties() {
+        return properties;
+    }
+
+    @Override public Registry<ResourceLimiter<?>> limiters() {
+        return registries.limiters();
+    }
+
+    @Override public Registry<Matcher<R, ?>> matchers() {
+        return registries.matchers();
+    }
+
+    @Override public <K> Registry<RateCache<K>> caches() {
+        return registries.caches();
+    }
+
+    @Override public Registry<UsageListener> listeners() {
+        return registries.listeners();
     }
 }

@@ -1,7 +1,7 @@
 package com.looseboxes.ratelimiter.web.core;
 
 import com.looseboxes.ratelimiter.*;
-import com.looseboxes.ratelimiter.annotation.NodeValue;
+import com.looseboxes.ratelimiter.annotation.RateConfig;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Matcher;
@@ -28,7 +28,7 @@ final class RegistrationHandler<R, S>{
         this.resourceLimiterFactory = Objects.requireNonNull(resourceLimiterFactory);
     }
 
-    public void registerMatchersAndRateLimiters(Node<NodeValue<Rates>> root) {
+    public void registerMatchersAndRateLimiters(Node<RateConfig> root) {
 
         root.visitAll(node -> {
             node.getValueOptional().ifPresent(nodeValue -> {
@@ -42,15 +42,15 @@ final class RegistrationHandler<R, S>{
     }
 
     private void registerMatcherAndRateLimiter(
-            Node<NodeValue<Rates>> root, String nodeName, NodeValue<Rates> nodeValue) {
+            Node<RateConfig> root, String nodeName, RateConfig rateConfig) {
 
-        if (isEqual(root, nodeName, nodeValue)) {
+        if (isEqual(root, nodeName, rateConfig)) {
             noop(nodeName);
         }
 
-        final Rates rates = nodeValue.getValue();
+        final Rates rates = rateConfig.getValue();
 
-        // One method with 3 @RateLimit annotations is a simple group (not really a group)
+        // One method with 3 @Rate annotations is a simple group (not really a group)
         // A true group spans either multiple methods/classes
         if(!rates.hasLimits()) { // This is a group node
 
@@ -60,15 +60,21 @@ final class RegistrationHandler<R, S>{
             noop(nodeName);
         }
 
-        createMatcher(nodeName, nodeValue.getSource())
-                .ifPresent(matcher -> registries.matchers().register(nodeName, matcher));
+        if (!registries.matchers().get(nodeName).isPresent()) {
+            createMatcher(nodeName, rateConfig.getSource()).ifPresent(matcher -> {
+                registries.matchers().register(nodeName, matcher);
+            });
+        } else {
+            LOG.debug("Found existing matcher for {}", nodeName);
+        }
 
-        ResourceLimiter<Object> resourceLimiter = resourceLimiterFactory
-                .createNew(rates)
-                .cache(registries.caches().getOrDefault(nodeName))
-                .listener(registries.listeners().getOrDefault(nodeName));
-
-        registries.limiters().register(nodeName, resourceLimiter);
+        if (!registries.limiters().get(nodeName).isPresent()) {
+            createLimiter(nodeName, rateConfig.getValue()).ifPresent(limiter -> {
+                registries.limiters().register(nodeName, limiter);
+            });
+        } else {
+            LOG.debug("Found existing limiter for {}", nodeName);
+        }
     }
 
     private void noop(String nodeName) {
@@ -76,22 +82,29 @@ final class RegistrationHandler<R, S>{
         registries.limiters().register(nodeName, ResourceLimiter.noop());
     }
 
-    private boolean isEqual(Node<NodeValue<Rates>> node, String name, NodeValue<Rates> nodeValue) {
-        return Objects.equals(node.getName(), name) && Objects.equals(node.getValueOrDefault(null), nodeValue);
+    private boolean isEqual(Node<RateConfig> node, String name, RateConfig rateConfig) {
+        return Objects.equals(node.getName(), name) && Objects.equals(node.getValueOrDefault(null),
+                rateConfig);
     }
 
     private Optional<Matcher<R, ?>> createMatcher(String name, Object source) {
         if (source == null) {
             return Optional.empty();
         }
-        Matcher<R, ?> registeredMatcher = registries.matchers().getOrDefault(name, null);
-        if (registeredMatcher == null) {
-            return matcherFactory.createMatcher(name, (S)source);
-        }
-        Matcher<R, ?> createdMatcher = matcherFactory.createMatcher(name, (S)source).orElse(null);
-        if (createdMatcher == null) {
+        return matcherFactory.createMatcher(name, (S)source);
+    }
+
+    private Optional<ResourceLimiter<?>> createLimiter(String name, Rates rates) {
+        if (rates == null) {
             return Optional.empty();
         }
-        return Optional.of(registeredMatcher.andThen((Matcher)createdMatcher));
+        ResourceLimiter<Object> resourceLimiter = resourceLimiterFactory.createNew(rates);
+        if (resourceLimiter == null) {
+            return Optional.empty();
+        }
+        resourceLimiter = resourceLimiter
+                .cache(registries.caches().getOrDefault(name))
+                .listener(registries.listeners().getOrDefault(name));
+        return Optional.of(resourceLimiter);
     }
 }

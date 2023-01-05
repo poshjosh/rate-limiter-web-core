@@ -1,9 +1,15 @@
 package com.looseboxes.ratelimiter.web.core;
 
+import java.util.Optional;
+
 public interface Registry<T> {
 
     static <T> Registry<T> of(T defaultInstance) {
         return new SimpleRegistry<>(defaultInstance);
+    }
+
+    default Optional<T> get(String name) {
+        return Optional.ofNullable(getOrDefault(name, null));
     }
 
     default T getOrDefault(String name) {

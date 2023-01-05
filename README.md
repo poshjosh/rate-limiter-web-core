@@ -18,7 +18,8 @@ __Annotate the resource you want to rate imit__
 class GreetingResource {
 
   // Only 99 calls to this path is allowed per minute
-  @RateLimitGroup("limitBySession")
+  @RateGroup("limitBySession")
+  @Rate(permits = 99, timeUnit = TimeUnit.MINUTES)
   @GetMapping("/greet")
   String greet(String name) {
     return "Hello " + name;
@@ -80,21 +81,21 @@ public class RateLimiterConfigurerImpl
 
 Please first read the [annotation specs](https://github.com/poshjosh/rate-limiter-annotation/blob/main/docs/ANNOTATION_SPECS.md). It is concise.
 
-The `@RateLimit` and `@RateLimitGroup` annotations are bound to paths.
+The `@Rate` and `@RateGroup` annotations are bound to paths.
 
 For the specification of these annotations, please read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
 In addition, the following applies:
 
-- The `@RateLimit` annotation must be placed together with path related annotations e.g:
+- The `@Rate` annotation must be placed together with path related annotations e.g:
   Springframeworks's `@RequestMapping`, `@Get` etc or JAX-RS `@Path` etc
 
-- The `@RateLimit` annotation is bound to the path with which it is co-located, not the resource.
-  This means that the `@RateLimit` annotation below will match all request paths beginning with `/api/v1`
+- The `@Rate` annotation is bound to the path with which it is co-located, not the resource.
+  This means that the `@Rate` annotation below will match all request paths beginning with `/api/v1`
   even those paths specified on other resources and methods.
 
 ```java
 @Path("/api/v1")
-@RateLimit(limit = 20, duration = 1, timeUnit = TimeUnit.MINUTES)
+@Rate(limit = 20, duration = 1, timeUnit = TimeUnit.MINUTES)
 class RateLimitedResource{
     
 }
@@ -105,7 +106,7 @@ class RateLimitedResource{
 A `RequestMatcher` may be registered using either a class name, a method name, or a string name.
 When a string name is used, it should match one of the following:
 
-- __A group__ - The name of a `@RateLimitGroup` annotation.
+- __A group__ - The name of a `@RateGroup` annotation.
 - __A class__ - The fully qualified name of a class e.g: `com.example.web.resources.GreetingResource`
 - __A method__ - The identifier of a method eg: `com.example.web.resources.GreetingResource.greet(java.lang.String)`
 - __A property__ - One of the keys in the `Map` returned by `RateLimitProperties#getRateLimitConfigs()`
@@ -125,7 +126,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
 
   @Override
   public Map<String, Rates> getRateLimitConfigs() {
-    return Collections.singletonMap("default", Rates.of(Rate.of(10, Duration.ofMinutes(1))));
+    return Collections.singletonMap("default", Rates.of(Rate.ofMinutes(10)));
   }
 }
 ```
@@ -137,7 +138,7 @@ with `IdProvider.ofMethod()`.
 ```java
 public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer<HttpServletRequest> {
 
-    private final String resourceId = IdProvider.ofClass().getId(MyRateLimitedResource.class);
+    private final String resourceId = ElementId.of(MyRateLimitedResource.class);
     
     @Override
     public void configure(Registries<HttpServletRequest> registries) {
@@ -151,7 +152,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
 
     @Override
     public Map<String, Rates> getRateLimitConfigs() {
-        return Collections.singletonMap(resourceId, Rates.of(Rate.of(10, Duration.ofMinutes(1))));
+        return Collections.singletonMap(resourceId, Rates.of(Rate.ofMinutes(10)));
     }
 }
 ```
@@ -160,7 +161,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
 
 There are 2 ways to rate limit a web application:
 
-### 1. Use the `@RateLimit` and/or `@RateLimitGroup` annotation
+### 1. Use the `@Rate` and/or `@RateGroup` annotation
 
 __Example using Springframework__
 
