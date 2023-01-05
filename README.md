@@ -95,7 +95,7 @@ In addition, the following applies:
 
 ```java
 @Path("/api/v1")
-@Rate(limit = 20, duration = 1, timeUnit = TimeUnit.MINUTES)
+@Rate(limit = 20, timeUnit = TimeUnit.MINUTES)
 class RateLimitedResource{
     
 }
