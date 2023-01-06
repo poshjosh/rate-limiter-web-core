@@ -27,9 +27,9 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
         }
     }
 
-    private static class UniqueNameEnforcer implements AnnotationProcessor.NodeConsumer {
+    private static class UniqueIdEnforcer implements AnnotationProcessor.NodeConsumer {
         private final Set<String> alreadyUsedNodeName;
-        public UniqueNameEnforcer(Set<String> alreadyUsedNodeName) {
+        public UniqueIdEnforcer(Set<String> alreadyUsedNodeName) {
             this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
         }
         @Override public void accept(Object source, Node<RateConfig> node) {
@@ -49,7 +49,6 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
         public void accept(Object source, Node<RateConfig> node) {
             if (source instanceof Element) {
                 Element element = (Element)source;
-                System.out.println("AbstractResourceLimiterRegistry collecting element " + element);
                 nameToElementMap.putIfAbsent(element.getId(), element);
             }
         }
@@ -66,7 +65,9 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
     protected AbstractResourceLimiterRegistry(ResourceLimiterConfig<R> resourceLimiterConfig) {
         properties = resourceLimiterConfig.getProperties();
 
-        registries = new DefaultRegistries<>(ResourceLimiter.noop(), Matcher.matchNone());
+        registries = new DefaultRegistries<>(
+                ResourceLimiter.noop(), Matcher.matchNone(),
+                RateCache.ofMap(), UsageListener.NO_OP);
 
         resourceLimiterConfig.getConfigurer()
                 .ifPresent(configurer -> configurer.configure(registries));
@@ -75,9 +76,9 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
         propertiesRootNode = NodeBuilder.ofProperties()
                 .buildNode("root.properties", properties, nodeNamesCollector);
 
-        UniqueNameEnforcer uniqueNameEnforcer = new UniqueNameEnforcer(nodeNamesCollector.getNodeNames());
+        UniqueIdEnforcer uniqueIdEnforcer = new UniqueIdEnforcer(nodeNamesCollector.getNodeNames());
         ElementCollector elementCollector = new ElementCollector();
-        AnnotationProcessor.NodeConsumer consumer = uniqueNameEnforcer.andThen(elementCollector);
+        AnnotationProcessor.NodeConsumer consumer = uniqueIdEnforcer.andThen(elementCollector);
         annotationsRootNode = NodeBuilder.ofClasses(resourceLimiterConfig.getAnnotationProcessor())
                 .buildNode("root.annotations", resourceLimiterConfig.getResourceClasses(), consumer);
 
@@ -172,7 +173,7 @@ public abstract class AbstractResourceLimiterRegistry<R> implements Registries<R
         return registries.matchers();
     }
 
-    @Override public <K> Registry<RateCache<K>> caches() {
+    @Override public Registry<RateCache<?>> caches() {
         return registries.caches();
     }
 

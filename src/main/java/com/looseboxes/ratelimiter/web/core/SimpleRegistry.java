@@ -36,4 +36,9 @@ final class SimpleRegistry<T> implements Registry<T> {
     Map<String, T> getRegistered() {
         return registered;
     }
+
+    @Override public String toString() {
+        return "SimpleRegistry{" + "registered=" + registered.keySet() +
+                ", defaultInstance=" + defaultInstance + '}';
+    }
 }
