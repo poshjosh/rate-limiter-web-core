@@ -30,50 +30,50 @@ class GreetingResource {
 __Configure rate limiting__
 
 ```java
-package com.looseboxes.ratelimiter.web.spring;
+package io.github.poshjosh.web.spring;
 
 import JavaRateCache;
-import com.looseboxes.ratelimiter.web.core.Registries;
-import com.looseboxes.ratelimiter.web.core.ResourceLimiterConfigurer;
+import Registries;
+import ResourceLimiterConfigurer;
 import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Configuration
-public class RateLimiterConfigurerImpl
+@Configuration public class RateLimiterConfigurerImpl
         implements ResourceLimiterConfigurer<HttpServletRequest> {
 
-  @Override
-  public void configure(Registries<HttpServletRequest> registries) {
+    @Override public void configure(Registries<HttpServletRequest> registries) {
 
-    // Register consumption listeners
-    // ------------------------------
+        // Register consumption listeners
+        // ------------------------------
 
-    registries.listeners().register((context, resourceId, hits, limit) -> {
+        registries.listeners().register((context, resourceId, hits, limit) -> {
 
-      // For example, log the limit that was exceeded
-      System.out.println("For " + resourceId + ", the following limits are exceeded: " + limit);
-    });
+            // For example, log the limit that was exceeded
+            System.out
+                    .println("For " + resourceId + ", the following limits are exceeded: " + limit);
+        });
 
-    // Register request matchers
-    // -------------------------
+        // Register request matchers
+        // -------------------------
 
-    // Identify resources to rate-limit by session id
-    registries.matchers().register("limitBySession", request -> request.getSession().getId());
+        // Identify resources to rate-limit by session id
+        registries.matchers().register("limitBySession", request -> request.getSession().getId());
 
-    // Identify resources to rate-limit by the presence of request parameter "utm_source"
-    registries.matchers().register("limitByUtmSource", request -> request.getParameter("utm_source"));
+        // Identify resources to rate-limit by the presence of request parameter "utm_source"
+        registries.matchers()
+                .register("limitByUtmSource", request -> request.getParameter("utm_source"));
 
-    // Rate limit users from a specific utm_source e.g facebook
-    registries.matchers().register("limitByUtmSourceIsFacebook",
-            request -> "facebook".equals(request.getParameter("utm_source")));
+        // Rate limit users from a specific utm_source e.g facebook
+        registries.matchers().register("limitByUtmSourceIsFacebook",
+                request -> "facebook".equals(request.getParameter("utm_source")));
 
-    // You could use a variety of Cache flavours
-    // -----------------------------------------
+        // You could use a variety of Cache flavours
+        // -----------------------------------------
 
-    javax.cache.Cache javaxCache = null; // PROVIDE THIS
-    registries.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
-  }
+        javax.cache.Cache javaxCache = null; // PROVIDE THIS
+        registries.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
+    }
 }
 ```
 
@@ -205,7 +205,7 @@ Example class that implements the required properties.
 ```java
 package com.example.web;
 
-import com.looseboxes.ratelimiter.web.core.util.RateLimitProperties;
+import RateLimitProperties;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -214,20 +214,17 @@ import java.util.Map;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-  @Override
-  public List<String> getResourcePackages() {
-    return Collections.singletonList("com.example.web.resources");
-  }
+    @Override public List<String> getResourcePackages() {
+        return Collections.singletonList("com.example.web.resources");
+    }
 
-  @Override
-  public Map<String, Rates> getRateLimitConfigs() {
-    return Collections
-            .singletonMap("limitBySession", Rates.of(getRates()));
-  }
+    @Override public Map<String, Rates> getRateLimitConfigs() {
+        return Collections.singletonMap("limitBySession", Rates.of(getRates()));
+    }
 
-  private Rate[] getRates() {
-    return new Rate[]{Rate.of(1, Duration.ofMinutes(1))};
-  }
+    private Rate[] getRates() {
+        return new Rate[] { Rate.of(1, Duration.ofMinutes(1)) };
+    }
 }
 ```
 
