@@ -4,13 +4,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class SimpleRegistry<T> implements Registry<T> {
+final class DefaultRegistry<T> implements Registry<T> {
 
     private final Map<String, T> registered;
 
     private T defaultInstance;
 
-    SimpleRegistry(T defaultInstance) {
+    DefaultRegistry(T defaultInstance) {
         this.registered = new ConcurrentHashMap<>();
         this.defaultInstance = Objects.requireNonNull(defaultInstance);
     }
@@ -33,12 +33,8 @@ final class SimpleRegistry<T> implements Registry<T> {
         return this.defaultInstance;
     }
 
-    Map<String, T> getRegistered() {
-        return registered;
-    }
-
     @Override public String toString() {
-        return "SimpleRegistry{" + "registered=" + registered.keySet() +
+        return "DefaultRegistry{" + "registered=" + registered.keySet() +
                 ", defaultInstance=" + defaultInstance + '}';
     }
 }

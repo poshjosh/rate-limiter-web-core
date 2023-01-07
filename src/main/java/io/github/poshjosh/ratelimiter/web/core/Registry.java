@@ -1,24 +1,21 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import java.util.Optional;
-
-public interface Registry<T> {
+public interface Registry<T> extends UnmodifiableRegistry<T> {
 
     static <T> Registry<T> of(T defaultInstance) {
-        return new SimpleRegistry<>(defaultInstance);
+        return new DefaultRegistry<>(defaultInstance);
     }
 
-    default Optional<T> get(String name) {
-        return Optional.ofNullable(getOrDefault(name, null));
+    static <T> UnmodifiableRegistry<T> unmodifiable(Registry<T> registry) {
+        return new UnmodifiableRegistry<T>() {
+            @Override public T getOrDefault(String name, T resultIfNone) {
+                return registry.getOrDefault(name, resultIfNone);
+            }
+            @Override public T getDefault() {
+                return registry.getDefault();
+            }
+        };
     }
-
-    default T getOrDefault(String name) {
-        return getOrDefault(name, getDefault());
-    }
-
-    T getOrDefault(String name, T resultIfNone);
-
-    T getDefault();
 
     Registry<T> register(T what);
 

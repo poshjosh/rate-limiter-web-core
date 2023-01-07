@@ -63,9 +63,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
     DefaultResourceLimiterRegistry(ResourceLimiterConfig<R> resourceLimiterConfig) {
         properties = resourceLimiterConfig.getProperties();
 
-        registries = new DefaultRegistries<>(
-                ResourceLimiter.noop(), Matcher.matchNone(),
-                RateCache.ofMap(), UsageListener.NO_OP);
+        registries = Registries.ofDefaults();
 
         resourceLimiterConfig.getConfigurer()
                 .ifPresent(configurer -> configurer.configure(registries));
@@ -150,19 +148,19 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         return properties;
     }
 
-    @Override public Registry<ResourceLimiter<?>> limiters() {
-        return registries.limiters();
+    @Override public UnmodifiableRegistry<ResourceLimiter<?>> limiters() {
+        return Registry.unmodifiable(registries.limiters());
     }
 
-    @Override public Registry<Matcher<R, ?>> matchers() {
-        return registries.matchers();
+    @Override public UnmodifiableRegistry<Matcher<R, ?>> matchers() {
+        return Registry.unmodifiable(registries.matchers());
     }
 
-    @Override public Registry<RateCache<?>> caches() {
-        return registries.caches();
+    @Override public UnmodifiableRegistry<RateCache<?>> caches() {
+        return Registry.unmodifiable(registries.caches());
     }
 
-    @Override public Registry<UsageListener> listeners() {
-        return registries.listeners();
+    @Override public UnmodifiableRegistry<UsageListener> listeners() {
+        return Registry.unmodifiable(registries.listeners());
     }
 }

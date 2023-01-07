@@ -1,12 +1,15 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
+import io.github.poshjosh.ratelimiter.cache.RateCache;
+import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.lang.reflect.Method;
 
-public interface ResourceLimiterRegistry<R> extends Registries<R> {
+public interface ResourceLimiterRegistry<R> {
 
     static <R> ResourceLimiterRegistry<R> ofDefaults() {
         return of(ResourceLimiterConfig.<R>builder().build());
@@ -34,4 +37,12 @@ public interface ResourceLimiterRegistry<R> extends Registries<R> {
         final Boolean disabled = properties().getDisabled();
         return disabled == null || Boolean.FALSE.equals(disabled);
     }
+
+    UnmodifiableRegistry<ResourceLimiter<?>> limiters();
+
+    UnmodifiableRegistry<Matcher<R, ?>> matchers();
+
+    UnmodifiableRegistry<RateCache<?>> caches();
+
+    UnmodifiableRegistry<UsageListener> listeners();
 }
