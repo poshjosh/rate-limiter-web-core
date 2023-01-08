@@ -5,10 +5,25 @@ Light-weight rate limiting library for java web apps, based on
 
 Please first read the [rate-limiter-annotation documentation](https://github.com/poshjosh/rate-limiter-annotation).
 
+Some custom implementations:
+
+- [rate-limiter-spring](https://github.com/poshjosh/rate-limiter-spring).
+
+- [rate-limiter-javaee](https://github.com/poshjosh/rate-limiter-javaee).
+
+To add a dependency on `rate-limiter-web-core` using Maven, use the following:
+
+```xml
+        <dependency>
+            <groupId>io.github.poshjosh</groupId>
+            <artifactId>rate-limiter-web-core</artifactId>
+            <version>0.2.0</version> 
+        </dependency>
+```
 
 ## Quick Start
 
-__Annotate the resource you want to rate imit__
+__Annotate the resource you want to rate limit__
 
 ```java
 
@@ -17,8 +32,17 @@ __Annotate the resource you want to rate imit__
 @RequestMapping("/api")
 class GreetingResource {
 
-  // Only 99 calls to this path is allowed per minute
+  // 2 calls per second for users in role GUEST
+  @Rate(2)
+  @RateRequestIf(matchType = MatchType.USER_ROLE, values = "GUEST")
+  @GetMapping("/smile")
+  String smile() {
+    return ":)";
+  }
+
+  // We can collectively configure RateLimiters by adding them to a group  
   @RateGroup("limitBySession")
+  // Only 99 calls to this path is allowed per minute
   @Rate(permits = 99, timeUnit = TimeUnit.MINUTES)
   @GetMapping("/greet")
   String greet(String name) {
@@ -39,13 +63,15 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
-@Configuration public class RateLimiterConfigurerImpl
+@Configuration 
+public class RateLimiterConfigurerImpl
         implements ResourceLimiterConfigurer<HttpServletRequest> {
 
-    @Override public void configure(Registries<HttpServletRequest> registries) {
+    @Override 
+    public void configure(Registries<HttpServletRequest> registries) {
 
-        // Register consumption listeners
-        // ------------------------------
+        // Register usage listeners
+        // ------------------------
 
         registries.listeners().register((context, resourceId, hits, limit) -> {
 
@@ -159,7 +185,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
 
 ## Ways and Means
 
-There are 2 ways to rate limit a web application:
+There are 2 ways to rate limit a web application (You could use both):
 
 ### 1. Use the `@Rate` and/or `@RateGroup` annotation
 
@@ -172,7 +198,8 @@ __Example using Springframework__
 @RequestMapping("/api")
 class GreetingResource {
 
-  // Only 99 calls to this path is allowed per minute
+  // Only 99 calls to this path is allowed per second
+  @Rate(99)
   @GetMapping("/greet")
   String greet() {
     return "Hello World!";
@@ -188,7 +215,8 @@ __Example using JAX-RS__
 @Path("/api")
 class GreetingResource {
 
-  // Only 99 calls to this path is allowed per minute
+  // Only 99 calls to this path is allowed per second
+  @Rate(99)
   @GET
   @Path("/greet")
   @Produces("text/plan")
