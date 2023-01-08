@@ -32,7 +32,7 @@ public class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>> 
 
     @Override
     public boolean matches(R request) {
-        String uri = requestToUriConverter.convert(request);
+        String uri = requestToUriConverter.toId(request);
         return pathPatterns.matches(uri);
     }
 

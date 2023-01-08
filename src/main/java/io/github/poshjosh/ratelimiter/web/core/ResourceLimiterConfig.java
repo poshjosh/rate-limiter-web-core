@@ -23,8 +23,7 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
         Builder<REQUEST> configurer(ResourceLimiterConfigurer<REQUEST> configurer);
 
-        Builder<REQUEST> requestToIdConverter(
-                RequestToIdConverter<REQUEST, String> requestToIdConverter);
+        Builder<REQUEST> requestMatcherFactory(RequestMatcherFactory<REQUEST> requestMatcherFactory);
 
         Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
 

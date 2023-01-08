@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.web.core.annotation.RequestRateAnnotationConverter;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
@@ -22,7 +23,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
         private RateLimitProperties properties;
         private ResourceLimiterConfigurer<T> configurer;
-        private RequestToIdConverter<T, String> requestToIdConverter;
+        private RequestMatcherFactory<T> requestMatcherFactory;
         private PathPatternsProvider pathPatternsProvider;
         private MatcherFactory<T> matcherFactory;
         private ResourceLimiterFactory<Object> resourceLimiterFactory;
@@ -83,12 +84,12 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             classesInPackageFinder(ClassesInPackageFinder.ofDefaults());
         }
         if (configuration.annotationProcessor == null) {
-            annotationProcessor(AnnotationProcessor.ofDefaults());
+            annotationProcessor(AnnotationProcessor.of(new RequestRateAnnotationConverter()));
         }
 
         if (configuration.matcherFactory == null) {
             matcherFactory(new DefaultMatcherFactory<>(
-                    configuration.pathPatternsProvider, configuration.requestToIdConverter));
+                    configuration.pathPatternsProvider, configuration.requestMatcherFactory));
         }
 
         configuration.resourceClassesSupplier = () -> configuration.classesInPackageFinder.findClasses(configuration.properties.getResourcePackages());
@@ -108,9 +109,9 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> requestToIdConverter(
-            RequestToIdConverter<REQUEST, String> requestToIdConverter) {
-        configuration.requestToIdConverter = requestToIdConverter;
+    @Override public ResourceLimiterConfig.Builder<REQUEST> requestMatcherFactory(
+            RequestMatcherFactory<REQUEST> requestMatcherFactory) {
+        configuration.requestMatcherFactory = requestMatcherFactory;
         return this;
     }
 
