@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.2.0](https://github.com/poshjosh/rate-limiter-web-core/tree/v0.2.0) ] - 2023-01-08
+
+### Added
+
+- Implement matching of requests via annotation `@RateRequestIf`
+- Implement and use `UnmodifiableRegistry`
+- Add alias `value` as alias for `permits` property in `@Rate`
+
+### Changed
+
+- Rename package `com.looseboxes` to `io.github.poshjosh`
+- Update README
+- Move `@Rate` and `@RateGroup` from package `ratelimiter.annotations` to `ratelimiter.annotation`
+
+### Removed
+
+- Remove methods `RateCache.cache` and `RateCache.listener`
+
 ## [ [0.1.0](https://github.com/poshjosh/rate-limiter-web-core/tree/v0.1.0) ] - 2023-01-07
 
 ### Added
