@@ -1,16 +1,19 @@
-package io.github.poshjosh.ratelimiter.web.core.annotation;
+package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
 import io.github.poshjosh.ratelimiter.annotation.Element;
 import io.github.poshjosh.ratelimiter.annotation.Rate;
 import io.github.poshjosh.ratelimiter.annotation.RateGroup;
 import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.web.core.annotation.RateRequestIf;
 import io.github.poshjosh.ratelimiter.web.core.util.MatchConfig;
 import io.github.poshjosh.ratelimiter.web.core.util.RequestRates;
 
-public final class RequestRateAnnotationConverter implements AnnotationConverter<Rate, Rates> {
+final class RequestRateAnnotationConverter implements AnnotationConverter<Rate, Rates> {
 
     private final AnnotationConverter<Rate, Rates> delegate = AnnotationConverter.ofRate();
+
+    RequestRateAnnotationConverter() { }
 
     @Override
     public Class<Rate> getAnnotationType() {
@@ -23,7 +26,7 @@ public final class RequestRateAnnotationConverter implements AnnotationConverter
         return RequestRates.of(rates, getMatchConfig(element));
     }
 
-    public MatchConfig getMatchConfig(Element element) {
+    private MatchConfig getMatchConfig(Element element) {
         return element.getAnnotation(RateRequestIf.class)
                 .map(annotation -> {
                     MatchConfig matchConfig = new MatchConfig();

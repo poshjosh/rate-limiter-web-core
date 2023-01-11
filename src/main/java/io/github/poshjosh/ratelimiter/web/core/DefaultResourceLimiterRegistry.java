@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.MatchedResourceLimiter;
+import io.github.poshjosh.ratelimiter.ResourceLimiterComposition;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
@@ -31,7 +31,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
             this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
         }
         @Override public void accept(Object source, Node<RateConfig> node) {
-            if(!node.isEmpty() && alreadyUsedNodeName.contains(node.getName())) {
+            if(!node.isEmptyNode() && alreadyUsedNodeName.contains(node.getName())) {
                 throw new IllegalStateException("Node name: " + node.getName() +
                         ", already used at: " + source);
             }
@@ -119,25 +119,25 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
 
     public ResourceLimiter<R> createResourceLimiter() {
 
-        MatchedResourceLimiter.MatcherProvider<R> matcherProvider = node -> {
+        ResourceLimiterComposition.MatcherProvider<R> matcherProvider = node -> {
             if (isRateLimitingEnabled()) {
                 return registries.matchers().getOrDefault(node.getName());
             }
             return Matcher.matchNone();
         };
 
-        MatchedResourceLimiter.LimiterProvider limiterProvider = node -> {
+        ResourceLimiterComposition.LimiterProvider limiterProvider = node -> {
             if (isRateLimitingEnabled()) {
                 return registries.limiters().getOrDefault(node.getName());
             }
             return ResourceLimiter.noop();
         };
 
-        ResourceLimiter<R> limiterForProperties = MatchedResourceLimiter.ofProperties(
+        ResourceLimiter<R> limiterForProperties = ResourceLimiterComposition.ofProperties(
                 matcherProvider, limiterProvider, propertiesRootNode
         );
 
-        ResourceLimiter<R> limiterForAnnotations = MatchedResourceLimiter.ofAnnotations(
+        ResourceLimiter<R> limiterForAnnotations = ResourceLimiterComposition.ofAnnotations(
                 matcherProvider, limiterProvider, annotationsRootNode
         );
 

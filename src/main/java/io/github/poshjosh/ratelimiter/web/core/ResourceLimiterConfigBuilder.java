@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
-import io.github.poshjosh.ratelimiter.web.core.annotation.RequestRateAnnotationConverter;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
@@ -59,6 +58,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
     private static final class DefaultRateLimitProperties implements RateLimitProperties {
         private DefaultRateLimitProperties() { }
+        @Override public List<Class<?>> getResourceClasses() { return Collections.emptyList(); }
         @Override public List<String> getResourcePackages() {
             return Collections.emptyList();
         }
@@ -92,7 +92,10 @@ final class ResourceLimiterConfigBuilder<REQUEST>
                     configuration.pathPatternsProvider, configuration.requestMatcherFactory));
         }
 
-        configuration.resourceClassesSupplier = () -> configuration.classesInPackageFinder.findClasses(configuration.properties.getResourcePackages());
+        configuration.resourceClassesSupplier = () -> {
+            return configuration.classesInPackageFinder
+                    .findClasses(configuration.properties.getResourcePackages());
+        };
 
         return configuration;
     }

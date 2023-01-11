@@ -8,16 +8,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The class allows for the customization of a {@link ResourceLimiter} via properties.
+ * The class allows for the customization of {@link ResourceLimiter}s via properties.
  * The properties defined here will be used to create a {@link ResourceLimiter} independent
  * of those created from the various {@link Rate} annotations.
  */
 public interface RateLimitProperties {
 
     /**
-     * If using annotations, you have to specify the list packages where resources containing
-     * rate-limit related annotations should be scanned for.
+     * List of classes to search for resources annotated with rate limit related annotations.
      *
+     * If using annotations, implement either this, {@link #getResourcePackages()}, or both.
+     * If not using annotations, simply return an empty list.
+     *
+     * @return the packages containing resources having rate-limit related annotations.
+     */
+    List<Class<?>> getResourceClasses();
+
+    /**
+     * List of packages to search for resources annotated with rate limit related annotations.
+     *
+     * If using annotations, implement either this, {@link #getResourceClasses()}, or both.
      * If not using annotations, simply return an empty list.
      *
      * @return the packages containing resources having rate-limit related annotations.
