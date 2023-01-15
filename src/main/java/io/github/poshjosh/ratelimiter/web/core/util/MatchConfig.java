@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public final class MatchConfig {
 
-    private MatchType matchType = MatchType.NOOP;
+    private MatchType matchType = MatchType.NO_OP;
 
     private String name = "";
 

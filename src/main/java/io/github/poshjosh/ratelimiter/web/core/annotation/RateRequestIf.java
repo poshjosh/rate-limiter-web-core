@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Target({ ElementType.TYPE, ElementType.METHOD})
 public @interface RateRequestIf {
 
-    MatchType matchType() default MatchType.NOOP;
+    MatchType matchType() default MatchType.NO_OP;
 
     Operator operator() default Operator.AND;
 

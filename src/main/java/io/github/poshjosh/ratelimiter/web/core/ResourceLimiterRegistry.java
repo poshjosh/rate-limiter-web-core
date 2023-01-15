@@ -30,7 +30,7 @@ public interface ResourceLimiterRegistry<R> {
     }
 
     default boolean isRateLimited(Method method) {
-        return isRateLimited(ElementId.of(method));
+        return isRateLimited(method.getDeclaringClass()) || isRateLimited(ElementId.of(method));
     }
 
     default boolean isRateLimitingEnabled() {

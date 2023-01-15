@@ -5,7 +5,6 @@ import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
 import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.node.NodeFormatter;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import org.slf4j.Logger;
@@ -31,46 +30,40 @@ final class RegistrationHandler<R>{
     }
 
     public void registerMatchersAndRateLimiters(Node<RateConfig> root) {
-
+        LOG.debug("Nodes:\n{}", root);
         root.visitAll(node -> {
-            node.getValueOptional().ifPresent(nodeValue -> {
-                registerMatcherAndRateLimiter(root, node.getName(), nodeValue);
-            });
+            node.getValueOptional().ifPresent(v -> registerMatcherAndRateLimiter(root, node));
         });
-
-        if(LOG.isDebugEnabled()) {
-            LOG.debug("ResourceLimiter nodes: {}", NodeFormatter.indentedHeirarchy().format(root));
-        }
     }
 
-    private void registerMatcherAndRateLimiter(
-            Node<RateConfig> root, String nodeName, RateConfig rateConfig) {
+    private void registerMatcherAndRateLimiter(Node<RateConfig> root, Node<RateConfig> node) {
+
+        final String nodeName = node.getName();
+        final RateConfig rateConfig = node.getValueOrDefault(null);
 
         if (isEqual(root, nodeName, rateConfig)) {
             noop(nodeName);
+            return;
         }
 
-        final Rates rates = rateConfig.getValue();
+        LOG.trace("Processing: {} = {}", nodeName, rateConfig);
 
-        // One method with 3 @Rate annotations is a simple group (not really a group)
-        // A true group spans either multiple methods/classes
-        if(!rates.hasLimits()) { // This is a group node
+        // If no Matcher or a NO_OP Matcher exists, create new
+        Matcher<R, ?> existingMatcher = registries.matchers()
+                .get(nodeName).orElse(Matcher.matchNone());
 
-            // @TODO how do we handle this?
-            // Do we create multiple rate limiters, one for each of the direct children of this group
-            // Do we re-use the rate limiters of the children ? They must already exist since we create children first
-            noop(nodeName);
-        }
-
-        if (!registries.matchers().get(nodeName).isPresent()) {
-            createMatcher(nodeName, rateConfig).ifPresent(matcher -> {
+        if (existingMatcher == Matcher.MATCH_NONE) {
+            createMatcher(node).ifPresent(matcher -> {
                 registries.matchers().register(nodeName, matcher);
             });
         } else {
             LOG.debug("Found existing matcher for {}", nodeName);
         }
 
-        if (!registries.limiters().get(nodeName).isPresent()) {
+        // If no Limiter or a NO_OP Limiter exists, create new
+        ResourceLimiter<?> existingLimiter = registries.limiters()
+                .get(nodeName).orElse(ResourceLimiter.NO_OP);
+        if (existingLimiter == ResourceLimiter.NO_OP) {
             createLimiter(nodeName, rateConfig.getValue()).ifPresent(limiter -> {
                 registries.limiters().register(nodeName, limiter);
             });
@@ -85,25 +78,38 @@ final class RegistrationHandler<R>{
     }
 
     private boolean isEqual(Node<RateConfig> node, String name, RateConfig rateConfig) {
-        return Objects.equals(node.getName(), name) && Objects.equals(node.getValueOrDefault(null),
-                rateConfig);
+        return Objects.equals(node.getName(), name)
+                && Objects.equals(node.getValueOrDefault(null), rateConfig);
     }
 
-    private Optional<Matcher<R, ?>> createMatcher(String name, RateConfig rateConfig) {
-        if (rateConfig == null) {
-            return Optional.empty();
+    private Optional<Matcher<R, ?>> createMatcher(Node<RateConfig> node) {
+        if(!requireRates(node).hasLimits() && !parentHasLimits(node)) {
+            LOG.debug("No limits specified for group, so no matcher will be registered for: {}",
+                    node.getName());
+            return Optional.of(Matcher.matchNone());
         }
-        return matcherFactory.createMatcher(name, rateConfig);
+        return matcherFactory.createMatcher(node.getName(), Checks.requireNodeValue(node));
+    }
+
+    private boolean parentHasLimits(Node<RateConfig> node) {
+        return node.getParentOptional()
+                .filter(parent -> parent.hasNodeValue() && requireRates(parent).hasLimits())
+                .isPresent();
     }
 
     private Optional<ResourceLimiter<?>> createLimiter(String name, Rates rates) {
-        if (rates == null) {
-            return Optional.empty();
+        if (!rates.hasLimits()) {
+            LOG.debug("No limits at node, so no matcher will be registered for: {}", name);
+            return Optional.of(ResourceLimiter.noop());
         }
         RateCache cache = registries.caches().getOrDefault(name);
         UsageListener listener = registries.listeners().getOrDefault(name);
         ResourceLimiter<?> resourceLimiter = resourceLimiterFactory
                 .createNew(cache, listener, rates);
         return Optional.ofNullable(resourceLimiter);
+    }
+
+    private Rates requireRates(Node<RateConfig> node) {
+        return Objects.requireNonNull(Checks.requireNodeValue(node).getValue());
     }
 }

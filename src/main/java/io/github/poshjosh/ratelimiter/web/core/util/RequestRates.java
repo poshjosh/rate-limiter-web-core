@@ -71,6 +71,6 @@ public final class RequestRates extends Rates {
 
     @Override
     public String toString() {
-        return "RequestRates{" + "matchConfig=" + matchConfig + '}';
+        return "RequestRates{" + super.toString() + ", " + matchConfig + '}';
     }
 }

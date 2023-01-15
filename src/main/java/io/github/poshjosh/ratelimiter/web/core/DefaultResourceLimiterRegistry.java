@@ -4,7 +4,6 @@ import io.github.poshjosh.ratelimiter.ResourceLimiterComposition;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
-import io.github.poshjosh.ratelimiter.annotation.Element;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
 import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.node.Node;
@@ -12,46 +11,24 @@ import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry<R> {
 
-    private static class NodeNamesCollector implements AnnotationProcessor.NodeConsumer {
-        private final Set<String> nodeNames = new HashSet<>();
-        @Override public void accept(Object source, Node<RateConfig> node) {
-            nodeNames.add(node.getName());
-        }
-        public Set<String> getNodeNames() {
-            return Collections.unmodifiableSet(nodeNames);
-        }
-    }
-
-    private static class UniqueIdEnforcer implements AnnotationProcessor.NodeConsumer {
-        private final Set<String> alreadyUsedNodeName;
-        public UniqueIdEnforcer(Set<String> alreadyUsedNodeName) {
-            this.alreadyUsedNodeName = Objects.requireNonNull(alreadyUsedNodeName);
-        }
-        @Override public void accept(Object source, Node<RateConfig> node) {
-            if(!node.isEmptyNode() && alreadyUsedNodeName.contains(node.getName())) {
-                throw new IllegalStateException("Node name: " + node.getName() +
-                        ", already used at: " + source);
-            }
-        }
-    }
-
-    private static class ElementCollector implements AnnotationProcessor.NodeConsumer {
-        private final Map<String, Element> nameToElementMap;
-        public ElementCollector() {
-            this.nameToElementMap = new HashMap<>();
+    private static class RateConfigCollector implements AnnotationProcessor.NodeConsumer {
+        private final Map<String, RateConfig> nameToRateMap;
+        public RateConfigCollector() {
+            this.nameToRateMap = new HashMap<>();
         }
         @Override
-        public void accept(Object source, Node<RateConfig> node) {
-            if (source instanceof Element) {
-                Element element = (Element)source;
-                nameToElementMap.putIfAbsent(element.getId(), element);
-            }
+        public void accept(Object genericDeclaration, Node<RateConfig> node) {
+            node.getValueOptional().ifPresent(rateConfig -> {
+                nameToRateMap.putIfAbsent(node.getName(), rateConfig);
+            });
         }
-        public Optional<Element> get(String name) {
-            return Optional.ofNullable(nameToElementMap.get(name));
+        public Optional<RateConfig> get(String name) {
+            return Optional.ofNullable(nameToRateMap.get(name));
         }
     }
 
@@ -68,37 +45,42 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         resourceLimiterConfig.getConfigurer()
                 .ifPresent(configurer -> configurer.configure(registries));
 
-        NodeNamesCollector nodeNamesCollector = new NodeNamesCollector();
-        propertiesRootNode = NodeBuilder.ofProperties()
-                .buildNode("root.properties", properties, nodeNamesCollector);
+        RateConfigCollector propertyConfigs = new RateConfigCollector();
+        Node<RateConfig> propRoot = NodeBuilder.ofProperties()
+                .buildNode("root.properties", properties, propertyConfigs);
 
-        UniqueIdEnforcer uniqueIdEnforcer = new UniqueIdEnforcer(nodeNamesCollector.getNodeNames());
-        ElementCollector elementCollector = new ElementCollector();
-        AnnotationProcessor.NodeConsumer consumer = uniqueIdEnforcer.andThen(elementCollector);
-        annotationsRootNode = NodeBuilder.ofClasses(resourceLimiterConfig.getAnnotationProcessor())
-                .buildNode("root.annotations", resourceLimiterConfig.getResourceClasses(), consumer);
+        Node<RateConfig> annoRoot = NodeBuilder.ofClasses(resourceLimiterConfig.getAnnotationProcessor())
+                .buildNode("root.annotations", resourceLimiterConfig.getResourceClasses());
 
-        register(resourceLimiterConfig, propertiesRootNode, annotationsRootNode, elementCollector);
+        List<String> transferredToAnnotations = new ArrayList<>();
+        Function<Node<RateConfig>, RateConfig> overrideWithPropertyValue = node -> {
+            if (node.isRoot()) {
+                return node.getValueOrDefault(null);
+            }
+            RateConfig annotationConfig = Checks.requireNodeValue(node);
+            return propertyConfigs.get(node.getName())
+                    .map(propertyConfig -> {
+                        transferredToAnnotations.add(node.getName());
+                        return propertyConfig.withSource(annotationConfig.getSource());
+                    }).orElse(annotationConfig);
+        };
+
+        annotationsRootNode = annoRoot.transform(overrideWithPropertyValue);
+
+        Predicate<Node<RateConfig>> nodesNotTransferred =
+                node -> !transferredToAnnotations.contains(node.getName());
+
+        propertiesRootNode = propRoot.retainAll(nodesNotTransferred)
+                .orElseGet(() -> Node.of("root.properties"));
+
+        register(resourceLimiterConfig, propertiesRootNode, annotationsRootNode);
     }
 
     private void register(
             ResourceLimiterConfig<R> resourceLimiterConfig,
             Node<RateConfig> propertiesRootNode,
-            Node<RateConfig> annotationsRootNode,
-            ElementCollector elementCollector) {
+            Node<RateConfig> annotationsRootNode) {
 
-        MatcherFactory<R> propertiesMatcherFactory = (name, rateConfig) -> {
-            // If the name matches an element source (e.g class/method) name,
-            // then use the MatcherFactory for that element
-            // This means that if the a property has a name that matches
-            return elementCollector.get(name)
-                    .map(element -> RateConfig.of(element, rateConfig.getValue()))
-                    .flatMap(config ->
-                            resourceLimiterConfig.getMatcherFactory().createMatcher(name, config));
-        };
-
-        // Annotation based comes before properties, so they can be overwritten by properties
-        //
         new RegistrationHandler<>(
                 registries,
                 resourceLimiterConfig.getMatcherFactory(),
@@ -107,14 +89,18 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
 
         new RegistrationHandler<>(
                 registries,
-                propertiesMatcherFactory,
+                resourceLimiterConfig.getMatcherFactory(),
                 resourceLimiterConfig.getResourceLimiterFactory()
         ).registerMatchersAndRateLimiters(propertiesRootNode);
     }
 
     public boolean isRateLimited(String id) {
-        return propertiesRootNode.findFirstChild(node -> node.getName().equals(id)).isPresent()
-                || annotationsRootNode.findFirstChild(node -> node.getName().equals(id)).isPresent();
+        return propertiesRootNode.findFirstChild(node -> isRateLimited(id, node)).isPresent()
+                || annotationsRootNode.findFirstChild(node -> isRateLimited(id, node)).isPresent();
+    }
+
+    private boolean isRateLimited(String id, Node<RateConfig> node) {
+        return id.equals(node.getName());
     }
 
     public ResourceLimiter<R> createResourceLimiter() {

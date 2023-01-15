@@ -5,9 +5,7 @@ import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class ResourceLimiterConfig<REQUEST>{
@@ -54,8 +52,9 @@ public abstract class ResourceLimiterConfig<REQUEST>{
     abstract AnnotationProcessor<Class<?>> getAnnotationProcessor();
 
     List<Class<?>> getResourceClasses() {
-        List<Class<?>> classes = new ArrayList<>(getProperties().getResourceClasses());
+        Set<Class<?>> classes = new HashSet<>();
+        classes.addAll(getProperties().getResourceClasses());
         classes.addAll(getResourceClassesSupplier().get());
-        return classes;
+        return new ArrayList<>(classes);
     }
 }

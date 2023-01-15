@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.node.NodeFormatter;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
@@ -35,15 +34,15 @@ abstract class NodeBuilder<S> {
         public Node<RateConfig> buildNode(String name, List<Class<?>> sourceOfRateLimitInfo,
                                                 AnnotationProcessor.NodeConsumer nodeConsumer) {
 
-            Node<RateConfig> rootNode = Node.of(name);
+            Node<RateConfig> root = Node.of(name);
 
-            annotationProcessor.processAll(rootNode, nodeConsumer, sourceOfRateLimitInfo);
+            root = annotationProcessor.processAll(root, nodeConsumer, sourceOfRateLimitInfo);
 
             if(LOG.isTraceEnabled()) {
-                LOG.trace("Element nodes: {}", NodeFormatter.indentedHeirarchy().format(rootNode));
+                LOG.trace("Nodes:\n{}", root);
             }
 
-            return rootNode;
+            return root;
         }
     }
 
@@ -61,7 +60,7 @@ abstract class NodeBuilder<S> {
                     name, sourceOfRateLimitInfo.getRateLimitConfigs(), nodeConsumer);
 
             if(LOG.isTraceEnabled()) {
-                LOG.trace("Element nodes: {}", NodeFormatter.indentedHeirarchy().format(rootNode));
+                LOG.trace("Nodes:\n{}", rootNode);
             }
 
             return rootNode;
@@ -96,6 +95,10 @@ abstract class NodeBuilder<S> {
                 nodeConsumer.accept(nodeConfig, node);
             }
         }
+    }
+
+    public Node<RateConfig> buildNode(String name, S source) {
+        return buildNode(name, source, (src, node) -> {});
     }
 
     abstract Node<RateConfig> buildNode(String name, S source, AnnotationProcessor.NodeConsumer nodeConsumer);

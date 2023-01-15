@@ -6,10 +6,7 @@ import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -93,8 +90,11 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         }
 
         configuration.resourceClassesSupplier = () -> {
-            return configuration.classesInPackageFinder
-                    .findClasses(configuration.properties.getResourcePackages());
+            Set<Class<?>> classes = new HashSet<>();
+            classes.addAll(configuration.getProperties().getResourceClasses());
+            classes.addAll(configuration.classesInPackageFinder
+                    .findClasses(configuration.properties.getResourcePackages()));
+            return new ArrayList<>(classes);
         };
 
         return configuration;

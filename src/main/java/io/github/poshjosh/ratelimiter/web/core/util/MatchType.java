@@ -7,7 +7,7 @@ public enum MatchType {
     AUTH_SCHEME,
     COOKIE,
     HEADER,
-    NOOP,
+    NO_OP,
     PARAMETER,
     REMOTE_ADDRESS,
 

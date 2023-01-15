@@ -72,7 +72,7 @@ public interface RequestMatcherFactory<R> extends RequestToIdConverter<R, String
         final String [] vals = matchConfig.getValues();
 
         switch(matchType) {
-            case NOOP: return resultIfNone;
+            case NO_OP: return resultIfNone;
 
             case ATTRIBUTE: return req -> matchOrNull(operator, key, info(req).getAttribute(key), vals);
 
