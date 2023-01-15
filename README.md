@@ -3,6 +3,33 @@
 Light-weight rate limiting library for java web apps, based on
 [rate-limiter-annotation](https://github.com/poshjosh/rate-limiter-annotation).
 
+We believe that rate limiting should be as simple as:
+
+```java
+@Rate(10) // 10 permits per second for the entire class
+@Controller
+@RequestMapping("/api")
+public class GreetingResource {
+
+  // 2 calls per second for users in role GUEST
+  @Rate(2)
+  @RateCondition("web.session.user.role=GUEST")
+  @GetMapping("/smile")
+  public String smile() {
+    return ":)";
+  }
+
+  // We can collectively configure RateLimiters by adding them to a group  
+  @RateGroup("limitBySession")
+  // Only 99 calls to this path is allowed per minute
+  @Rate(permits = 99, timeUnit = TimeUnit.MINUTES)
+  @GetMapping("/greet")
+  public String greet(String name) {
+    return "Hello " + name;
+  }
+}
+```
+
 Please first read the [rate-limiter-annotation documentation](https://github.com/poshjosh/rate-limiter-annotation).
 
 Some custom implementations:
@@ -26,32 +53,21 @@ To add a dependency on `rate-limiter-web-core` using Maven, use the following:
 __Annotate the resource you want to rate limit__
 
 ```java
-
-
 @Controller
 @RequestMapping("/api")
 class GreetingResource {
 
-  // 2 calls per second for users in role GUEST
+  // 2 calls per second, if the header X-Rate-Limited has a value
   @Rate(2)
-  @RateRequestIf(matchType = MatchType.USER_ROLE, values = "GUEST")
+  @RateCondition("web.request.header=X-Rate-Limited")
   @GetMapping("/smile")
   String smile() {
     return ":)";
   }
-
-  // We can collectively configure RateLimiters by adding them to a group  
-  @RateGroup("limitBySession")
-  // Only 99 calls to this path is allowed per minute
-  @Rate(permits = 99, timeUnit = TimeUnit.MINUTES)
-  @GetMapping("/greet")
-  String greet(String name) {
-    return "Hello " + name;
-  }
 }
 ```
 
-__Configure rate limiting__
+__(Optional) Configure rate limiting__
 
 ```java
 package io.github.poshjosh.web.spring;

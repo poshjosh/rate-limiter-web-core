@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
+import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -19,14 +20,16 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
         private RateLimitProperties properties;
         private ResourceLimiterConfigurer<T> configurer;
-        private RequestMatcherFactory<T> requestMatcherFactory;
         private PathPatternsProvider pathPatternsProvider;
-        private MatcherFactory<T> matcherFactory;
+        private RequestToIdConverter<T, String> requestToIdConverter;
+        private ExpressionMatcher<T, Object> expressionMatcher;
         private ResourceLimiterFactory<Object> resourceLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
         private AnnotationProcessor<Class<?>> annotationProcessor;
 
         private Supplier<List<Class<?>>> resourceClassesSupplier;
+
+        private MatcherFactory<T> matcherFactory;
 
         // Package access getters
         //
@@ -71,6 +74,9 @@ final class ResourceLimiterConfigBuilder<REQUEST>
     }
 
     @Override public ResourceLimiterConfig<REQUEST> build() {
+
+        Objects.requireNonNull(configuration.requestToIdConverter);
+
         if (configuration.properties == null) {
             configuration.properties = new DefaultRateLimitProperties();
         }
@@ -81,12 +87,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             classesInPackageFinder(ClassesInPackageFinder.ofDefaults());
         }
         if (configuration.annotationProcessor == null) {
-            annotationProcessor(AnnotationProcessor.of(new RequestRateAnnotationConverter()));
-        }
-
-        if (configuration.matcherFactory == null) {
-            matcherFactory(new DefaultMatcherFactory<>(
-                    configuration.pathPatternsProvider, configuration.requestMatcherFactory));
+            annotationProcessor(AnnotationProcessor.ofDefaults());
         }
 
         configuration.resourceClassesSupplier = () -> {
@@ -96,6 +97,15 @@ final class ResourceLimiterConfigBuilder<REQUEST>
                     .findClasses(configuration.properties.getResourcePackages()));
             return new ArrayList<>(classes);
         };
+
+        if (configuration.expressionMatcher == null) {
+            configuration.expressionMatcher = ExpressionMatcher.matchNone();
+        }
+
+        configuration.matcherFactory = new DefaultMatcherFactory<>(
+                configuration.pathPatternsProvider,
+                configuration.requestToIdConverter,
+                configuration.expressionMatcher);
 
         return configuration;
     }
@@ -112,21 +122,21 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> requestMatcherFactory(
-            RequestMatcherFactory<REQUEST> requestMatcherFactory) {
-        configuration.requestMatcherFactory = requestMatcherFactory;
-        return this;
-    }
-
     @Override public ResourceLimiterConfig.Builder<REQUEST> pathPatternsProvider(
             PathPatternsProvider pathPatternsProvider) {
         configuration.pathPatternsProvider = pathPatternsProvider;
         return this;
     }
 
-    @Override
-    public ResourceLimiterConfig.Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST> matcherFactory) {
-        configuration.matcherFactory = matcherFactory;
+    @Override public ResourceLimiterConfig.Builder<REQUEST> requestToIdConverter(
+            RequestToIdConverter<REQUEST, String> requestToIdConverter) {
+        configuration.requestToIdConverter = requestToIdConverter;
+        return this;
+    }
+
+    @Override public ResourceLimiterConfig.Builder<REQUEST> expressionMatcher(
+            ExpressionMatcher<REQUEST, Object> expressionMatcher) {
+        configuration.expressionMatcher = expressionMatcher;
         return this;
     }
 

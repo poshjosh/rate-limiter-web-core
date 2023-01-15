@@ -87,9 +87,7 @@ abstract class NodeBuilder<S> {
             Set<Map.Entry<String, Rates>> entrySet = limits.entrySet();
             for (Map.Entry<String, Rates> entry : entrySet) {
                 String name = entry.getKey();
-                if(name.equals(parent.getName())) {
-                    throw new IllegalStateException("Parent and child nodes both have the same name: " + name);
-                }
+                Checks.requireParentNameDoesNotMatchChild(parent.getName(), name);
                 Rates nodeConfig = entry.getValue();
                 Node<RateConfig> node = Node.of(name, RateConfig.of(nodeConfig, nodeConfig), parent);
                 nodeConsumer.accept(nodeConfig, node);

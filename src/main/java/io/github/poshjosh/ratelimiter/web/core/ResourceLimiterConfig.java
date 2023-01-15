@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
+import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
@@ -22,11 +23,11 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
         Builder<REQUEST> configurer(ResourceLimiterConfigurer<REQUEST> configurer);
 
-        Builder<REQUEST> requestMatcherFactory(RequestMatcherFactory<REQUEST> requestMatcherFactory);
+        Builder<REQUEST> expressionMatcher(ExpressionMatcher<REQUEST, Object> expressionMatcher);
+
+        Builder<REQUEST> requestToIdConverter(RequestToIdConverter<REQUEST, String> requestToIdConverter);
 
         Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
-
-        Builder<REQUEST> matcherFactory(MatcherFactory<REQUEST> matcherFactory);
 
         Builder<REQUEST> resourceLimiterFactory(
                 ResourceLimiterFactory<Object> resourceLimiterFactory);
