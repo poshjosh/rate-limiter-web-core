@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
-import io.github.poshjosh.ratelimiter.annotation.RateConfig;
+import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
@@ -52,12 +52,17 @@ final class RegistrationHandler<R>{
         Matcher<R, ?> existingMatcher = registries.matchers()
                 .get(nodeName).orElse(Matcher.matchNone());
 
+        Optional<Matcher<R, ?>> createdMatcherOpt = createMatcher(node);
+
         if (existingMatcher == Matcher.MATCH_NONE) {
-            createMatcher(node).ifPresent(matcher -> {
+            createdMatcherOpt.ifPresent(matcher -> {
                 registries.matchers().register(nodeName, matcher);
             });
         } else {
             LOG.debug("Found existing matcher for {}", nodeName);
+            Matcher<R, ?> createdMatcher = createdMatcherOpt.orElse(null);
+            registries.matchers().register(nodeName, createdMatcher == null ? existingMatcher :
+                    createdMatcher.andThen((Matcher) existingMatcher));
         }
 
         // If no Limiter or a NO_OP Limiter exists, create new

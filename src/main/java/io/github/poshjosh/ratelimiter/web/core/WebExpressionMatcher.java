@@ -1,6 +1,5 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.Checks;
 import io.github.poshjosh.ratelimiter.matcher.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +41,11 @@ public abstract class WebExpressionMatcher<R>
     private static final class Composite{
         private final String raw;
         private final Object [] values;
-        private final io.github.poshjosh.ratelimiter.util.Operator operator;
+        private final io.github.poshjosh.ratelimiter.Operator operator;
         private Composite(String raw, String operatorSymbol, Object[] values) {
             this.raw = Objects.requireNonNull(raw);
             this.values = Objects.requireNonNull(values);
-            this.operator = io.github.poshjosh.ratelimiter.util.Operator.ofSymbol(operatorSymbol);
+            this.operator = io.github.poshjosh.ratelimiter.Operator.ofSymbol(operatorSymbol);
         }
         @Override public String toString() {
             return raw;
@@ -159,52 +158,68 @@ public abstract class WebExpressionMatcher<R>
         final Type type = getType(expression);
         final String key = expression.getLeft();
         final String name;
-        final Object fromRequest;
-        final Object input;
-        boolean flipOperator = false;
+        final Expression<Object> result;
         if (Type.OBJ_RHS.equals(type)) {
             final Expression<String> rhs = Expression
                     .ofLenient(withoutObjectBrackets(expression.getRight()));
             name = requireName(rhs.getLeft(), rhs);
-            fromRequest = getValue(request, key, name);
-            if (isPairValueSingleObject(key)) {
-                input = fromRequest;
+            final Object fromRequest = getValue(request, key, name);
+            final Object input;
+            if (COOKIE.equals(key)) {
+                input = hasValue(fromRequest, key, name) ? fromRequest : "";
             } else {
                 input = splitIntoArrayIfNeed(
                         rhs.getLeft(), rhs.getRight(), fromRequest, getTransformer(key));
             }
+            result = expression.with(input, fromRequest);
         } else {
             if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type)) {
                 name = requireName(expression.getRight(), expression);
-                fromRequest = getValue(request, key, name);
-                if (isPairValueSingleObject(key)) {
-                    input = fromRequest;
+                final Object fromRequest = getValue(request, key, name);
+                final boolean hasValue = hasValue(fromRequest, key, name);
+                if (COOKIE.equals(key)) {
+                    final Object input = hasValue ? fromRequest : "";
+                    result = expression.with(input, fromRequest);
                 } else {
-                    // web.request.header=Content-Type  means: If the content type has a value
-                    // We resolve the above to expression: Content-Type!=''  (i.e not equals)
-                    //
-                    flipOperator = true;
-                    input = splitIntoArrayIfNeed(name, fromRequest, getTransformer(key));
+                    if (!hasValue) {
+                        result = Expression.FALSE;
+                    } else {
+                        // web.request.header=Content-Type  means: If the content type has a value
+                        // We resolve the above to expression: Content-Type!=''  (i.e not equals)
+                        //
+                        final Object input = splitIntoArrayIfNeed(name, fromRequest, getTransformer(key));
+                        result = expression.with(input, fromRequest).flipOperator();
+                    }
                 }
             } else {
                 name = "";
-                fromRequest = getValue(request, key, name);
-                input = splitIntoArrayIfNeed(
+                final Object fromRequest = getValue(request, key, name);
+                final Object input = splitIntoArrayIfNeed(
                         "", expression.getRight(), fromRequest, getTransformer(key));
+                result = expression.with(input, fromRequest);
             }
         }
-
-        Expression<Object> result = expression.with(input, fromRequest);
-        if (flipOperator) {
-            result = result.flipOperator();
-        }
-        LOG.trace("Type: {}, key: {}, name: {}, output: {}, input: {}",
+        LOG.debug("Type: {}, key: {}, name: {}, output: {}, input: {}",
                 type, key, name, result, expression);
         return result;
     }
 
-    private boolean isPairValueSingleObject(String key) {
-        return COOKIE.equals(key);
+    private boolean hasValue(Object fromRequest, String key, String name) {
+        switch(key) {
+            case ATTRIBUTE:
+                return fromRequest != null;
+            case AUTH_SCHEME:
+                return fromRequest != null && !fromRequest.toString().isEmpty();
+            case COOKIE:
+                RequestInfo.Cookie cookie = (RequestInfo.Cookie)fromRequest;
+                return !cookie.name().isEmpty() && !cookie.value().isEmpty();
+            case HEADER:
+            case PARAMETER:
+                return !((List)fromRequest).isEmpty();
+            case USER_ROLE:
+                return !"".equals(fromRequest);
+            default : throw new AssertionError();
+        }
     }
 
     private String requireName(String name, Object unsupported) {

@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.annotation.NodeValueAbsentException;
+import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.Arrays;
@@ -8,6 +8,14 @@ import java.util.Objects;
 
 final class Checks {
     private Checks() { }
+    static RuntimeException notSupported(Object complainer, Object unsupported) {
+        return notSupported(complainer.getClass(), unsupported);
+    }
+    static RuntimeException notSupported(Class<?> complainer, Object unsupported) {
+        return new UnsupportedOperationException(
+                complainer.getSimpleName() + " does not support: " + unsupported
+        );
+    }
     static <V> V requireNodeValue(Node<V> node) {
         return node.getValueOptional().orElseThrow(() -> new NodeValueAbsentException(node));
     }

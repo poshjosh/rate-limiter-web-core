@@ -11,7 +11,7 @@ We believe that rate limiting should be as simple as:
 @RequestMapping("/api")
 public class GreetingResource {
 
-  // 2 calls per second for users in role GUEST
+  // Only 2 calls per second to this path, for users in role GUEST
   @Rate(2)
   @RateCondition("web.session.user.role=GUEST")
   @GetMapping("/smile")
@@ -19,10 +19,9 @@ public class GreetingResource {
     return ":)";
   }
 
-  // We can collectively configure RateLimiters by adding them to a group  
-  @RateGroup("limitBySession")
-  // Only 99 calls to this path is allowed per minute
-  @Rate(permits = 99, timeUnit = TimeUnit.MINUTES)
+  // Only 10 calls per minute to this path, when system available memory < 1GB 
+  @Rate(permits = 10, timeUnit = TimeUnit.MINUTES)
+  @RateCondition("sys.memory.available<1gb")
   @GetMapping("/greet")
   public String greet(String name) {
     return "Hello " + name;
@@ -69,16 +68,10 @@ class GreetingResource {
 
 __(Optional) Configure rate limiting__
 
+Limiters, matchers, caches and listeners, could be configured by implementing and
+exposing a `ResourceLimiterConfigurer` as shown below:
+
 ```java
-package io.github.poshjosh.web.spring;
-
-import JavaRateCache;
-import Registries;
-import ResourceLimiterConfigurer;
-import org.springframework.context.annotation.Configuration;
-
-import javax.servlet.http.HttpServletRequest;
-
 @Configuration 
 public class RateLimiterConfigurerImpl
         implements ResourceLimiterConfigurer<HttpServletRequest> {
@@ -143,10 +136,11 @@ class RateLimitedResource{
 }
 ```
 
-## Naming Conventions for `RequestMatcher`s
 
-A `RequestMatcher` may be registered using either a class name, a method name, or a string name.
-When a string name is used, it should match one of the following:
+## Naming Conventions 
+
+Limiters, matchers, caches or listeners could be registered using either a class ID, 
+a method ID, or a string name. When using a string name, it should match one of the following:
 
 - __A group__ - The name of a `@RateGroup` annotation.
 - __A class__ - The fully qualified name of a class e.g: `com.example.web.resources.GreetingResource`
@@ -198,6 +192,15 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
     }
 }
 ```
+
+## Match order
+
+Matchers are invoked in this order:
+
+- Path pattern matcher - Created by default - (Matches path patterns e.g `@GetMapping("/api/v1")`)
+- Custom expression matcher ([see expression language](docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md))
+- System expression matcher - Created by default - ([see expression language](docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md))
+- Custom registered matcher 
 
 ## Ways and Means
 

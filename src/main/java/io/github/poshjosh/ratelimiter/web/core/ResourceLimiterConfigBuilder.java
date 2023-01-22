@@ -1,7 +1,9 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
+import io.github.poshjosh.ratelimiter.util.RateConfig;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -25,7 +27,8 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         private ExpressionMatcher<T, Object> expressionMatcher;
         private ResourceLimiterFactory<Object> resourceLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
-        private AnnotationProcessor<Class<?>> annotationProcessor;
+        private RateProcessor<Class<?>> classRateProcessor;
+        private RateProcessor<RateLimitProperties> propertyRateProcessor;
 
         private Supplier<List<Class<?>>> resourceClassesSupplier;
 
@@ -51,19 +54,12 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             return resourceLimiterFactory;
         }
 
-        @Override AnnotationProcessor<Class<?>> getAnnotationProcessor() {
-            return annotationProcessor;
+        @Override RateProcessor<Class<?>> getClassRateProcessor() {
+            return classRateProcessor;
         }
-    }
 
-    private static final class DefaultRateLimitProperties implements RateLimitProperties {
-        private DefaultRateLimitProperties() { }
-        @Override public List<Class<?>> getResourceClasses() { return Collections.emptyList(); }
-        @Override public List<String> getResourcePackages() {
-            return Collections.emptyList();
-        }
-        @Override public Map<String, Rates> getRateLimitConfigs() {
-            return Collections.emptyMap();
+        @Override public RateProcessor<RateLimitProperties> getPropertyRateProcessor() {
+            return propertyRateProcessor;
         }
     }
 
@@ -86,8 +82,16 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         if (configuration.classesInPackageFinder == null) {
             classesInPackageFinder(ClassesInPackageFinder.ofDefaults());
         }
-        if (configuration.annotationProcessor == null) {
-            annotationProcessor(AnnotationProcessor.ofDefaults());
+        if (configuration.classRateProcessor == null) {
+            // We accept all class/method  nodes, even those without rate limit related annotations
+            // This is because, any of the nodes may have its rate limit related info, specified
+            // via properties. Such a node needs to be accepted at this point as property
+            // sourced rate limited data will later be transferred to class/method nodes
+            classRateProcessor(RateProcessor.of(source -> true));
+        }
+
+        if (configuration.propertyRateProcessor == null) {
+            propertyRateProcessor(new PropertyRateProcessor());
         }
 
         configuration.resourceClassesSupplier = () -> {
@@ -152,9 +156,63 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> annotationProcessor(
-            AnnotationProcessor<Class<?>> annotationProcessor) {
-        configuration.annotationProcessor = annotationProcessor;
+    @Override public ResourceLimiterConfig.Builder<REQUEST> classRateProcessor(
+            RateProcessor<Class<?>> rateProcessor) {
+        configuration.classRateProcessor = rateProcessor;
         return this;
+    }
+
+    @Override public ResourceLimiterConfig.Builder<REQUEST> propertyRateProcessor(
+            RateProcessor<RateLimitProperties> rateProcessor) {
+        configuration.propertyRateProcessor = rateProcessor;
+        return this;
+    }
+
+    private static final class DefaultRateLimitProperties implements RateLimitProperties {
+        private DefaultRateLimitProperties() { }
+        @Override public List<Class<?>> getResourceClasses() { return Collections.emptyList(); }
+        @Override public List<String> getResourcePackages() {
+            return Collections.emptyList();
+        }
+        @Override public Map<String, Rates> getRateLimitConfigs() {
+            return Collections.emptyMap();
+        }
+    }
+
+    private static final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> {
+        private PropertyRateProcessor() { }
+        @Override
+        public Node<RateConfig> process(
+                Node<RateConfig> root, NodeConsumer consumer, RateLimitProperties source) {
+            return addNodesToRoot(root, source.getRateLimitConfigs(), consumer);
+        }
+        private Node<RateConfig> addNodesToRoot(
+                Node<RateConfig> rootNode,
+                Map<String, Rates> limits,
+                NodeConsumer nodeConsumer) {
+            Map<String, Rates> configsWithoutParent = new LinkedHashMap<>(limits);
+            Rates rootNodeConfig = configsWithoutParent.remove(rootNode.getName());
+            if (rootNodeConfig != null) {
+                throw new IllegalStateException("The name: " + rootNode.getName() +
+                        " is reserved, and may not be used to identify rates in " +
+                        RateLimitProperties.class.getName());
+            }
+            nodeConsumer.accept(Rates.of(), rootNode);
+            createNodes(rootNode, configsWithoutParent, nodeConsumer);
+            return rootNode;
+        }
+        private void createNodes(
+                Node<RateConfig> parent,
+                Map<String, Rates> limits,
+                NodeConsumer nodeConsumer) {
+            Set<Map.Entry<String, Rates>> entrySet = limits.entrySet();
+            for (Map.Entry<String, Rates> entry : entrySet) {
+                String name = entry.getKey();
+                Checks.requireParentNameDoesNotMatchChild(parent.getName(), name);
+                Rates rates = entry.getValue();
+                Node<RateConfig> node = Node.of(name, RateConfig.of(rates, rates), parent);
+                nodeConsumer.accept(rates, node);
+            }
+        }
     }
 }

@@ -1,10 +1,11 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiterComposition;
+import io.github.poshjosh.ratelimiter.ResourceLimiters;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
-import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
-import io.github.poshjosh.ratelimiter.annotation.RateConfig;
+import io.github.poshjosh.ratelimiter.annotation.Element;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
@@ -16,7 +17,7 @@ import java.util.function.Predicate;
 
 final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry<R> {
 
-    private static class RateConfigCollector implements AnnotationProcessor.NodeConsumer {
+    private static class RateConfigCollector implements RateProcessor.NodeConsumer {
         private final Map<String, RateConfig> nameToRateMap;
         public RateConfigCollector() {
             this.nameToRateMap = new HashMap<>();
@@ -46,11 +47,11 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                 .ifPresent(configurer -> configurer.configure(registries));
 
         RateConfigCollector propertyConfigs = new RateConfigCollector();
-        Node<RateConfig> propRoot = NodeBuilder.ofProperties()
-                .buildNode("root.properties", properties, propertyConfigs);
+        Node<RateConfig> propRoot = resourceLimiterConfig.getPropertyRateProcessor()
+                .process(Node.of("root.properties"), propertyConfigs, properties);
 
-        Node<RateConfig> annoRoot = NodeBuilder.ofClasses(resourceLimiterConfig.getAnnotationProcessor())
-                .buildNode("root.annotations", resourceLimiterConfig.getResourceClasses());
+        Node<RateConfig> annoRoot = resourceLimiterConfig.getClassRateProcessor()
+                .processAll(Node.of("root.annotations"), (src, node) -> {}, resourceLimiterConfig.getResourceClasses());
 
         List<String> transferredToAnnotations = new ArrayList<>();
         Function<Node<RateConfig>, RateConfig> overrideWithPropertyValue = node -> {
@@ -65,7 +66,23 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                     }).orElse(annotationConfig);
         };
 
-        annotationsRootNode = annoRoot.transform(overrideWithPropertyValue);
+        annoRoot = annoRoot.transform(overrideWithPropertyValue);
+
+        Predicate<Node<RateConfig>> isNodeRateLimited = node -> {
+            if (node.isRoot()) {
+                return true;
+            }
+            return transferredToAnnotations.contains(node.getName()) || node.getValueOptional()
+                    .map(val -> (Element)val.getSource())
+                    .filter(Element::isRateLimited).isPresent();
+        };
+
+        Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited = node -> {
+            return testTree(node, isNodeRateLimited);
+        };
+
+        annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
+                .orElseGet(() -> Node.of("root.annotations"));
 
         Predicate<Node<RateConfig>> nodesNotTransferred =
                 node -> !transferredToAnnotations.contains(node.getName());
@@ -74,6 +91,10 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                 .orElseGet(() -> Node.of("root.properties"));
 
         register(resourceLimiterConfig, propertiesRootNode, annotationsRootNode);
+    }
+
+    private boolean testTree(Node<RateConfig> node, Predicate<Node<RateConfig>> test) {
+        return test.test(node) || node.getChildren().stream().anyMatch(child -> testTree(child, test));
     }
 
     private void register(
@@ -105,25 +126,25 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
 
     public ResourceLimiter<R> createResourceLimiter() {
 
-        ResourceLimiterComposition.MatcherProvider<R> matcherProvider = node -> {
+        ResourceLimiters.MatcherProvider<R> matcherProvider = node -> {
             if (isRateLimitingEnabled()) {
                 return registries.matchers().getOrDefault(node.getName());
             }
             return Matcher.matchNone();
         };
 
-        ResourceLimiterComposition.LimiterProvider limiterProvider = node -> {
+        ResourceLimiters.LimiterProvider limiterProvider = node -> {
             if (isRateLimitingEnabled()) {
                 return registries.limiters().getOrDefault(node.getName());
             }
             return ResourceLimiter.noop();
         };
 
-        ResourceLimiter<R> limiterForProperties = ResourceLimiterComposition.ofProperties(
+        ResourceLimiter<R> limiterForProperties = ResourceLimiters.of(
                 matcherProvider, limiterProvider, propertiesRootNode
         );
 
-        ResourceLimiter<R> limiterForAnnotations = ResourceLimiterComposition.ofAnnotations(
+        ResourceLimiter<R> limiterForAnnotations = ResourceLimiters.of(
                 matcherProvider, limiterProvider, annotationsRootNode
         );
 

@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -35,7 +35,9 @@ public abstract class ResourceLimiterConfig<REQUEST>{
         Builder<REQUEST> classesInPackageFinder(
                 ClassesInPackageFinder classesInPackageFinder);
 
-        Builder<REQUEST> annotationProcessor(AnnotationProcessor<Class<?>> annotationProcessor);
+        Builder<REQUEST> classRateProcessor(RateProcessor<Class<?>> rateProcessor);
+
+        Builder<REQUEST> propertyRateProcessor(RateProcessor<RateLimitProperties> rateProcessor);
     }
 
     // Package access getters
@@ -50,12 +52,14 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
     abstract ResourceLimiterFactory<Object> getResourceLimiterFactory();
 
-    abstract AnnotationProcessor<Class<?>> getAnnotationProcessor();
+    abstract RateProcessor<Class<?>> getClassRateProcessor();
 
-    List<Class<?>> getResourceClasses() {
+    abstract RateProcessor<RateLimitProperties> getPropertyRateProcessor();
+
+    Set<Class<?>> getResourceClasses() {
         Set<Class<?>> classes = new HashSet<>();
         classes.addAll(getProperties().getResourceClasses());
         classes.addAll(getResourceClassesSupplier().get());
-        return new ArrayList<>(classes);
+        return Collections.unmodifiableSet(classes);
     }
 }
