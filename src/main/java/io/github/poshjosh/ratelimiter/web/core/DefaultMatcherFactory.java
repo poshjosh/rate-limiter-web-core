@@ -17,7 +17,7 @@ final class DefaultMatcherFactory<R> implements MatcherFactory<R> {
     private final RequestToIdConverter<R, String> requestToIdConverter;
     private final ExpressionMatcher<R, Object> expressionMatcher;
 
-    private final ExpressionMatcher<R, Object> sysExpressionMatcher;
+    private final ExpressionMatcher<R, Object> defaultExpressionMatcher;
 
     DefaultMatcherFactory(
             PathPatternsProvider pathPatternsProvider,
@@ -26,7 +26,7 @@ final class DefaultMatcherFactory<R> implements MatcherFactory<R> {
         this.pathPatternsProvider = Objects.requireNonNull(pathPatternsProvider);
         this.requestToIdConverter = Objects.requireNonNull(requestToIdConverter);
         this.expressionMatcher = Objects.requireNonNull(expressionMatcher);
-        this.sysExpressionMatcher = ExpressionMatcher.ofSystem();
+        this.defaultExpressionMatcher = ExpressionMatcher.ofDefault();
     }
 
     @Override
@@ -49,8 +49,8 @@ final class DefaultMatcherFactory<R> implements MatcherFactory<R> {
         if (expression != null && !expression.isEmpty()) {
             if (expressionMatcher.isSupported(expression)) {
                 return Optional.of(expressionMatcher.with(expression));
-            } else if (sysExpressionMatcher.isSupported(expression)) {
-                return Optional.of(sysExpressionMatcher.with(expression));
+            } else if (defaultExpressionMatcher.isSupported(expression)) {
+                return Optional.of(defaultExpressionMatcher.with(expression));
             }
         }
         return Optional.empty();
