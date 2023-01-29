@@ -1,12 +1,10 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiters;
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.UsageListener;
+import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.annotation.Element;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
-import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -102,17 +100,11 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
             Node<RateConfig> propertiesRootNode,
             Node<RateConfig> annotationsRootNode) {
 
-        new RegistrationHandler<>(
-                registries,
-                resourceLimiterConfig.getMatcherFactory(),
-                resourceLimiterConfig.getResourceLimiterFactory()
-        ).registerMatchersAndRateLimiters(annotationsRootNode);
+        new RegistrationHandler<>(registries, resourceLimiterConfig.getMatcherFactory())
+                .registerMatchersAndRateLimiters(annotationsRootNode);
 
-        new RegistrationHandler<>(
-                registries,
-                resourceLimiterConfig.getMatcherFactory(),
-                resourceLimiterConfig.getResourceLimiterFactory()
-        ).registerMatchersAndRateLimiters(propertiesRootNode);
+        new RegistrationHandler<>(registries, resourceLimiterConfig.getMatcherFactory())
+                .registerMatchersAndRateLimiters(propertiesRootNode);
     }
 
     public boolean isRateLimited(String id) {
@@ -126,26 +118,23 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
 
     public ResourceLimiter<R> createResourceLimiter() {
 
-        ResourceLimiters.MatcherProvider<R> matcherProvider = node -> {
+        MatcherProvider<R> matcherProvider = (nodeName, rateConfig) -> {
             if (isRateLimitingEnabled()) {
-                return registries.matchers().getOrDefault(node.getName());
+                return registries.matchers().getOrDefault(nodeName);
             }
             return Matcher.matchNone();
         };
 
-        ResourceLimiters.LimiterProvider limiterProvider = node -> {
-            if (isRateLimitingEnabled()) {
-                return registries.limiters().getOrDefault(node.getName());
-            }
-            return ResourceLimiter.noop();
-        };
-
-        ResourceLimiter<R> limiterForProperties = ResourceLimiters.of(
-                matcherProvider, limiterProvider, propertiesRootNode
+        ResourceLimiter<R> limiterForProperties = ResourceLimiter.of(
+                registries.getListenerOrDefault(),
+                registries.getStoreOrDefault(),
+                matcherProvider, propertiesRootNode
         );
 
-        ResourceLimiter<R> limiterForAnnotations = ResourceLimiters.of(
-                matcherProvider, limiterProvider, annotationsRootNode
+        ResourceLimiter<R> limiterForAnnotations = ResourceLimiter.of(
+                registries.getListenerOrDefault(),
+                registries.getStoreOrDefault(),
+                matcherProvider, annotationsRootNode
         );
 
         return limiterForProperties.andThen(limiterForAnnotations);
@@ -155,19 +144,15 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         return properties;
     }
 
-    @Override public UnmodifiableRegistry<ResourceLimiter<?>> limiters() {
-        return Registry.unmodifiable(registries.limiters());
-    }
-
     @Override public UnmodifiableRegistry<Matcher<R, ?>> matchers() {
         return Registry.unmodifiable(registries.matchers());
     }
 
-    @Override public UnmodifiableRegistry<RateCache<?>> caches() {
-        return Registry.unmodifiable(registries.caches());
+    public Optional<BandwidthsStore<?>> getStore() {
+        return registries.getStore();
     }
 
-    @Override public UnmodifiableRegistry<UsageListener> listeners() {
-        return Registry.unmodifiable(registries.listeners());
+    public Optional<UsageListener> getListener() {
+        return registries.getListener();
     }
 }

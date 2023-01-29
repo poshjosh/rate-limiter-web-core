@@ -29,9 +29,6 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
         Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
 
-        Builder<REQUEST> resourceLimiterFactory(
-                ResourceLimiterFactory<Object> resourceLimiterFactory);
-
         Builder<REQUEST> classesInPackageFinder(
                 ClassesInPackageFinder classesInPackageFinder);
 
@@ -49,8 +46,6 @@ public abstract class ResourceLimiterConfig<REQUEST>{
     abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
 
     abstract MatcherFactory<REQUEST> getMatcherFactory();
-
-    abstract ResourceLimiterFactory<Object> getResourceLimiterFactory();
 
     abstract RateProcessor<Class<?>> getClassRateProcessor();
 

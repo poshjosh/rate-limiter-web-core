@@ -1,31 +1,21 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.UsageListener;
-import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+
+import java.util.Optional;
 
 final class DefaultRegistries<R> implements Registries<R> {
 
-    private final Registry<ResourceLimiter<?>> resourceLimiterRegistry;
-
     private final Registry<Matcher<R, ?>> matcherRegistry;
 
-    private final Registry<RateCache<?>> cacheRegistry;
+    private BandwidthsStore<?> store;
 
-    private final Registry<UsageListener> listenerRegistry;
+    private UsageListener listener;
 
-    DefaultRegistries(ResourceLimiter<?> resourceLimiter, Matcher<R, ?> matcher,
-                      RateCache<?> rateCache, UsageListener usageListener) {
-        this.resourceLimiterRegistry = Registry.of(resourceLimiter);
+    DefaultRegistries(Matcher<R, ?> matcher) {
         this.matcherRegistry = Registry.of(matcher);
-        this.cacheRegistry = Registry.of(rateCache);
-        this.listenerRegistry = Registry.of(usageListener);
-    }
-
-    @Override
-    public Registry<ResourceLimiter<?>> limiters() {
-        return resourceLimiterRegistry;
     }
 
     @Override
@@ -34,17 +24,24 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public Registry<RateCache<?>> caches() {
-        return cacheRegistry;
+    public Optional<BandwidthsStore<?>> getStore() {
+        return Optional.ofNullable(store);
     }
 
     @Override
-    public Registry<UsageListener> listeners() {
-        return listenerRegistry;
+    public Registries<R> registerStore(BandwidthsStore<?> store) {
+        this.store = store;
+        return this;
     }
 
-    public String toString() {
-        return "DefaultRegistries{\nmatcherRegistry=" + matcherRegistry +
-                "\nlimiterRegistry=" + resourceLimiterRegistry + "}";
+    @Override
+    public Optional<UsageListener> getListener() {
+        return Optional.ofNullable(listener);
+    }
+
+    @Override
+    public Registries<R> registerListener(UsageListener listener) {
+        this.listener = listener;
+        return this;
     }
 }

@@ -1,28 +1,42 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.UsageListener;
-import io.github.poshjosh.ratelimiter.cache.RateCache;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 
-public interface Registries<REQUEST> {
+import javax.cache.Cache;
+import java.util.Optional;
+
+public interface Registries<R> {
 
     static <R> Registries<R> ofDefaults() {
-        return of(ResourceLimiter.noop(), Matcher.matchNone(),
-                  RateCache.ofMap(), UsageListener.NO_OP);
+        return of(Matcher.matchNone());
     }
 
-    static <R> Registries<R> of(
-            ResourceLimiter<?> resourceLimiter, Matcher<R, ?> matcher,
-            RateCache<?> rateCache, UsageListener usageListener) {
-        return new DefaultRegistries<>(resourceLimiter, matcher, rateCache, usageListener);
+    static <R> Registries<R> of(Matcher<R, ?> matcher) {
+        return new DefaultRegistries<>(matcher);
     }
 
-    Registry<ResourceLimiter<?>> limiters();
+    Registry<Matcher<R, ?>> matchers();
 
-    Registry<Matcher<REQUEST, ?>> matchers();
+    default BandwidthsStore<?> getStoreOrDefault() {
+        return getStore().orElse(BandwidthsStore.ofDefaults());
+    }
 
-    Registry<RateCache<?>> caches();
+    Optional<BandwidthsStore<?>> getStore();
 
-    Registry<UsageListener> listeners();
+    default Registries<R> registerCache(Cache<?, Bandwidths> cache) {
+        return registerStore(BandwidthsStore.ofCache(cache));
+    }
+
+    Registries<R> registerStore(BandwidthsStore<?> store);
+
+    default UsageListener getListenerOrDefault() {
+        return getListener().orElse(UsageListener.NO_OP);
+    }
+
+    Optional<UsageListener> getListener();
+
+    Registries<R> registerListener(UsageListener listener);
 }

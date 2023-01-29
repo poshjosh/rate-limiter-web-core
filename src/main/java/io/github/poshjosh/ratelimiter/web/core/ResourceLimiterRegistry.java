@@ -1,13 +1,14 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
-import io.github.poshjosh.ratelimiter.cache.RateCache;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 public interface ResourceLimiterRegistry<R> {
 
@@ -38,11 +39,9 @@ public interface ResourceLimiterRegistry<R> {
         return disabled == null || Boolean.FALSE.equals(disabled);
     }
 
-    UnmodifiableRegistry<ResourceLimiter<?>> limiters();
-
     UnmodifiableRegistry<Matcher<R, ?>> matchers();
 
-    UnmodifiableRegistry<RateCache<?>> caches();
+    Optional<BandwidthsStore<?>> getStore();
 
-    UnmodifiableRegistry<UsageListener> listeners();
+    Optional<UsageListener> getListener();
 }

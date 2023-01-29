@@ -25,7 +25,6 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         private PathPatternsProvider pathPatternsProvider;
         private RequestToIdConverter<T, String> requestToIdConverter;
         private ExpressionMatcher<T, Object> expressionMatcher;
-        private ResourceLimiterFactory<Object> resourceLimiterFactory;
         private ClassesInPackageFinder classesInPackageFinder;
         private RateProcessor<Class<?>> classRateProcessor;
         private RateProcessor<RateLimitProperties> propertyRateProcessor;
@@ -50,10 +49,6 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
         @Override MatcherFactory<T> getMatcherFactory() { return matcherFactory; }
 
-        @Override ResourceLimiterFactory<Object> getResourceLimiterFactory() {
-            return resourceLimiterFactory;
-        }
-
         @Override RateProcessor<Class<?>> getClassRateProcessor() {
             return classRateProcessor;
         }
@@ -75,9 +70,6 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
         if (configuration.properties == null) {
             configuration.properties = new DefaultRateLimitProperties();
-        }
-        if (configuration.resourceLimiterFactory == null) {
-            resourceLimiterFactory(ResourceLimiterFactory.ofDefaults());
         }
         if (configuration.classesInPackageFinder == null) {
             classesInPackageFinder(ClassesInPackageFinder.ofDefaults());
@@ -144,12 +136,6 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> resourceLimiterFactory(
-            ResourceLimiterFactory<Object> resourceLimiterFactory) {
-        configuration.resourceLimiterFactory = resourceLimiterFactory;
-        return this;
-    }
-
     @Override public ResourceLimiterConfig.Builder<REQUEST> classesInPackageFinder(
             ClassesInPackageFinder classesInPackageFinder) {
         configuration.classesInPackageFinder = classesInPackageFinder;
@@ -197,7 +183,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
                         " is reserved, and may not be used to identify rates in " +
                         RateLimitProperties.class.getName());
             }
-            nodeConsumer.accept(Rates.of(), rootNode);
+            nodeConsumer.accept(Rates.empty(), rootNode);
             createNodes(rootNode, configsWithoutParent, nodeConsumer);
             return rootNode;
         }
