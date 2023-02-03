@@ -1,18 +1,24 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
+import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
 
 public abstract class ResourceLimiterConfig<REQUEST>{
 
-    public static <R> Builder<R> builder() {
-        return new ResourceLimiterConfigBuilder<>();
+    public static Builder<HttpServletRequest> builderOfRequest() {
+        return builder(HttpServletRequest.class);
+    }
+
+    public static <R> Builder<R> builder(Class<R> requestType) {
+        return new ResourceLimiterConfigBuilder<>(requestType);
     }
 
     public interface Builder<REQUEST> {
@@ -45,7 +51,7 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
     abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
 
-    abstract MatcherFactory<REQUEST> getMatcherFactory();
+    abstract MatcherProvider<REQUEST, ?> getMatcherProvider();
 
     abstract RateProcessor<Class<?>> getClassRateProcessor();
 

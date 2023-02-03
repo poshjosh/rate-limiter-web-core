@@ -1,9 +1,10 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.matcher.*;
+import io.github.poshjosh.ratelimiter.expression.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -11,6 +12,14 @@ import java.util.stream.Collectors;
 public abstract class WebExpressionMatcher<R>
         implements ExpressionMatcher<R, Object>, WebExpressionKey,
         ExpressionParser<R, Object>, ExpressionResolver<Object>{
+
+    public static WebExpressionMatcher<HttpServletRequest> ofHttpServletRequest() {
+        return new WebExpressionMatcher<HttpServletRequest>() {
+            @Override protected RequestInfo info(HttpServletRequest request) {
+                return RequestInfo.of(request);
+            }
+        };
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(WebExpressionMatcher.class);
 

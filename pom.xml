@@ -18,9 +18,8 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <rate-limiter.version>0.3.2</rate-limiter.version>
-        <bucket4j.version>6.4.1</bucket4j.version>
-        <javax.enterprise.version>2.0</javax.enterprise.version>
+        <rate-limiter.version>0.3.3-SNAPSHOT</rate-limiter.version>
+        <javax.servlet.version>4.0.1</javax.servlet.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
         <maven.failsafle.plugin.version>2.22.2</maven.failsafle.plugin.version>
@@ -34,15 +33,15 @@
             <version>${rate-limiter.version}</version>
         </dependency>
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>${javax.servlet.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.6</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-core</artifactId>
-            <version>${bucket4j.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>

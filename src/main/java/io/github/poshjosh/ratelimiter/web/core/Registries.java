@@ -1,8 +1,8 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.UsageListener;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 
 import javax.cache.Cache;
@@ -26,7 +26,7 @@ public interface Registries<R> {
 
     Optional<BandwidthsStore<?>> getStore();
 
-    default Registries<R> registerCache(Cache<?, Bandwidths> cache) {
+    default Registries<R> registerCache(Cache<?, Bandwidth[]> cache) {
         return registerStore(BandwidthsStore.ofCache(cache));
     }
 

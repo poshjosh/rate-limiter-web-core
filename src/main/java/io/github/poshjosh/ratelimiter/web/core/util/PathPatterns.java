@@ -32,6 +32,9 @@ public interface PathPatterns<PATH> extends Serializable {
         public boolean matches(Object path) {
             return false;
         }
+        @Override public String toString() {
+            return "PathPatterns$NONE";
+        }
     };
 
     @SuppressWarnings("unchecked")

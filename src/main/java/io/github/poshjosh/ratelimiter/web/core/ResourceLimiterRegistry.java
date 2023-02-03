@@ -5,15 +5,20 @@ import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
 
 public interface ResourceLimiterRegistry<R> {
 
-    static <R> ResourceLimiterRegistry<R> ofDefaults() {
-        return of(ResourceLimiterConfig.<R>builder().build());
+    static ResourceLimiterRegistry<HttpServletRequest> of(PathPatternsProvider pathPatternsProvider) {
+        return of(ResourceLimiterConfig.builder(HttpServletRequest.class)
+                .pathPatternsProvider(pathPatternsProvider)
+                .build());
     }
 
     static <R> ResourceLimiterRegistry<R> of(ResourceLimiterConfig<R> resourceLimiterConfig) {
@@ -39,7 +44,27 @@ public interface ResourceLimiterRegistry<R> {
         return disabled == null || Boolean.FALSE.equals(disabled);
     }
 
+    /**
+     * Return the Matchers registered to {@link Registries#matchers()}
+     *
+     * Registration is done by calling any of the <code>register</code> methods of the returned
+     * {@link io.github.poshjosh.ratelimiter.web.core.Registry}
+     *
+     * @return The registered matchers
+     * @see #getMatchers(String)
+     */
     UnmodifiableRegistry<Matcher<R, ?>> matchers();
+
+    default boolean hasMatching(String id) {
+        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+    }
+
+    /**
+     * @param id The id of the matchers to return
+     * @return All the matchers that will be applied for the given id
+     * @see #matchers()
+     */
+    List<Matcher<R, ?>> getMatchers(String id);
 
     Optional<BandwidthsStore<?>> getStore();
 

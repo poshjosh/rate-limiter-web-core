@@ -1,24 +1,26 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
 
 /**
  * @param <REQUEST> The type of the request related object
  */
-final class ResourceLimiterConfigBuilder<REQUEST>
+class ResourceLimiterConfigBuilder<REQUEST>
         implements ResourceLimiterConfig.Builder<REQUEST> {
 
-    private static final class ResourceLimiterConfigImpl<T> extends ResourceLimiterConfig<T> {
+    static final class ResourceLimiterConfigImpl<T> extends ResourceLimiterConfig<T> {
 
         private RateLimitProperties properties;
         private ResourceLimiterConfigurer<T> configurer;
@@ -31,7 +33,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
 
         private Supplier<List<Class<?>>> resourceClassesSupplier;
 
-        private MatcherFactory<T> matcherFactory;
+        private MatcherProvider<T, ?> matcherProvider;
 
         // Package access getters
         //
@@ -47,7 +49,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override MatcherFactory<T> getMatcherFactory() { return matcherFactory; }
+        @Override MatcherProvider<T, ?> getMatcherProvider() { return matcherProvider; }
 
         @Override RateProcessor<Class<?>> getClassRateProcessor() {
             return classRateProcessor;
@@ -58,18 +60,33 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         }
     }
 
+    private final Class<REQUEST> requestType;
+
     private final ResourceLimiterConfigImpl<REQUEST> configuration;
 
-    ResourceLimiterConfigBuilder() {
+    ResourceLimiterConfigBuilder(Class<REQUEST> requestType) {
+        this.requestType = Objects.requireNonNull(requestType);
         this.configuration = new ResourceLimiterConfigImpl<>();
     }
 
     @Override public ResourceLimiterConfig<REQUEST> build() {
 
+        if (HttpServletRequest.class.isAssignableFrom(requestType)) {
+            if (configuration.requestToIdConverter == null) {
+                requestToIdConverter((RequestToIdConverter)RequestToIdConverter.ofHttpServletRequest());
+            }
+            if (configuration.expressionMatcher == null) {
+                expressionMatcher((ExpressionMatcher)WebExpressionMatcher.ofHttpServletRequest());
+            }
+        }
+
         Objects.requireNonNull(configuration.requestToIdConverter);
+        if (configuration.expressionMatcher == null) {
+            configuration.expressionMatcher = ExpressionMatcher.matchNone();
+        }
 
         if (configuration.properties == null) {
-            configuration.properties = new DefaultRateLimitProperties();
+            configuration.properties = new EmptyRateLimitProperties();
         }
         if (configuration.classesInPackageFinder == null) {
             classesInPackageFinder(ClassesInPackageFinder.ofDefaults());
@@ -94,11 +111,7 @@ final class ResourceLimiterConfigBuilder<REQUEST>
             return new ArrayList<>(classes);
         };
 
-        if (configuration.expressionMatcher == null) {
-            configuration.expressionMatcher = ExpressionMatcher.matchNone();
-        }
-
-        configuration.matcherFactory = new DefaultMatcherFactory<>(
+        configuration.matcherProvider = new DefaultMatcherProvider<>(
                 configuration.pathPatternsProvider,
                 configuration.requestToIdConverter,
                 configuration.expressionMatcher);
@@ -154,8 +167,8 @@ final class ResourceLimiterConfigBuilder<REQUEST>
         return this;
     }
 
-    private static final class DefaultRateLimitProperties implements RateLimitProperties {
-        private DefaultRateLimitProperties() { }
+    private static final class EmptyRateLimitProperties implements RateLimitProperties {
+        private EmptyRateLimitProperties() { }
         @Override public List<Class<?>> getResourceClasses() { return Collections.emptyList(); }
         @Override public List<String> getResourcePackages() {
             return Collections.emptyList();
