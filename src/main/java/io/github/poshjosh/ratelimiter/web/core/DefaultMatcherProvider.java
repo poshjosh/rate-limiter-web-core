@@ -36,10 +36,7 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
 
     @Override
     public Matcher<R, K> createMatcher(Node<RateConfig> node) {
-        if (node.isRoot()) {
-            return Matcher.matchNone();
-        }
-        final RateConfig rateConfig = requireRateConfig(node);
+        RateConfig rateConfig = requireRateConfig(node);
         final Rates rates = rateConfig.getRates();
         if(!rates.hasLimits() && !parentHasLimits(node)) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
@@ -55,14 +52,14 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
             }
             return main.andThen((Matcher)supplementaryMatcherOpt.get());
         }
-        return (Matcher<R, K>)supplementaryMatcherOpt.get();
+        return (Matcher<R, K>)supplementaryMatcherOpt.orElse(Matcher.matchNone());
     }
 
 
     @Override
     public List<Matcher<R, K>> createMatchers(Node<RateConfig> node) {
-        final Rates rates = requireRateConfig(node).getRates();
-        return createSupplementaryMatchers(rates);
+        RateConfig rateConfig = requireRateConfig(node);
+        return createSupplementaryMatchers(rateConfig.getRates());
     }
 
     private boolean parentHasLimits(Node<RateConfig> node) {
@@ -100,7 +97,9 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
         } else if (defaultExpressionMatcher.isSupported(expression)) {
             return Optional.of(defaultExpressionMatcher.with(expression));
         }
-        return Optional.empty();
+        throw new UnsupportedOperationException("Expression not supported: " + expression +
+                " by any of: [" + expressionMatcher.getClass().getSimpleName() +
+                "," + expressionMatcher.getClass().getSimpleName() + "]");
     }
 
     private Matcher<R, PathPatterns<String>> createPathPatternMatcher(Element element) {
