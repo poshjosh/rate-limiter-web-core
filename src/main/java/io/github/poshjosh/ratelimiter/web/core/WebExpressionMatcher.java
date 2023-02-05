@@ -208,7 +208,7 @@ public abstract class WebExpressionMatcher<R>
                 result = expression.with(input, fromRequest);
             }
         }
-        LOG.debug("Type: {}, key: {}, name: {}, output: {}, input: {}",
+        LOG.trace("Type: {}, key: {}, name: {}, output: {}, input: {}",
                 type, key, name, result, expression);
         return result;
     }

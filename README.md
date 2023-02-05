@@ -70,43 +70,42 @@ Limiters, matchers, caches and listeners, could be configured by implementing an
 exposing a `ResourceLimiterConfigurer` as shown below:
 
 ```java
-@Configuration 
-public class RateLimiterConfigurerImpl
-        implements ResourceLimiterConfigurer<HttpServletRequest> {
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 
-    @Override 
-    public void configure(Registries<HttpServletRequest> registries) {
+@Configuration public class Configurer implements ResourceLimiterConfigurer<HttpServletRequest> {
 
-        // Register usage listeners
-        // ------------------------
+  @Override public void configure(Registries<HttpServletRequest> registries) {
 
-        registries.listeners().register((context, resourceId, hits, limit) -> {
+    // Register usage listeners
+    // ------------------------
 
-            // For example, log the limit that was exceeded
-            System.out
-                    .println("For " + resourceId + ", the following limits are exceeded: " + limit);
-        });
+    registries.listeners().register((context, resourceId, hits, limit) -> {
 
-        // Register request matchers
-        // -------------------------
+      // For example, log the limit that was exceeded
+      System.out.println("For " + resourceId + ", exceeded limit: " + limit);
+    });
 
-        // Identify resources to rate-limit by session id
-        registries.matchers().register("limitBySession", request -> request.getSession().getId());
+    // Register request matchers
+    // -------------------------
 
-        // Identify resources to rate-limit by the presence of request parameter "utm_source"
-        registries.matchers()
-                .register("limitByUtmSource", request -> request.getParameter("utm_source"));
+    // Identify resources to rate-limit by session id
+    registries.matchers().register("limitBySession", request -> request.getSession().getId());
 
-        // Rate limit users from a specific utm_source e.g facebook
-        registries.matchers().register("limitByUtmSourceIsFacebook",
-                request -> "facebook".equals(request.getParameter("utm_source")));
+    // Identify resources to rate-limit by the presence of request parameter "utm_source"
+    registries.matchers()
+            .register("limitByUtmSource", request -> request.getParameter("utm_source"));
 
-        // You could use a variety of Cache flavours
-        // -----------------------------------------
+    // Rate limit users from a specific utm_source e.g facebook
+    registries.matchers().register("limitByUtmSourceIsFacebook",
+            request -> "facebook".equals(request.getParameter("utm_source")));
 
-        javax.cache.Cache javaxCache = null; // PROVIDE THIS
-        registries.caches().register("limitBySession", new JavaRateCache<>(javaxCache));
-    }
+    // You could use a variety of Cache flavours
+    // -----------------------------------------
+
+    javax.cache.Cache cache = null; // PROVIDE THIS
+    
+    registries.registerStore(BandwidthsStore.ofCache(cache));
+  }
 }
 ```
 
@@ -259,11 +258,13 @@ import java.util.Map;
 
 public class RateLimitPropertiesImpl implements RateLimitProperties {
 
-    @Override public List<String> getResourcePackages() {
+    @Override 
+    public List<String> getResourcePackages() {
         return Collections.singletonList("com.example.web.resources");
     }
 
-    @Override public Map<String, Rates> getRateLimitConfigs() {
+    @Override 
+    public Map<String, Rates> getRateLimitConfigs() {
         return Collections.singletonMap("limitBySession", Rates.of(getRates()));
     }
 
