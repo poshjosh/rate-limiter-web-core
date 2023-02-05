@@ -1,8 +1,9 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
-import io.github.poshjosh.ratelimiter.annotation.Element;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry<R> {
 
@@ -82,8 +84,8 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                 return true;
             }
             return transferredToAnnotations.contains(node.getName()) || node.getValueOptional()
-                    .map(val -> (Element)val.getSource())
-                    .filter(Element::isRateLimited).isPresent();
+                    .map(val -> (RateSource)val.getSource())
+                    .filter(RateSource::isRateLimited).isPresent();
         };
 
         Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited = node -> {
@@ -108,15 +110,36 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         return test.test(node) || node.getChildren().stream().anyMatch(child -> testTree(child, test));
     }
 
-    public boolean isRateLimited(String id) {
-        return propertiesRootNode.findFirstChild(node -> isRateLimited(id, node)).isPresent()
-                || annotationsRootNode.findFirstChild(node -> isRateLimited(id, node)).isPresent();
+    @Override
+    public List<RateLimiter> getRateLimiters(String id) {
+        return getRateConfig(id)
+                .map(rateConfig -> {
+                    RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
+                    Bandwidth[] bandwidths = converter.convert(id, rateConfig.getRates(), 0);
+                    return Arrays.stream(bandwidths).map(RateLimiter::of).collect(Collectors.toList());
+                }).orElse(Collections.emptyList());
     }
 
-    private boolean isRateLimited(String id, Node<RateConfig> node) {
+    @Override
+    public Optional<RateConfig> getRateConfig(String id) {
+        RateConfig rateConfig = propertiesRootNode.findFirstChild(node -> matches(id, node))
+                .flatMap(Node::getValueOptional)
+                .orElseGet(() -> annotationsRootNode.findFirstChild(node -> matches(id, node))
+                        .flatMap(Node::getValueOptional).orElse(null));
+        return Optional.ofNullable(rateConfig);
+    }
+
+    @Override
+    public boolean isRateLimited(String id) {
+        return propertiesRootNode.findFirstChild(node -> matches(id, node)).isPresent()
+                || annotationsRootNode.findFirstChild(node -> matches(id, node)).isPresent();
+    }
+
+    private boolean matches(String id, Node<RateConfig> node) {
         return id.equals(node.getName());
     }
 
+    @Override
     public ResourceLimiter<R> createResourceLimiter() {
 
         ResourceLimiter<R> limiterForProperties = ResourceLimiter.of(
@@ -148,7 +171,8 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @return The registered matchers
      * @see #getMatchers(String)
      */
-    @Override public UnmodifiableRegistry<Matcher<R>> matchers() {
+    @Override
+    public UnmodifiableRegistry<Matcher<R>> matchers() {
         return Registry.unmodifiable(registries.matchers());
     }
 
@@ -157,15 +181,18 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @return All the matchers that will be applied for the given id
      * @see #matchers()
      */
+    @Override
     public List<Matcher<R>> getMatchers(String id) {
         List<Matcher<R>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
     }
 
+    @Override
     public Optional<BandwidthsStore<?>> getStore() {
         return registries.getStore();
     }
 
+    @Override
     public Optional<UsageListener> getListener() {
         return registries.getListener();
     }

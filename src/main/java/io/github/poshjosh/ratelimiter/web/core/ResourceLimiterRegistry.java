@@ -1,10 +1,12 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -28,6 +30,10 @@ public interface ResourceLimiterRegistry<R> {
     ResourceLimiter<R> createResourceLimiter();
 
     boolean isRateLimited(String id);
+
+    List<RateLimiter> getRateLimiters(String id);
+
+    Optional<RateConfig> getRateConfig(String id);
 
     RateLimitProperties properties();
 

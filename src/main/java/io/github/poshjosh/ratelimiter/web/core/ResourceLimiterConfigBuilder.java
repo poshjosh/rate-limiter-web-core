@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
@@ -11,6 +12,7 @@ import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 
 import javax.servlet.http.HttpServletRequest;
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -183,12 +185,13 @@ class ResourceLimiterConfigBuilder<REQUEST>
         @Override
         public Node<RateConfig> process(
                 Node<RateConfig> root, NodeConsumer consumer, RateLimitProperties source) {
-            return addNodesToRoot(root, source.getRateLimitConfigs(), consumer);
+            return addNodesToRoot(root, source, consumer);
         }
         private Node<RateConfig> addNodesToRoot(
                 Node<RateConfig> rootNode,
-                Map<String, Rates> limits,
+                RateLimitProperties source,
                 NodeConsumer nodeConsumer) {
+            Map<String, Rates> limits = source.getRateLimitConfigs();
             Map<String, Rates> configsWithoutParent = new LinkedHashMap<>(limits);
             Rates rootNodeConfig = configsWithoutParent.remove(rootNode.getName());
             if (rootNodeConfig != null) {
@@ -197,21 +200,41 @@ class ResourceLimiterConfigBuilder<REQUEST>
                         RateLimitProperties.class.getName());
             }
             nodeConsumer.accept(Rates.empty(), rootNode);
-            createNodes(rootNode, configsWithoutParent, nodeConsumer);
+            createNodes(rootNode, nodeConsumer, source, configsWithoutParent);
             return rootNode;
         }
         private void createNodes(
                 Node<RateConfig> parent,
-                Map<String, Rates> limits,
-                NodeConsumer nodeConsumer) {
+                NodeConsumer nodeConsumer,
+                RateLimitProperties source,
+                Map<String, Rates> limits) {
             Set<Map.Entry<String, Rates>> entrySet = limits.entrySet();
             for (Map.Entry<String, Rates> entry : entrySet) {
                 String name = entry.getKey();
                 Checks.requireParentNameDoesNotMatchChild(parent.getName(), name);
                 Rates rates = entry.getValue();
-                Node<RateConfig> node = Node.of(name, RateConfig.of(rates, rates), parent);
+                RateSource rateSource = new PropertyRateSource(name, rates.hasLimits(), source);
+                Node<RateConfig> node = Node.of(name, RateConfig.of(rateSource, rates), parent);
                 nodeConsumer.accept(rates, node);
             }
         }
+    }
+
+    private static final class PropertyRateSource extends RateSource {
+        private final String id;
+        private final boolean rateLimited;
+        private final RateLimitProperties source;
+        public PropertyRateSource(String id, boolean rateLimited, RateLimitProperties source) {
+            this.id = Objects.requireNonNull(id);
+            this.rateLimited = rateLimited;
+            this.source = Objects.requireNonNull(source);
+        }
+        @Override public Object getSource() { return source; }
+        @Override public String getId() { return id; }
+        @Override
+        public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
+            return Optional.empty();
+        }
+        @Override public boolean isRateLimited() { return rateLimited; }
     }
 }

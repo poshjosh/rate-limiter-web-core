@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.annotation.Element;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.*;
@@ -9,6 +9,7 @@ import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.GenericDeclaration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,10 +44,10 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
                     node.getName());
             return Matcher.matchNone();
         }
-        final Object source = rateConfig.getSource();
+        final RateSource source = rateConfig.getSource();
         Optional<Matcher<R>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
-        if (source instanceof Element) {
-            Matcher<R> main = createPathPatternMatcher((Element)source);
+        if (!source.isGroupType() && source.getSource() instanceof GenericDeclaration) {
+            Matcher<R> main = createPathPatternMatcher(source);
             if (!supplementaryMatcherOpt.isPresent()) {
                 return main;
             }
@@ -100,8 +101,8 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
                 "," + expressionMatcher.getClass().getSimpleName() + "]");
     }
 
-    private Matcher<R> createPathPatternMatcher(Element element) {
-        PathPatterns<String> pathPatterns = pathPatternsProvider.get(element);
+    private Matcher<R> createPathPatternMatcher(RateSource rateSource) {
+        PathPatterns<String> pathPatterns = pathPatternsProvider.get(rateSource);
         return new PathPatternsMatcher<>(pathPatterns, requestToIdConverter);
     }
 
