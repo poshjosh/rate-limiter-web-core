@@ -12,7 +12,7 @@ We believe that rate limiting should be as simple as:
 public class GreetingResource {
 
   // Only 2 calls per second to this path, for users in role GUEST
-  @Rate(permits=2, when="web.session.user.role=GUEST")
+  @Rate(permits=2, when="web.request.user.role=GUEST")
   @GetMapping("/smile")
   public String smile() {
     return ":)";

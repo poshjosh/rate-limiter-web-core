@@ -4,19 +4,18 @@ public interface WebExpressionKey {
 
     String ATTRIBUTE = "web.request.attribute";
     String AUTH_SCHEME = "web.request.auth.scheme";
-    String COOKIE = "web.session.cookie";
+    String COOKIE = "web.request.cookie";
     String HEADER = "web.request.header";
-    String PARAMETER = "web.request.parameter";
-    String REMOTE_ADDRESS = "web.request.remote.address";
 
     /**
      * Format en-US, de-DE etc
      */
     String LOCALE = "web.request.locale";
-
-    String USER_ROLE = "web.session.user.role";
-    String USER_PRINCIPAL = "web.session.user.principal";
+    String PARAMETER = "web.request.parameter";
+    String REMOTE_ADDRESS = "web.request.remote.address";
     String REQUEST_URI = "web.request.uri";
+    String USER_ROLE = "web.request.user.role";
+    String USER_PRINCIPAL = "web.request.user.principal";
 
     /** A Session will be created if none */
     String SESSION_ID = "web.session.id";
@@ -41,12 +40,12 @@ public interface WebExpressionKey {
             case AUTH_SCHEME:
             case COOKIE:
             case HEADER:
+            case LOCALE:
             case PARAMETER:
             case REMOTE_ADDRESS:
-            case LOCALE:
+            case REQUEST_URI:
             case USER_ROLE:
             case USER_PRINCIPAL:
-            case REQUEST_URI:
             case SESSION_ID:
                 return true;
             default:

@@ -12,9 +12,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
-final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvider<R, K> {
+final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultMatcherProvider.class);
 
@@ -35,7 +36,7 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
     }
 
     @Override
-    public Matcher<R, K> createMatcher(Node<RateConfig> node) {
+    public Matcher<R, String> createMatcher(Node<RateConfig> node) {
         RateConfig rateConfig = requireRateConfig(node);
         final Rates rates = rateConfig.getRates();
         if(!rates.hasLimits() && !parentHasLimits(node)) {
@@ -46,18 +47,17 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
         final Object source = rateConfig.getSource();
         Optional<Matcher<R, String>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
         if (source instanceof Element) {
-            Matcher<R, PathPatterns<String>> main = createPathPatternMatcher((Element)source);
+            Matcher<R, String> main = createPathPatternMatcher((Element)source);
             if (!supplementaryMatcherOpt.isPresent()) {
-                return (Matcher<R, K>)main;
+                return main;
             }
-            return main.andThen((Matcher)supplementaryMatcherOpt.get());
+            return Matcher.compose(main, supplementaryMatcherOpt.get());
         }
-        return (Matcher<R, K>)supplementaryMatcherOpt.orElse(Matcher.matchNone());
+        return supplementaryMatcherOpt.orElse(Matcher.matchNone());
     }
 
-
     @Override
-    public List<Matcher<R, K>> createMatchers(Node<RateConfig> node) {
+    public List<Matcher<R, String>> createMatchers(Node<RateConfig> node) {
         RateConfig rateConfig = requireRateConfig(node);
         return createSupplementaryMatchers(rateConfig.getRates());
     }
@@ -80,11 +80,10 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
         return createExpressionMatcher(rates.getRateCondition());
     }
 
-    private List<Matcher<R, K>> createSupplementaryMatchers(Rates rates) {
+    private List<Matcher<R, String>> createSupplementaryMatchers(Rates rates) {
         return rates.getLimits().stream()
                 .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(null))
                 .filter(Objects::nonNull)
-                .map(matcher -> (Matcher<R, K>)matcher)
                 .collect(Collectors.toList());
     }
 
@@ -102,7 +101,7 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
                 "," + expressionMatcher.getClass().getSimpleName() + "]");
     }
 
-    private Matcher<R, PathPatterns<String>> createPathPatternMatcher(Element element) {
+    private Matcher<R, String> createPathPatternMatcher(Element element) {
         PathPatterns<String> pathPatterns = pathPatternsProvider.get(element);
         return new PathPatternsMatcher<>(pathPatterns, requestToIdConverter);
     }
@@ -112,11 +111,13 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
      *
      * @param <R> The type of the request for which a match will be checked for
      */
-    private static class PathPatternsMatcher<R> implements Matcher<R, PathPatterns<String>> {
+    private static class PathPatternsMatcher<R> implements Matcher<R, String> {
 
         private final PathPatterns<String> pathPatterns;
 
         private final RequestToIdConverter<R, String> requestToUriConverter;
+
+        private final String id;
 
         public PathPatternsMatcher(
                 PathPatterns<String> pathPatterns,
@@ -125,11 +126,14 @@ final class DefaultMatcherProvider<R, K extends Object> implements MatcherProvid
             this.pathPatterns = Objects.requireNonNull(pathPatterns);
 
             this.requestToUriConverter = Objects.requireNonNull(requestToUriConverter);
+
+            final List<String> paths = pathPatterns.getPatterns();
+            this.id = paths.isEmpty() ? "" : (paths.size() == 1 ? paths.get(0) : paths.toString());
         }
 
         @Override
-        public PathPatterns<String> matchOrNull(R target) {
-            return matches(target) ? pathPatterns : null;
+        public String matchOrNull(R target) {
+            return matches(target) ? id : null;
         }
 
         @Override

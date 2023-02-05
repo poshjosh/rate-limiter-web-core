@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BinaryOperator;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -222,7 +223,8 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                 return created;
             } else {
                 LOG.debug("Found existing matcher for {}, matcher: {}", nodeName, existing);
-                Matcher<R, K> result = created == null ? existing : created.andThen(existing);
+                BinaryOperator<K> resultComposer = (k0, k1) -> (K)(k0 + "_" + k1);
+                Matcher<R, K> result = created == null ? existing : created.andThen(existing, resultComposer);
                 addIfAbsent(nodeName, result);
                 return result;
             }

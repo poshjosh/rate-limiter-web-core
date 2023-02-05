@@ -24,12 +24,12 @@ public abstract class WebExpressionMatcher<R>
     private static final Logger LOG = LoggerFactory.getLogger(WebExpressionMatcher.class);
 
     interface Transformer<T>{
-        T [] transform(String name, String [] toTransform, List<T> fromRequest);
+        T [] transform(String name, String [] toTransform, List<T> fromWebRequest);
     }
 
     private static class StringToLocaleTransformer implements Transformer<Locale>{
         @Override
-        public Locale[] transform(String name, String[] toTransform, List<Locale> fromRequest) {
+        public Locale[] transform(String name, String[] toTransform, List<Locale> fromWebRequest) {
             if (toTransform.length == 0) {
                 return new Locale[0];
             }
@@ -42,7 +42,7 @@ public abstract class WebExpressionMatcher<R>
     }
 
     private static class NoopTransformer implements Transformer<String> {
-        @Override public String[] transform(String name, String[] toTransform, List<String> fromRequest) {
+        @Override public String[] transform(String name, String[] toTransform, List<String> fromWebRequest) {
             return toTransform;
         }
     }
@@ -99,7 +99,7 @@ public abstract class WebExpressionMatcher<R>
         if (!isSupported(expression.getOperator())) {
             return false;
         }
-        if (!WebExpressionKey.isKey(expression.getLeft())){
+        if (!WebExpressionKey.isKey(expression.requireLeft())){
             return false;
         }
         validate(expression);
@@ -108,14 +108,14 @@ public abstract class WebExpressionMatcher<R>
 
     private void validate(Expression<String> expression) {
         final Type type = getType(expression);
-        final String rhs = expression.getRight();
+        final String rhs = expression.getRightOrDefault(null);
         if (!Type.OBJ_RHS.equals(type)) {
-            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && rhs.isEmpty()) {
+            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && (rhs == null || rhs.isEmpty())) {
                 throw Checks.notSupported(this, expression);
             }
             return;
         }
-        if(Expression.ofLenient(rhs).getLeft().isEmpty()) {
+        if(Expression.of(rhs).requireLeft().isEmpty()) {
             throw Checks.notSupported(this, rhs);
         }
         if(rhs.startsWith("{") && rhs.endsWith("}")) {
@@ -127,10 +127,11 @@ public abstract class WebExpressionMatcher<R>
     private enum Type{OBJ_RHS, NON_OBJ_RHS, NON_OBJ_RHS__PAIR_TYPE}
 
     private Type getType(Expression<String> expression) {
-        if (expression.getRight().contains("=")) {
+        final String right = expression.getRightOrDefault(null);
+        if (right != null && right.contains("=")) {
             return Type.OBJ_RHS;
         }
-        return WebExpressionKey.isNameValueType(expression.getLeft())
+        return WebExpressionKey.isNameValueType(expression.requireLeft())
                 ? Type.NON_OBJ_RHS__PAIR_TYPE : Type.NON_OBJ_RHS;
     }
 
@@ -149,7 +150,7 @@ public abstract class WebExpressionMatcher<R>
      * web.request.locale=[en_US|en_UK]             means: match either locales
      * We resolve the above to expression: [en_US|en_UK]=[LOCALES_FROM_REQUEST]
      *
-     * web.session.user.role=GUEST                  means: match if the user role is GUEST
+     * web.request.user.role=GUEST                  means: match if the user role is GUEST
      * We resolve the above as follows:
      *  - If the user is in role GUEST: GUEST=GUEST
      *  - If the user is not in role GUEST: GUEST=''
@@ -165,30 +166,30 @@ public abstract class WebExpressionMatcher<R>
             throw Checks.notSupported(this, expression);
         }
         final Type type = getType(expression);
-        final String key = expression.getLeft();
+        final String key = expression.requireLeft();
         final String name;
         final Expression<Object> result;
         if (Type.OBJ_RHS.equals(type)) {
-            final Expression<String> rhs = Expression
-                    .ofLenient(withoutObjectBrackets(expression.getRight()));
-            name = requireName(rhs.getLeft(), rhs);
-            final Object fromRequest = getValue(request, key, name);
-            final Object input;
+            final Expression<String> rhs = Expression.of(withoutObjectBrackets(expression.requireRight()));
+            name = requireName(rhs.requireLeft(), rhs);
+            final Object fromWebRequest = getValue(request, key, name);
+            final Object fromExpression;
             if (COOKIE.equals(key)) {
-                input = hasValue(fromRequest, key, name) ? fromRequest : "";
+                fromExpression = hasValue(fromWebRequest, key) ? fromWebRequest : "";
             } else {
-                input = splitIntoArrayIfNeed(
-                        rhs.getLeft(), rhs.getRight(), fromRequest, getTransformer(key));
+                fromExpression = splitIntoArrayIfNeed(
+                        rhs.requireLeft(), rhs.getRightOrDefault(null), 
+                        fromWebRequest, getTransformer(key));
             }
-            result = expression.with(input, fromRequest);
+            result = expression.with(fromWebRequest, fromExpression);
         } else {
             if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type)) {
-                name = requireName(expression.getRight(), expression);
-                final Object fromRequest = getValue(request, key, name);
-                final boolean hasValue = hasValue(fromRequest, key, name);
+                name = requireName(expression.getRightOrDefault(null), expression);
+                final Object fromWebRequest = getValue(request, key, name);
+                final boolean hasValue = hasValue(fromWebRequest, key);
                 if (COOKIE.equals(key)) {
-                    final Object input = hasValue ? fromRequest : "";
-                    result = expression.with(input, fromRequest);
+                    final Object fromExpression = hasValue ? fromWebRequest : "";
+                    result = expression.with(fromWebRequest, fromExpression);
                 } else {
                     if (!hasValue) {
                         result = Expression.FALSE;
@@ -196,43 +197,45 @@ public abstract class WebExpressionMatcher<R>
                         // web.request.header=Content-Type  means: If the content type has a value
                         // We resolve the above to expression: Content-Type!=''  (i.e not equals)
                         //
-                        final Object input = splitIntoArrayIfNeed(name, fromRequest, getTransformer(key));
-                        result = expression.with(input, fromRequest).flipOperator();
+                        final Object fromExpression = splitIntoArrayIfNeed(
+                                name, fromWebRequest, getTransformer(key));
+                        result = expression.with(fromWebRequest, fromExpression).flipOperator();
                     }
                 }
             } else {
                 name = "";
-                final Object fromRequest = getValue(request, key, name);
-                final Object input = splitIntoArrayIfNeed(
-                        "", expression.getRight(), fromRequest, getTransformer(key));
-                result = expression.with(input, fromRequest);
+                final Object fromWebRequest = getValue(request, key, name);
+                final Object fromExpression = splitIntoArrayIfNeed(
+                        "", expression.getRightOrDefault(null), 
+                        fromWebRequest, getTransformer(key));
+                result = expression.with(fromWebRequest, fromExpression);
             }
         }
-        LOG.trace("Type: {}, key: {}, name: {}, output: {}, input: {}",
+        LOG.trace("YType: {}, key: {}, name: {}, output: {}, input: {}",
                 type, key, name, result, expression);
         return result;
     }
 
-    private boolean hasValue(Object fromRequest, String key, String name) {
+    private boolean hasValue(Object fromWebRequest, String key) {
         switch(key) {
             case ATTRIBUTE:
-                return fromRequest != null;
+                return fromWebRequest != null;
             case AUTH_SCHEME:
-                return fromRequest != null && !fromRequest.toString().isEmpty();
+                return fromWebRequest != null && !fromWebRequest.toString().isEmpty();
             case COOKIE:
-                RequestInfo.Cookie cookie = (RequestInfo.Cookie)fromRequest;
+                RequestInfo.Cookie cookie = (RequestInfo.Cookie)fromWebRequest;
                 return !cookie.name().isEmpty() && !cookie.value().isEmpty();
             case HEADER:
             case PARAMETER:
-                return !((List)fromRequest).isEmpty();
+                return !((List)fromWebRequest).isEmpty();
             case USER_ROLE:
-                return !"".equals(fromRequest);
+                return !"".equals(fromWebRequest);
             default : throw new AssertionError();
         }
     }
 
     private String requireName(String name, Object unsupported) {
-        if (name.isEmpty()) {
+        if (name == null || name.isEmpty()) {
             throw Checks.notSupported(this, unsupported);
         }
         return name;
@@ -250,11 +253,14 @@ public abstract class WebExpressionMatcher<R>
         return without(value, "{", "}");
     }
 
-    private Object splitIntoArrayIfNeed(String name, String input, Object fromRequest, Transformer<?> transformer) {
-        if (!hasArrayBrackets(input)) {
-            return input;
+    private Object splitIntoArrayIfNeed(String name, String fromExpression, Object fromWebRequest, Transformer<?> transformer) {
+        if (fromExpression == null) {
+            return fromExpression;
         }
-        final String value = withoutArrayBrackets(input);
+        if (!hasArrayBrackets(fromExpression)) {
+            return fromExpression;
+        }
+        final String value = withoutArrayBrackets(fromExpression);
         final String arraySeparator;
         if (value.contains("|")) {
             arraySeparator = "|";
@@ -267,23 +273,23 @@ public abstract class WebExpressionMatcher<R>
                 .stream(value.split("[" + Pattern.quote(arraySeparator) + "]", 2))
                 .map(String::trim)
                 .toArray(String[]::new);
-        return splitIntoArrayIfNeed(name, input, arraySeparator, parts, fromRequest, transformer);
+        return splitIntoArrayIfNeed(name, fromExpression, arraySeparator, parts, fromWebRequest, transformer);
     }
 
-    private Object splitIntoArrayIfNeed(String name, Object fromRequest, Transformer<?> transformer) {
-        return splitIntoArrayIfNeed(name, "", "&", new String[0], fromRequest, transformer);
+    private Object splitIntoArrayIfNeed(String name, Object fromWebRequest, Transformer<?> transformer) {
+        return splitIntoArrayIfNeed(name, "", "&", new String[0], fromWebRequest, transformer);
     }
 
     private Object splitIntoArrayIfNeed(
-            String name, String input, String arraySeparator, String [] parts, Object fromRequest, Transformer<?> transformer) {
-        final Object [] transformed = transformer.transform(name, parts, toList(fromRequest));
+            String name, String fromExpression, String arraySeparator, String [] parts, Object fromWebRequest, Transformer<?> transformer) {
+        final Object [] transformed = transformer.transform(name, parts, toList(fromWebRequest));
         if (transformed.length == 0) {
             return "";
         }
         if (transformed.length == 1) {
             return transformed[0];
         }
-        return new Composite(input, arraySeparator, transformed);
+        return new Composite(fromExpression, arraySeparator, transformed);
     }
 
     private List toList(Object val){
@@ -314,32 +320,32 @@ public abstract class WebExpressionMatcher<R>
 
     @Override
     public boolean resolve(Expression<Object> expression) {
-        final Object input = expression.getLeft();
-        final Object fromRequest = expression.getRight();
-        final boolean result = resolve(input, fromRequest);
+        final Object fromWebRequest = expression.getLeftOrDefault(null);
+        final Object fromExpression = expression.getRightOrDefault(null);
+        final boolean result = resolve(fromWebRequest, fromExpression);
         return expression.getOperator().isNegation() != result;
     }
 
-    private boolean resolve(Object input, Object fromRequest) {
-        fromRequest = convertArrayToListIfNeed(fromRequest); // Support for arrays
-        if (input instanceof Composite) {
-            Composite composite = (Composite)input;
+    private boolean resolve(Object fromWebRequest, Object fromExpression) {
+        fromWebRequest = convertArrayToListIfNeed(fromWebRequest); // Support for arrays
+        if (fromExpression instanceof Composite) {
+            Composite composite = (Composite)fromExpression;
             Object [] inputArr = composite.values;
-            if (fromRequest instanceof List) {
-                List fromReqList = (List)fromRequest;
+            if (fromWebRequest instanceof List) {
+                List fromReqList = (List)fromWebRequest;
                 return MatchUtils.matches(composite.operator, fromReqList, inputArr);
             }
-            return MatchUtils.matches(composite.operator, fromRequest, inputArr);
+            return MatchUtils.matches(composite.operator, fromWebRequest, inputArr);
         }
-        if (fromRequest instanceof List) {
-            List fromReqList = (List)fromRequest;
-            return fromReqList.size() == 1 ? Objects.equals(fromReqList.get(0), input) : false;
+        if (fromWebRequest instanceof List) {
+            List fromReqList = (List)fromWebRequest;
+            return fromReqList.size() == 1 ? Objects.equals(fromReqList.get(0), fromExpression) : false;
         }
-        return Objects.equals(fromRequest, input);
+        return Objects.equals(fromWebRequest, fromExpression);
     }
 
-    private Object convertArrayToListIfNeed(Object fromRequest) {
-        return fromRequest instanceof Object[] ? Arrays.asList((Object[])fromRequest) : fromRequest;
+    private Object convertArrayToListIfNeed(Object obj) {
+        return obj instanceof Object[] ? Arrays.asList((Object[])obj) : obj;
     }
 
     private Object getValue(R request, String type, String name) {
