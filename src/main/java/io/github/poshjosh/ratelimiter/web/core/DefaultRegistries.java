@@ -8,18 +8,18 @@ import java.util.Optional;
 
 final class DefaultRegistries<R> implements Registries<R> {
 
-    private final Registry<Matcher<R, ?>> matcherRegistry;
+    private final Registry<Matcher<R>> matcherRegistry;
 
     private BandwidthsStore<?> store;
 
     private UsageListener listener;
 
-    DefaultRegistries(Matcher<R, ?> matcher) {
+    DefaultRegistries(Matcher<R> matcher) {
         this.matcherRegistry = Registry.of(matcher);
     }
 
     @Override
-    public Registry<Matcher<R, ?>> matchers() {
+    public Registry<Matcher<R>> matchers() {
         return matcherRegistry;
     }
 

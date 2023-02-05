@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BinaryOperator;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -40,7 +39,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
     }
 
     private final Registries<R> registries;
-    private final Map<String, List<Matcher<R, ?>>> matchers;
+    private final Map<String, List<Matcher<R>>> matchers;
     private final RateLimitProperties properties;
     private final MatcherProvider matcherProvider;
     private final Node<RateConfig> propertiesRootNode;
@@ -149,7 +148,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @return The registered matchers
      * @see #getMatchers(String)
      */
-    @Override public UnmodifiableRegistry<Matcher<R, ?>> matchers() {
+    @Override public UnmodifiableRegistry<Matcher<R>> matchers() {
         return Registry.unmodifiable(registries.matchers());
     }
 
@@ -158,8 +157,8 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @return All the matchers that will be applied for the given id
      * @see #matchers()
      */
-    public List<Matcher<R, ?>> getMatchers(String id) {
-        List<Matcher<R, ?>> result = matchers.get(id);
+    public List<Matcher<R>> getMatchers(String id) {
+        List<Matcher<R>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
     }
 
@@ -195,48 +194,47 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         }
     }
 
-    private static final class MatcherProviderMultiSource<R, K> implements MatcherProvider<R, K>{
+    private static final class MatcherProviderMultiSource<R, K> implements MatcherProvider<R>{
         private static final Logger LOG = LoggerFactory.getLogger(MatcherProviderMultiSource.class);
-        private final MatcherProvider<R, K> delegate;
-        private final Registry<Matcher<R, K>> registry;
-        private final Map<String, List<Matcher<R, ?>>> matchers;
+        private final MatcherProvider<R> delegate;
+        private final Registry<Matcher<R>> registry;
+        private final Map<String, List<Matcher<R>>> matchers;
         private MatcherProviderMultiSource(
-                MatcherProvider<R, K> delegate,
-                Registry<Matcher<R, K>> registry,
-                Map<String, List<Matcher<R, ?>>> matchers) {
+                MatcherProvider<R> delegate,
+                Registry<Matcher<R>> registry,
+                Map<String, List<Matcher<R>>> matchers) {
             this.delegate = Objects.requireNonNull(delegate);
             this.registry = Objects.requireNonNull(registry);
             this.matchers = Objects.requireNonNull(matchers);
         }
         @Override
-        public Matcher<R, K> createMatcher(Node<RateConfig> node) {
+        public Matcher<R> createMatcher(Node<RateConfig> node) {
 
             String nodeName = node.getName();
 
             // If no Matcher or a NO_OP Matcher exists, create new
-            Matcher<R, K> existing = registry.get(nodeName).orElse(Matcher.matchNone());
+            Matcher<R> existing = registry.get(nodeName).orElse(Matcher.matchNone());
 
-            Matcher<R, K> created = delegate.createMatcher(node);
+            Matcher<R> created = delegate.createMatcher(node);
 
             if (existing == Matcher.MATCH_NONE) {
                 addIfAbsent(nodeName, created);
                 return created;
             } else {
                 LOG.debug("Found existing matcher for {}, matcher: {}", nodeName, existing);
-                BinaryOperator<K> resultComposer = (k0, k1) -> (K)(k0 + "_" + k1);
-                Matcher<R, K> result = created == null ? existing : created.andThen(existing, resultComposer);
+                Matcher<R> result = created == null ? existing : created.andThen(existing);
                 addIfAbsent(nodeName, result);
                 return result;
             }
         }
         @Override
-        public List<Matcher<R, K>> createMatchers(Node<RateConfig> node) {
-            List<Matcher<R, K>> result = delegate.createMatchers(node);
+        public List<Matcher<R>> createMatchers(Node<RateConfig> node) {
+            List<Matcher<R>> result = delegate.createMatchers(node);
             result.forEach(matcher -> addIfAbsent(node.getName(), matcher));
             return result;
         }
-        private void addIfAbsent(String name,  Matcher<R, K> matcher) {
-            List<Matcher<R, ?>> list = matchers.computeIfAbsent(name, k -> new ArrayList<>());
+        private void addIfAbsent(String name,  Matcher<R> matcher) {
+            List<Matcher<R>> list = matchers.computeIfAbsent(name, k -> new ArrayList<>());
             if (!list.contains(matcher)) {
                 list.add(matcher);
             }

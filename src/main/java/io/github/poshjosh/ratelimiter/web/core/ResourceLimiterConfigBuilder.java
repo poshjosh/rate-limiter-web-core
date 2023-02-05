@@ -33,7 +33,7 @@ class ResourceLimiterConfigBuilder<REQUEST>
 
         private Supplier<List<Class<?>>> resourceClassesSupplier;
 
-        private MatcherProvider<T, ?> matcherProvider;
+        private MatcherProvider<T> matcherProvider;
 
         // Package access getters
         //
@@ -49,7 +49,7 @@ class ResourceLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override MatcherProvider<T, ?> getMatcherProvider() { return matcherProvider; }
+        @Override MatcherProvider<T> getMatcherProvider() { return matcherProvider; }
 
         @Override RateProcessor<Class<?>> getClassRateProcessor() {
             return classRateProcessor;

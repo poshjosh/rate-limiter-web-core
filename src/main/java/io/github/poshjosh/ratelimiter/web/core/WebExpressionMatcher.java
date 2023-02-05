@@ -75,8 +75,8 @@ public abstract class WebExpressionMatcher<R>
     }
 
     @Override
-    public String matchOrNull(R request) {
-        return delegate.matchOrNull(request);
+    public String match(R request) {
+        return delegate.match(request);
     }
 
     @Override

@@ -51,7 +51,7 @@ public abstract class ResourceLimiterConfig<REQUEST>{
 
     abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
 
-    abstract MatcherProvider<REQUEST, ?> getMatcherProvider();
+    abstract MatcherProvider<REQUEST> getMatcherProvider();
 
     abstract RateProcessor<Class<?>> getClassRateProcessor();
 

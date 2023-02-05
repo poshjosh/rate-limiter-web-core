@@ -53,7 +53,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return The registered matchers
      * @see #getMatchers(String)
      */
-    UnmodifiableRegistry<Matcher<R, ?>> matchers();
+    UnmodifiableRegistry<Matcher<R>> matchers();
 
     default boolean hasMatching(String id) {
         return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
@@ -64,7 +64,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return All the matchers that will be applied for the given id
      * @see #matchers()
      */
-    List<Matcher<R, ?>> getMatchers(String id);
+    List<Matcher<R>> getMatchers(String id);
 
     Optional<BandwidthsStore<?>> getStore();
 

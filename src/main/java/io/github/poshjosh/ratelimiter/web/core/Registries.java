@@ -14,11 +14,11 @@ public interface Registries<R> {
         return of(Matcher.matchNone());
     }
 
-    static <R> Registries<R> of(Matcher<R, ?> matcher) {
+    static <R> Registries<R> of(Matcher<R> matcher) {
         return new DefaultRegistries<>(matcher);
     }
 
-    Registry<Matcher<R, ?>> matchers();
+    Registry<Matcher<R>> matchers();
 
     default BandwidthsStore<?> getStoreOrDefault() {
         return getStore().orElse(BandwidthsStore.ofDefaults());

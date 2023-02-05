@@ -12,10 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
-final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
+final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultMatcherProvider.class);
 
@@ -36,7 +35,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
     }
 
     @Override
-    public Matcher<R, String> createMatcher(Node<RateConfig> node) {
+    public Matcher<R> createMatcher(Node<RateConfig> node) {
         RateConfig rateConfig = requireRateConfig(node);
         final Rates rates = rateConfig.getRates();
         if(!rates.hasLimits() && !parentHasLimits(node)) {
@@ -45,19 +44,19 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
             return Matcher.matchNone();
         }
         final Object source = rateConfig.getSource();
-        Optional<Matcher<R, String>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
+        Optional<Matcher<R>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
         if (source instanceof Element) {
-            Matcher<R, String> main = createPathPatternMatcher((Element)source);
+            Matcher<R> main = createPathPatternMatcher((Element)source);
             if (!supplementaryMatcherOpt.isPresent()) {
                 return main;
             }
-            return Matcher.compose(main, supplementaryMatcherOpt.get());
+            return main.andThen(supplementaryMatcherOpt.get());
         }
         return supplementaryMatcherOpt.orElse(Matcher.matchNone());
     }
 
     @Override
-    public List<Matcher<R, String>> createMatchers(Node<RateConfig> node) {
+    public List<Matcher<R>> createMatchers(Node<RateConfig> node) {
         RateConfig rateConfig = requireRateConfig(node);
         return createSupplementaryMatchers(rateConfig.getRates());
     }
@@ -76,18 +75,18 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
         return Objects.requireNonNull(node.getValueOrDefault(null));
     }
 
-    private Optional<Matcher<R, String>> createSupplementaryMatcher(Rates rates) {
+    private Optional<Matcher<R>> createSupplementaryMatcher(Rates rates) {
         return createExpressionMatcher(rates.getRateCondition());
     }
 
-    private List<Matcher<R, String>> createSupplementaryMatchers(Rates rates) {
+    private List<Matcher<R>> createSupplementaryMatchers(Rates rates) {
         return rates.getLimits().stream()
                 .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private Optional<Matcher<R, String>> createExpressionMatcher(String expression) {
+    private Optional<Matcher<R>> createExpressionMatcher(String expression) {
         if (expression == null || expression.isEmpty()) {
             return Optional.empty();
         }
@@ -101,7 +100,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
                 "," + expressionMatcher.getClass().getSimpleName() + "]");
     }
 
-    private Matcher<R, String> createPathPatternMatcher(Element element) {
+    private Matcher<R> createPathPatternMatcher(Element element) {
         PathPatterns<String> pathPatterns = pathPatternsProvider.get(element);
         return new PathPatternsMatcher<>(pathPatterns, requestToIdConverter);
     }
@@ -111,7 +110,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
      *
      * @param <R> The type of the request for which a match will be checked for
      */
-    private static class PathPatternsMatcher<R> implements Matcher<R, String> {
+    private static class PathPatternsMatcher<R> implements Matcher<R> {
 
         private final PathPatterns<String> pathPatterns;
 
@@ -132,8 +131,8 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
         }
 
         @Override
-        public String matchOrNull(R target) {
-            return matches(target) ? id : null;
+        public String match(R target) {
+            return matches(target) ? id : Matcher.NO_MATCH;
         }
 
         @Override
