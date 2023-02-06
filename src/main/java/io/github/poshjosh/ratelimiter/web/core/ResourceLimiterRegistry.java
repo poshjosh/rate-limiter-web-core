@@ -29,13 +29,60 @@ public interface ResourceLimiterRegistry<R> {
 
     ResourceLimiter<R> createResourceLimiter();
 
-    boolean isRateLimited(String id);
+    default boolean hasMatching(String id) {
+        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+    }
 
-    List<RateLimiter> getRateLimiters(String id);
+    Optional<UsageListener> getListener();
+
+    /**
+     * @param clazz The class bearing the matchers to return
+     * @return All the matchers that will be applied for the given id
+     * @see #getMatchers(String)
+     */
+    default List<Matcher<R>> getMatchers(Class<?> clazz) {
+        return getMatchers(ElementId.of(clazz));
+    }
+
+    /**
+     * @param method The method bearing the matchers to return
+     * @return All the matchers that will be applied for the given id
+     * @see #getMatchers(String)
+     */
+    default List<Matcher<R>> getMatchers(Method method) {
+        return getMatchers(ElementId.of(method));
+    }
+
+    /**
+     * @param id The id of the matchers to return
+     * @return All the matchers that will be applied for the given id
+     * @see #matchers()
+     */
+    List<Matcher<R>> getMatchers(String id);
+
+    default List<RateLimiter> createRateLimiters(Class clazz) {
+        return createRateLimiters(ElementId.of(clazz));
+    }
+
+    default List<RateLimiter> createRateLimiters(Method method) {
+        return createRateLimiters(ElementId.of(method));
+    }
+
+    List<RateLimiter> createRateLimiters(String id);
+
+    default Optional<RateConfig> getRateConfig(Class<?> clazz) {
+        return getRateConfig(ElementId.of(clazz));
+    }
+
+    default Optional<RateConfig> getRateConfig(Method method) {
+        return getRateConfig(ElementId.of(method));
+    }
 
     Optional<RateConfig> getRateConfig(String id);
 
-    RateLimitProperties properties();
+    Optional<BandwidthsStore<?>> getStore();
+
+    boolean isRateLimited(String id);
 
     default boolean isRateLimited(Class<?> clazz) {
         return isRateLimited(ElementId.of(clazz));
@@ -61,18 +108,5 @@ public interface ResourceLimiterRegistry<R> {
      */
     UnmodifiableRegistry<Matcher<R>> matchers();
 
-    default boolean hasMatching(String id) {
-        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
-    }
-
-    /**
-     * @param id The id of the matchers to return
-     * @return All the matchers that will be applied for the given id
-     * @see #matchers()
-     */
-    List<Matcher<R>> getMatchers(String id);
-
-    Optional<BandwidthsStore<?>> getStore();
-
-    Optional<UsageListener> getListener();
+    RateLimitProperties properties();
 }

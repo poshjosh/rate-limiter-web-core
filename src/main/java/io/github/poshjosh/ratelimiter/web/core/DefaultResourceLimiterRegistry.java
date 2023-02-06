@@ -9,10 +9,10 @@ import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -84,7 +84,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
                 return true;
             }
             return transferredToAnnotations.contains(node.getName()) || node.getValueOptional()
-                    .map(val -> (RateSource)val.getSource())
+                    .map(RateConfig::getSource)
                     .filter(RateSource::isRateLimited).isPresent();
         };
 
@@ -111,13 +111,35 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
     }
 
     @Override
-    public List<RateLimiter> getRateLimiters(String id) {
+    public ResourceLimiter<R> createResourceLimiter() {
+
+        ResourceLimiter<R> limiterForProperties = ResourceLimiter.of(
+                registries.getListenerOrDefault(),
+                (BandwidthsStore)registries.getStoreOrDefault(),
+                matcherProvider, propertiesRootNode
+        );
+
+        ResourceLimiter<R> limiterForAnnotations = ResourceLimiter.of(
+                registries.getListenerOrDefault(),
+                (BandwidthsStore)registries.getStoreOrDefault(),
+                matcherProvider, annotationsRootNode
+        );
+
+        return new ResourceLimiterWrapper<>(
+                limiterForProperties.andThen(limiterForAnnotations), this::isRateLimitingEnabled);
+    }
+
+    @Override
+    public List<RateLimiter> createRateLimiters(String id) {
         return getRateConfig(id)
-                .map(rateConfig -> {
-                    RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
-                    Bandwidth[] bandwidths = converter.convert(id, rateConfig.getRates(), 0);
-                    return Arrays.stream(bandwidths).map(RateLimiter::of).collect(Collectors.toList());
-                }).orElse(Collections.emptyList());
+                .map(rateConfig -> createRateLimiters(id, rateConfig.getRates()))
+                .orElse(Collections.emptyList());
+    }
+
+    private List<RateLimiter> createRateLimiters(String id, Rates rates) {
+        RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
+        Bandwidth[] bandwidths = converter.convert(id, rates, 0);
+        return Arrays.stream(bandwidths).map(RateLimiter::of).collect(Collectors.toList());
     }
 
     @Override
@@ -137,25 +159,6 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
 
     private boolean matches(String id, Node<RateConfig> node) {
         return id.equals(node.getName());
-    }
-
-    @Override
-    public ResourceLimiter<R> createResourceLimiter() {
-
-        ResourceLimiter<R> limiterForProperties = ResourceLimiter.of(
-                registries.getListenerOrDefault(),
-                (BandwidthsStore)registries.getStoreOrDefault(),
-                matcherProvider, propertiesRootNode
-        );
-
-        ResourceLimiter<R> limiterForAnnotations = ResourceLimiter.of(
-                registries.getListenerOrDefault(),
-                (BandwidthsStore)registries.getStoreOrDefault(),
-                matcherProvider, annotationsRootNode
-        );
-
-        return new ResourceLimiterWrapper<>(
-                limiterForProperties.andThen(limiterForAnnotations), this::isRateLimitingEnabled);
     }
 
     public RateLimitProperties properties() {
