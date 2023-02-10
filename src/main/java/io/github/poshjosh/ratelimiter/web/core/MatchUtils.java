@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.Operator;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.util.*;
 
@@ -82,6 +83,6 @@ final class MatchUtils {
         return list == null || list.isEmpty();
     }
     private static boolean isNullOrEmpty(Object o) {
-        return o == null || o.toString().isEmpty();
+        return o == null || !StringUtils.hasText(o.toString());
     }
 }

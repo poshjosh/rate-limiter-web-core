@@ -15,6 +15,21 @@ import java.util.Map;
 public interface RateLimitProperties {
 
     /**
+     * Get the application path. For example the path defined by JAX RS
+     * {@link @javax.ws.rs.ApplicationPath} annotation.
+     *
+     * The default is to return empty text. Applications which define an application path
+     * should override this method.
+     *
+     * <p>
+     *     <b>Note:</b> Application paths containing '*' or '?' are not currently supported.
+     *     <code>Tag:Issue:Application-paths-containing-asterix-or-question-mark-not-supported</code>
+     * </p>
+     * @return the application path
+     */
+    default String getApplicationPath() { return ""; }
+
+    /**
      * List of classes to search for resources annotated with rate limit related annotations.
      *
      * If using annotations, implement either this, {@link #getResourcePackages()}, or both.

@@ -7,7 +7,7 @@ import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
-import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,19 +15,19 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
-public interface ResourceLimiterRegistry<R> {
+public interface ResourceLimiterRegistry {
 
-    static ResourceLimiterRegistry<HttpServletRequest> of(PathPatternsProvider pathPatternsProvider) {
-        return of(ResourceLimiterConfig.builder(HttpServletRequest.class)
-                .pathPatternsProvider(pathPatternsProvider)
+    static ResourceLimiterRegistry of(ResourceInfoProvider resourceInfoProvider) {
+        return of(ResourceLimiterConfig.builder()
+                .resourceInfoProvider(resourceInfoProvider)
                 .build());
     }
 
-    static <R> ResourceLimiterRegistry<R> of(ResourceLimiterConfig<R> resourceLimiterConfig) {
-        return new DefaultResourceLimiterRegistry<>(resourceLimiterConfig);
+    static ResourceLimiterRegistry of(ResourceLimiterConfig resourceLimiterConfig) {
+        return new DefaultResourceLimiterRegistry(resourceLimiterConfig);
     }
 
-    ResourceLimiter<R> createResourceLimiter();
+    ResourceLimiter<HttpServletRequest> createResourceLimiter();
 
     default boolean hasMatching(String id) {
         return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
@@ -40,7 +40,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return All the matchers that will be applied for the given id
      * @see #getMatchers(String)
      */
-    default List<Matcher<R>> getMatchers(Class<?> clazz) {
+    default List<Matcher<HttpServletRequest>> getMatchers(Class<?> clazz) {
         return getMatchers(ElementId.of(clazz));
     }
 
@@ -49,7 +49,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return All the matchers that will be applied for the given id
      * @see #getMatchers(String)
      */
-    default List<Matcher<R>> getMatchers(Method method) {
+    default List<Matcher<HttpServletRequest>> getMatchers(Method method) {
         return getMatchers(ElementId.of(method));
     }
 
@@ -58,7 +58,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return All the matchers that will be applied for the given id
      * @see #matchers()
      */
-    List<Matcher<R>> getMatchers(String id);
+    List<Matcher<HttpServletRequest>> getMatchers(String id);
 
     default List<RateLimiter> createRateLimiters(Class clazz) {
         return createRateLimiters(ElementId.of(clazz));
@@ -106,7 +106,7 @@ public interface ResourceLimiterRegistry<R> {
      * @return The registered matchers
      * @see #getMatchers(String)
      */
-    UnmodifiableRegistry<Matcher<R>> matchers();
+    UnmodifiableRegistry<Matcher<HttpServletRequest>> matchers();
 
     RateLimitProperties properties();
 }

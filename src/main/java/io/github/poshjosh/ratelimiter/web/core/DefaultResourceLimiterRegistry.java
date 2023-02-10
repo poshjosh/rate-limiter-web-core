@@ -13,6 +13,8 @@ import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -20,7 +22,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry<R> {
+final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceLimiterRegistry.class);
 
@@ -40,14 +42,14 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         }
     }
 
-    private final Registries<R> registries;
-    private final Map<String, List<Matcher<R>>> matchers;
+    private final Registries registries;
+    private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
     private final RateLimitProperties properties;
     private final MatcherProvider matcherProvider;
     private final Node<RateConfig> propertiesRootNode;
     private final Node<RateConfig> annotationsRootNode;
 
-    DefaultResourceLimiterRegistry(ResourceLimiterConfig<R> resourceLimiterConfig) {
+    DefaultResourceLimiterRegistry(ResourceLimiterConfig resourceLimiterConfig) {
         registries = Registries.ofDefaults();
         properties = resourceLimiterConfig.getProperties();
         matchers = new HashMap<>();
@@ -111,21 +113,21 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
     }
 
     @Override
-    public ResourceLimiter<R> createResourceLimiter() {
+    public ResourceLimiter<HttpServletRequest> createResourceLimiter() {
 
-        ResourceLimiter<R> limiterForProperties = ResourceLimiter.of(
+        ResourceLimiter<HttpServletRequest> limiterForProperties = ResourceLimiter.of(
                 registries.getListenerOrDefault(),
                 (BandwidthsStore)registries.getStoreOrDefault(),
                 matcherProvider, propertiesRootNode
         );
 
-        ResourceLimiter<R> limiterForAnnotations = ResourceLimiter.of(
+        ResourceLimiter<HttpServletRequest> limiterForAnnotations = ResourceLimiter.of(
                 registries.getListenerOrDefault(),
                 (BandwidthsStore)registries.getStoreOrDefault(),
                 matcherProvider, annotationsRootNode
         );
 
-        return new ResourceLimiterWrapper<>(
+        return new ResourceLimiterWrapper(
                 limiterForProperties.andThen(limiterForAnnotations), this::isRateLimitingEnabled);
     }
 
@@ -175,7 +177,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @see #getMatchers(String)
      */
     @Override
-    public UnmodifiableRegistry<Matcher<R>> matchers() {
+    public UnmodifiableRegistry<Matcher<HttpServletRequest>> matchers() {
         return Registry.unmodifiable(registries.matchers());
     }
 
@@ -185,8 +187,8 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
      * @see #matchers()
      */
     @Override
-    public List<Matcher<R>> getMatchers(String id) {
-        List<Matcher<R>> result = matchers.get(id);
+    public List<Matcher<HttpServletRequest>> getMatchers(String id) {
+        List<Matcher<HttpServletRequest>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
     }
 
@@ -200,15 +202,15 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         return registries.getListener();
     }
 
-    private static final class ResourceLimiterWrapper<R> implements ResourceLimiter<R> {
-        private final ResourceLimiter<R> delegate;
+    private static final class ResourceLimiterWrapper implements ResourceLimiter<HttpServletRequest> {
+        private final ResourceLimiter<HttpServletRequest> delegate;
         private final BooleanSupplier isEnabled;
-        private ResourceLimiterWrapper(ResourceLimiter<R> delegate, BooleanSupplier isEnabled) {
+        private ResourceLimiterWrapper(ResourceLimiter<HttpServletRequest> delegate, BooleanSupplier isEnabled) {
             this.delegate = Objects.requireNonNull(delegate);
             this.isEnabled = Objects.requireNonNull(isEnabled);
         }
         @Override
-        public ResourceLimiter<R> listener(UsageListener listener) {
+        public ResourceLimiter<HttpServletRequest> listener(UsageListener listener) {
             return delegate.listener(listener);
         }
         @Override
@@ -216,7 +218,7 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
             return delegate.getListener();
         }
         @Override
-        public boolean tryConsume(R key, int permits, long timeout, TimeUnit unit) {
+        public boolean tryConsume(HttpServletRequest key, int permits, long timeout, TimeUnit unit) {
             if (isEnabled.getAsBoolean()) {
                 return delegate.tryConsume(key, permits, timeout, unit);
             }
@@ -224,47 +226,47 @@ final class DefaultResourceLimiterRegistry<R> implements ResourceLimiterRegistry
         }
     }
 
-    private static final class MatcherProviderMultiSource<R, K> implements MatcherProvider<R>{
+    private static final class MatcherProviderMultiSource implements MatcherProvider<HttpServletRequest>{
         private static final Logger LOG = LoggerFactory.getLogger(MatcherProviderMultiSource.class);
-        private final MatcherProvider<R> delegate;
-        private final Registry<Matcher<R>> registry;
-        private final Map<String, List<Matcher<R>>> matchers;
+        private final MatcherProvider<HttpServletRequest> delegate;
+        private final Registry<Matcher<HttpServletRequest>> registry;
+        private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
         private MatcherProviderMultiSource(
-                MatcherProvider<R> delegate,
-                Registry<Matcher<R>> registry,
-                Map<String, List<Matcher<R>>> matchers) {
+                MatcherProvider<HttpServletRequest> delegate,
+                Registry<Matcher<HttpServletRequest>> registry,
+                Map<String, List<Matcher<HttpServletRequest>>> matchers) {
             this.delegate = Objects.requireNonNull(delegate);
             this.registry = Objects.requireNonNull(registry);
             this.matchers = Objects.requireNonNull(matchers);
         }
         @Override
-        public Matcher<R> createMatcher(Node<RateConfig> node) {
+        public Matcher<HttpServletRequest> createMatcher(Node<RateConfig> node) {
 
             String nodeName = node.getName();
 
             // If no Matcher or a NO_OP Matcher exists, create new
-            Matcher<R> existing = registry.get(nodeName).orElse(Matcher.matchNone());
+            Matcher<HttpServletRequest> existing = registry.get(nodeName).orElse(Matcher.matchNone());
 
-            Matcher<R> created = delegate.createMatcher(node);
+            Matcher<HttpServletRequest> created = delegate.createMatcher(node);
 
-            if (existing == Matcher.MATCH_NONE) {
+            if (Matcher.matchNone().equals(existing)) {
                 addIfAbsent(nodeName, created);
                 return created;
             } else {
                 LOG.debug("Found existing matcher for {}, matcher: {}", nodeName, existing);
-                Matcher<R> result = created == null ? existing : created.andThen(existing);
+                Matcher<HttpServletRequest> result = created == null ? existing : created.andThen(existing);
                 addIfAbsent(nodeName, result);
                 return result;
             }
         }
         @Override
-        public List<Matcher<R>> createMatchers(Node<RateConfig> node) {
-            List<Matcher<R>> result = delegate.createMatchers(node);
+        public List<Matcher<HttpServletRequest>> createMatchers(Node<RateConfig> node) {
+            List<Matcher<HttpServletRequest>> result = delegate.createMatchers(node);
             result.forEach(matcher -> addIfAbsent(node.getName(), matcher));
             return result;
         }
-        private void addIfAbsent(String name,  Matcher<R> matcher) {
-            List<Matcher<R>> list = matchers.computeIfAbsent(name, k -> new ArrayList<>());
+        private void addIfAbsent(String name,  Matcher<HttpServletRequest> matcher) {
+            List<Matcher<HttpServletRequest>> list = matchers.computeIfAbsent(name, k -> new ArrayList<>());
             if (!list.contains(matcher)) {
                 list.add(matcher);
             }

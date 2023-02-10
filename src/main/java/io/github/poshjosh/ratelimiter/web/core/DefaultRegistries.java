@@ -4,22 +4,23 @@ import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
-final class DefaultRegistries<R> implements Registries<R> {
+final class DefaultRegistries implements Registries {
 
-    private final Registry<Matcher<R>> matcherRegistry;
+    private final Registry<Matcher<HttpServletRequest>> matcherRegistry;
 
     private BandwidthsStore<?> store;
 
     private UsageListener listener;
 
-    DefaultRegistries(Matcher<R> matcher) {
+    DefaultRegistries(Matcher<HttpServletRequest> matcher) {
         this.matcherRegistry = Registry.of(matcher);
     }
 
     @Override
-    public Registry<Matcher<R>> matchers() {
+    public Registry<Matcher<HttpServletRequest>> matchers() {
         return matcherRegistry;
     }
 
@@ -29,7 +30,7 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public Registries<R> registerStore(BandwidthsStore<?> store) {
+    public Registries registerStore(BandwidthsStore<?> store) {
         this.store = store;
         return this;
     }
@@ -40,7 +41,7 @@ final class DefaultRegistries<R> implements Registries<R> {
     }
 
     @Override
-    public Registries<R> registerListener(UsageListener listener) {
+    public Registries registerListener(UsageListener listener) {
         this.listener = listener;
         return this;
     }

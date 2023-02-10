@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.expression.*;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,12 +10,12 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public abstract class WebExpressionMatcher<R>
-        implements ExpressionMatcher<R, Object>, WebExpressionKey,
-        ExpressionParser<R, Object>, ExpressionResolver<Object>{
+public abstract class WebExpressionMatcher
+        implements ExpressionMatcher<HttpServletRequest, Object>, WebExpressionKey,
+        ExpressionParser<HttpServletRequest, Object>, ExpressionResolver<Object>{
 
-    public static WebExpressionMatcher<HttpServletRequest> ofHttpServletRequest() {
-        return new WebExpressionMatcher<HttpServletRequest>() {
+    public static WebExpressionMatcher ofHttpServletRequest() {
+        return new WebExpressionMatcher() {
             @Override protected RequestInfo info(HttpServletRequest request) {
                 return RequestInfo.of(request);
             }
@@ -61,9 +62,9 @@ public abstract class WebExpressionMatcher<R>
         }
     }
 
-    protected abstract RequestInfo info(R request);
+    protected abstract RequestInfo info(HttpServletRequest request);
 
-    private final ExpressionMatcher<R, Object> delegate;
+    private final ExpressionMatcher<HttpServletRequest, Object> delegate;
 
     private final Transformer<Locale> stringToLocaleConverter;
     private final Transformer<String> noopConverter;
@@ -75,17 +76,17 @@ public abstract class WebExpressionMatcher<R>
     }
 
     @Override
-    public String match(R request) {
+    public String match(HttpServletRequest request) {
         return delegate.match(request);
     }
 
     @Override
-    public ExpressionMatcher<R, Object> with(String expression) {
+    public ExpressionMatcher<HttpServletRequest, Object> with(String expression) {
         return delegate.with(expression);
     }
 
     @Override
-    public ExpressionMatcher<R, Object> with(Expression<String> expression) {
+    public ExpressionMatcher<HttpServletRequest, Object> with(Expression<String> expression) {
         return delegate.with(expression);
     }
 
@@ -110,12 +111,12 @@ public abstract class WebExpressionMatcher<R>
         final Type type = getType(expression);
         final String rhs = expression.getRightOrDefault(null);
         if (!Type.OBJ_RHS.equals(type)) {
-            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && (rhs == null || rhs.isEmpty())) {
+            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && (!StringUtils.hasText(rhs))) {
                 throw Checks.notSupported(this, expression);
             }
             return;
         }
-        if(Expression.of(rhs).requireLeft().isEmpty()) {
+        if(!StringUtils.hasText(Expression.of(rhs).requireLeft())) {
             throw Checks.notSupported(this, rhs);
         }
         if(rhs.startsWith("{") && rhs.endsWith("}")) {
@@ -161,7 +162,7 @@ public abstract class WebExpressionMatcher<R>
      * @return A parsed version of the expression
      */
     @Override
-    public Expression<Object> parse(R request, Expression<String> expression) {
+    public Expression<Object> parse(HttpServletRequest request, Expression<String> expression) {
         if (!isSupported(expression)) {
             throw Checks.notSupported(this, expression);
         }
@@ -211,7 +212,7 @@ public abstract class WebExpressionMatcher<R>
                 result = expression.with(fromWebRequest, fromExpression);
             }
         }
-        LOG.trace("YType: {}, key: {}, name: {}, output: {}, input: {}",
+        LOG.trace("Type: {}, key: {}, name: {}, output: {}, input: {}",
                 type, key, name, result, expression);
         return result;
     }
@@ -221,21 +222,20 @@ public abstract class WebExpressionMatcher<R>
             case ATTRIBUTE:
                 return fromWebRequest != null;
             case AUTH_SCHEME:
-                return fromWebRequest != null && !fromWebRequest.toString().isEmpty();
+            case USER_ROLE:
+                return fromWebRequest != null && StringUtils.hasText(fromWebRequest.toString());
             case COOKIE:
                 RequestInfo.Cookie cookie = (RequestInfo.Cookie)fromWebRequest;
-                return !cookie.name().isEmpty() && !cookie.value().isEmpty();
+                return StringUtils.hasText(cookie.name()) && StringUtils.hasText(cookie.value());
             case HEADER:
             case PARAMETER:
                 return !((List)fromWebRequest).isEmpty();
-            case USER_ROLE:
-                return !"".equals(fromWebRequest);
             default : throw new AssertionError();
         }
     }
 
     private String requireName(String name, Object unsupported) {
-        if (name == null || name.isEmpty()) {
+        if (!StringUtils.hasText(name)) {
             throw Checks.notSupported(this, unsupported);
         }
         return name;
@@ -306,7 +306,7 @@ public abstract class WebExpressionMatcher<R>
     }
 
     private String without(String value, String prefix, String suffix) {
-        if (value.isEmpty()) {
+        if (!StringUtils.hasText(value)) {
             return value;
         }
         if (value.startsWith(prefix)) {
@@ -348,7 +348,7 @@ public abstract class WebExpressionMatcher<R>
         return obj instanceof Object[] ? Arrays.asList((Object[])obj) : obj;
     }
 
-    private Object getValue(R request, String type, String name) {
+    private Object getValue(HttpServletRequest request, String type, String name) {
         switch(type) {
             case ATTRIBUTE: return info(request).getAttribute(name);
             case AUTH_SCHEME: return info(request).getAuthScheme();

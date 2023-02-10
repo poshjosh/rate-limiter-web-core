@@ -5,53 +5,46 @@ import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
-import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
 
-public abstract class ResourceLimiterConfig<REQUEST>{
+public abstract class ResourceLimiterConfig {
 
-    public static Builder<HttpServletRequest> builderOfRequest() {
-        return builder(HttpServletRequest.class);
+    public static Builder builder() {
+        return new ResourceLimiterConfigBuilder();
     }
 
-    public static <R> Builder<R> builder(Class<R> requestType) {
-        return new ResourceLimiterConfigBuilder<>(requestType);
-    }
+    public interface Builder {
 
-    public interface Builder<REQUEST> {
+        ResourceLimiterConfig build();
 
-        ResourceLimiterConfig<REQUEST> build();
+        Builder properties(RateLimitProperties properties);
 
-        Builder<REQUEST> properties(RateLimitProperties properties);
+        Builder configurer(ResourceLimiterConfigurer configurer);
 
-        Builder<REQUEST> configurer(ResourceLimiterConfigurer<REQUEST> configurer);
+        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest, Object> expressionMatcher);
 
-        Builder<REQUEST> expressionMatcher(ExpressionMatcher<REQUEST, Object> expressionMatcher);
+        Builder resourceInfoProvider(ResourceInfoProvider resourceInfoProvider);
 
-        Builder<REQUEST> requestToIdConverter(RequestToIdConverter<REQUEST, String> requestToIdConverter);
+        Builder classesInPackageFinder(ClassesInPackageFinder classesInPackageFinder);
 
-        Builder<REQUEST> pathPatternsProvider(PathPatternsProvider classPathPatternsProvider);
+        Builder classRateProcessor(RateProcessor<Class<?>> rateProcessor);
 
-        Builder<REQUEST> classesInPackageFinder(
-                ClassesInPackageFinder classesInPackageFinder);
-
-        Builder<REQUEST> classRateProcessor(RateProcessor<Class<?>> rateProcessor);
-
-        Builder<REQUEST> propertyRateProcessor(RateProcessor<RateLimitProperties> rateProcessor);
+        Builder propertyRateProcessor(RateProcessor<RateLimitProperties> rateProcessor);
     }
 
     // Package access getters
     //
     abstract RateLimitProperties getProperties();
 
-    abstract Optional<ResourceLimiterConfigurer<REQUEST>> getConfigurer();
+    abstract Optional<ResourceLimiterConfigurer> getConfigurer();
 
     abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
 
-    abstract MatcherProvider<REQUEST> getMatcherProvider();
+    abstract MatcherProvider<HttpServletRequest> getMatcherProvider();
 
     abstract RateProcessor<Class<?>> getClassRateProcessor();
 

@@ -1,20 +1,17 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.web.core.util.PathPatterns;
-import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class ResourceLimiterRegistryTest {
 
     @Test void shouldCreateResourceLimiter() {
-        PathPatternsProvider pathPatternsProvider = element -> PathPatterns.none();
-        ResourceLimiterConfig<HttpServletRequest> config = ResourceLimiterConfig.builderOfRequest()
-                .pathPatternsProvider(pathPatternsProvider)
+        ResourceInfoProvider resourceInfoProvider = element -> ResourceInfoProvider.NONE;
+        ResourceLimiterConfig config = ResourceLimiterConfig.builder()
+                .resourceInfoProvider(resourceInfoProvider)
                 .build();
         ResourceLimiter<HttpServletRequest> limiter =
                 ResourceLimiterRegistry.of(config).createResourceLimiter();

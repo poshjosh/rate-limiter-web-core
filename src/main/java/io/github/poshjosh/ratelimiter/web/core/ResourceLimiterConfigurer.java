@@ -44,6 +44,6 @@ package io.github.poshjosh.ratelimiter.web.core;
  *           (e.g springframework's HttpServletRequest or JAX-RS' ContainerRequestContext)
  */
 @FunctionalInterface
-public interface ResourceLimiterConfigurer<R> {
-    void configure(Registries<R> registries);
+public interface ResourceLimiterConfigurer {
+    void configure(Registries registries);
 }

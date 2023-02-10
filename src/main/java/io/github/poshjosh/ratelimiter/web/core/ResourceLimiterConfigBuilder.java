@@ -9,33 +9,28 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
-import io.github.poshjosh.ratelimiter.web.core.util.PathPatternsProvider;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.function.Supplier;
 
-/**
- * @param <REQUEST> The type of the request related object
- */
-class ResourceLimiterConfigBuilder<REQUEST>
-        implements ResourceLimiterConfig.Builder<REQUEST> {
+class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
 
-    static final class ResourceLimiterConfigImpl<T> extends ResourceLimiterConfig<T> {
+    static final class ResourceLimiterConfigImpl extends ResourceLimiterConfig {
 
         private RateLimitProperties properties;
-        private ResourceLimiterConfigurer<T> configurer;
-        private PathPatternsProvider pathPatternsProvider;
-        private RequestToIdConverter<T, String> requestToIdConverter;
-        private ExpressionMatcher<T, Object> expressionMatcher;
+        private ResourceLimiterConfigurer configurer;
+        private ResourceInfoProvider resourceInfoProvider;
+        private ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
         private ClassesInPackageFinder classesInPackageFinder;
         private RateProcessor<Class<?>> classRateProcessor;
         private RateProcessor<RateLimitProperties> propertyRateProcessor;
 
         private Supplier<List<Class<?>>> resourceClassesSupplier;
 
-        private MatcherProvider<T> matcherProvider;
+        private MatcherProvider<HttpServletRequest> matcherProvider;
 
         // Package access getters
         //
@@ -43,7 +38,7 @@ class ResourceLimiterConfigBuilder<REQUEST>
             return properties;
         }
 
-        @Override Optional<ResourceLimiterConfigurer<T>> getConfigurer() {
+        @Override Optional<ResourceLimiterConfigurer> getConfigurer() {
             return Optional.ofNullable(configurer);
         }
 
@@ -51,7 +46,7 @@ class ResourceLimiterConfigBuilder<REQUEST>
             return resourceClassesSupplier;
         }
 
-        @Override MatcherProvider<T> getMatcherProvider() { return matcherProvider; }
+        @Override MatcherProvider<HttpServletRequest> getMatcherProvider() { return matcherProvider; }
 
         @Override RateProcessor<Class<?>> getClassRateProcessor() {
             return classRateProcessor;
@@ -62,27 +57,18 @@ class ResourceLimiterConfigBuilder<REQUEST>
         }
     }
 
-    private final Class<REQUEST> requestType;
+    private final ResourceLimiterConfigImpl configuration;
 
-    private final ResourceLimiterConfigImpl<REQUEST> configuration;
-
-    ResourceLimiterConfigBuilder(Class<REQUEST> requestType) {
-        this.requestType = Objects.requireNonNull(requestType);
-        this.configuration = new ResourceLimiterConfigImpl<>();
+    ResourceLimiterConfigBuilder() {
+        this.configuration = new ResourceLimiterConfigImpl();
     }
 
-    @Override public ResourceLimiterConfig<REQUEST> build() {
+    @Override public ResourceLimiterConfig build() {
 
-        if (HttpServletRequest.class.isAssignableFrom(requestType)) {
-            if (configuration.requestToIdConverter == null) {
-                requestToIdConverter((RequestToIdConverter)RequestToIdConverter.ofHttpServletRequest());
-            }
-            if (configuration.expressionMatcher == null) {
-                expressionMatcher((ExpressionMatcher)WebExpressionMatcher.ofHttpServletRequest());
-            }
+        if (configuration.expressionMatcher == null) {
+            expressionMatcher(WebExpressionMatcher.ofHttpServletRequest());
         }
 
-        Objects.requireNonNull(configuration.requestToIdConverter);
         if (configuration.expressionMatcher == null) {
             configuration.expressionMatcher = ExpressionMatcher.matchNone();
         }
@@ -98,7 +84,7 @@ class ResourceLimiterConfigBuilder<REQUEST>
             // This is because, any of the nodes may have its rate limit related info, specified
             // via properties. Such a node needs to be accepted at this point as property
             // sourced rate limited data will later be transferred to class/method nodes
-            classRateProcessor(RateProcessor.of(source -> true));
+            classRateProcessor(RateProcessor.ofClass(source -> true));
         }
 
         if (configuration.propertyRateProcessor == null) {
@@ -113,57 +99,51 @@ class ResourceLimiterConfigBuilder<REQUEST>
             return new ArrayList<>(classes);
         };
 
-        configuration.matcherProvider = new DefaultMatcherProvider<>(
-                configuration.pathPatternsProvider,
-                configuration.requestToIdConverter,
+        configuration.matcherProvider = new DefaultMatcherProvider(
+                configuration.properties.getApplicationPath(),
+                configuration.resourceInfoProvider,
                 configuration.expressionMatcher);
 
         return configuration;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> properties(
+    @Override public ResourceLimiterConfig.Builder properties(
             RateLimitProperties properties) {
         configuration.properties = properties;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> configurer(
-            ResourceLimiterConfigurer<REQUEST> configurer) {
+    @Override public ResourceLimiterConfig.Builder configurer(
+            ResourceLimiterConfigurer configurer) {
         configuration.configurer = configurer;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> pathPatternsProvider(
-            PathPatternsProvider pathPatternsProvider) {
-        configuration.pathPatternsProvider = pathPatternsProvider;
+    @Override public ResourceLimiterConfig.Builder resourceInfoProvider(
+            ResourceInfoProvider resourceInfoProvider) {
+        configuration.resourceInfoProvider = resourceInfoProvider;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> requestToIdConverter(
-            RequestToIdConverter<REQUEST, String> requestToIdConverter) {
-        configuration.requestToIdConverter = requestToIdConverter;
-        return this;
-    }
-
-    @Override public ResourceLimiterConfig.Builder<REQUEST> expressionMatcher(
-            ExpressionMatcher<REQUEST, Object> expressionMatcher) {
+    @Override public ResourceLimiterConfig.Builder expressionMatcher(
+            ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
         configuration.expressionMatcher = expressionMatcher;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> classesInPackageFinder(
+    @Override public ResourceLimiterConfig.Builder classesInPackageFinder(
             ClassesInPackageFinder classesInPackageFinder) {
         configuration.classesInPackageFinder = classesInPackageFinder;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> classRateProcessor(
+    @Override public ResourceLimiterConfig.Builder classRateProcessor(
             RateProcessor<Class<?>> rateProcessor) {
         configuration.classRateProcessor = rateProcessor;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder<REQUEST> propertyRateProcessor(
+    @Override public ResourceLimiterConfig.Builder propertyRateProcessor(
             RateProcessor<RateLimitProperties> rateProcessor) {
         configuration.propertyRateProcessor = rateProcessor;
         return this;
