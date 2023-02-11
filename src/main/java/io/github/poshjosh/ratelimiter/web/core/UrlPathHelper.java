@@ -56,7 +56,7 @@ final class UrlPathHelper {
     UrlPathHelper(String applicationPath) {
         this.applicationPath = Objects.requireNonNull(applicationPath);
         if (applicationPath.contains("*") || applicationPath.contains("?")) {
-            // Tag:Issue:Application-paths-containing-asterix-or-question-mark-not-supported
+            // issue #001 Application paths containing asterix or question-mark, not supported
             throw new UnsupportedOperationException(
                     "Application paths with * or ? are not currently supported");
         }

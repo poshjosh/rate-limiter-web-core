@@ -23,7 +23,7 @@ public interface RateLimitProperties {
      *
      * <p>
      *     <b>Note:</b> Application paths containing '*' or '?' are not currently supported.
-     *     <code>Tag:Issue:Application-paths-containing-asterix-or-question-mark-not-supported</code>
+     *     <code>issue #001 Application paths containing asterix or question-mark, not supported</code>
      * </p>
      * @return the application path
      */

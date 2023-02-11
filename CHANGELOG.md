@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.4.0](https://github.com/poshjosh/rate-limiter-web-core/tree/0.4.0) ] - 2023-02-11
+
+### Added
+
+- Added `RateLimitProperties#getApplicationPath` to support application path.
+
+### Changed
+
+- Used HttpServletRequest for javaee. (It is already used for spring).
+    * This fixes Issue #2 rate-limiter-javaee: Implement `MatchType.REMOTE_ADDRESS` for usage in `@RateRequestIf`
+- Fixed handling of multiple (non-composed) limits on a single node.
+- Fixed handling of multiple methods with same path but different http method.
+
 ## [ [0.3.4](https://github.com/poshjosh/rate-limiter-web-core/tree/0.3.4) ] - 2023-02-05
 
 ### Changed
