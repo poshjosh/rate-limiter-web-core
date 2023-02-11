@@ -6,23 +6,26 @@ Light-weight rate limiting library for java web apps, based on
 We believe that rate limiting should be as simple as:
 
 ```java
-@Rate(10) // 10 permits per second for the entire class
+@Rate(10) // 10 permits per second for all methods in this class
 @Controller
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 public class GreetingResource {
 
-  // Only 2 calls per second to this path, for users in role GUEST
-  @Rate(permits=2, when="web.request.user.role=GUEST")
+  // GUESTs - 1 call per second, USERs - 3 calls per second 
+  @Rate(permits=1, when="web.request.user.role=GUEST")
+  @Rate(permits=3, when="web.request.user.role=USER")
   @GetMapping("/smile")
   public String smile() {
     return ":)";
   }
 
-  // Only 10 calls per minute to this path, when system available memory < 1GB 
+  // When system available memory < 1GB - 10 calls per minute
   @Rate(permits=10, timeUnit=TimeUnit.MINUTES, when="sys.memory.available<1gb")
+  // When request parameter `who` has value of either ALICE or BOB - 1 permit per second
+  @Rate(permits=1, when="web.request.parameter={who=[ALICE|BOB]}")
   @GetMapping("/greet")
-  public String greet(String name) {
-    return "Hello " + name;
+  public String greet(@RequestParam("who") String who) {
+    return "Hello " + who;
   }
 }
 ```
