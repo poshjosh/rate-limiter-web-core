@@ -21,7 +21,23 @@ import java.util.List;
  */
 public interface PathPatterns<PATH> extends Serializable {
 
-    PathPatterns<Object> NONE = new PathPatterns<Object>() {
+    PathPatterns<Object> MATCH_ALL = new PathPatterns<Object>() {
+        @Override
+        public PathPatterns<Object> combine(PathPatterns<Object> other) {
+            return other;
+        }
+        @Override
+        public List<String> getPatterns() { return Collections.emptyList(); }
+        @Override
+        public boolean matches(Object path) {
+            return true;
+        }
+        @Override public String toString() {
+            return "PathPatterns$MATCH_ALL";
+        }
+    };
+
+    PathPatterns<Object> MATCH_NONE = new PathPatterns<Object>() {
         @Override
         public PathPatterns<Object> combine(PathPatterns<Object> other) {
             return other;
@@ -33,13 +49,18 @@ public interface PathPatterns<PATH> extends Serializable {
             return false;
         }
         @Override public String toString() {
-            return "PathPatterns$NONE";
+            return "PathPatterns$MATCH_NONE";
         }
     };
 
     @SuppressWarnings("unchecked")
-    static <T> PathPatterns<T> none() {
-        return (PathPatterns<T>)NONE;
+    static <T> PathPatterns<T> matchALL() {
+        return (PathPatterns<T>) MATCH_ALL;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T> PathPatterns<T> matchNone() {
+        return (PathPatterns<T>) MATCH_NONE;
     }
 
     PathPatterns<PATH> combine(PathPatterns<PATH> other);

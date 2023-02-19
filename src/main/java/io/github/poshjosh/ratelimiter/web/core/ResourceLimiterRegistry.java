@@ -1,12 +1,11 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
+import io.github.poshjosh.ratelimiter.util.LimiterConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
+import io.github.poshjosh.ratelimiter.web.core.util.PathPatterns;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
@@ -16,6 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ResourceLimiterRegistry {
+
+    static ResourceLimiterRegistry ofDefaults() {
+        return of(rateSource -> ResourceInfoProvider.ResourceInfo.of(PathPatterns.matchALL()));
+    }
 
     static ResourceLimiterRegistry of(ResourceInfoProvider resourceInfoProvider) {
         return of(ResourceLimiterConfig.builder()
@@ -27,13 +30,27 @@ public interface ResourceLimiterRegistry {
         return new DefaultResourceLimiterRegistry(resourceLimiterConfig);
     }
 
+    boolean register(Class<?> source);
+
+    boolean register(Method source);
+
+    Matcher<HttpServletRequest> getOrCreateMatcher(Class<?> clazz);
+
+    Matcher<HttpServletRequest> getOrCreateMatcher(Method method);
+
+    List<Matcher<HttpServletRequest>> getOrCreateMatchers(Class<?> clazz);
+
+    List<Matcher<HttpServletRequest>> getOrCreateMatchers(Method method);
+
     ResourceLimiter<HttpServletRequest> createResourceLimiter();
+
+    ResourceLimiter<HttpServletRequest> createResourceLimiter(Class<?> clazz);
+
+    ResourceLimiter<HttpServletRequest> createResourceLimiter(Method method);
 
     default boolean hasMatching(String id) {
         return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
     }
-
-    Optional<UsageListener> getListener();
 
     /**
      * @param clazz The class bearing the matchers to return
@@ -56,31 +73,26 @@ public interface ResourceLimiterRegistry {
     /**
      * @param id The id of the matchers to return
      * @return All the matchers that will be applied for the given id
-     * @see #matchers()
      */
     List<Matcher<HttpServletRequest>> getMatchers(String id);
 
-    default List<RateLimiter> createRateLimiters(Class clazz) {
-        return createRateLimiters(ElementId.of(clazz));
+    List<RateLimiter> createRateLimiters(Class<?> clazz);
+
+    List<RateLimiter> createRateLimiters(Method method);
+
+    LimiterConfig<HttpServletRequest> createConfig(Class<?> source);
+
+    LimiterConfig<HttpServletRequest> createConfig(Method source);
+
+    default Optional<LimiterConfig<HttpServletRequest>> getConfig(Class<?> clazz) {
+        return getConfig(ElementId.of(clazz));
     }
 
-    default List<RateLimiter> createRateLimiters(Method method) {
-        return createRateLimiters(ElementId.of(method));
+    default Optional<LimiterConfig<HttpServletRequest>> getConfig(Method method) {
+        return getConfig(ElementId.of(method));
     }
 
-    List<RateLimiter> createRateLimiters(String id);
-
-    default Optional<RateConfig> getRateConfig(Class<?> clazz) {
-        return getRateConfig(ElementId.of(clazz));
-    }
-
-    default Optional<RateConfig> getRateConfig(Method method) {
-        return getRateConfig(ElementId.of(method));
-    }
-
-    Optional<RateConfig> getRateConfig(String id);
-
-    Optional<BandwidthsStore<?>> getStore();
+    Optional<LimiterConfig<HttpServletRequest>> getConfig(String id);
 
     boolean isRateLimited(String id);
 
@@ -97,16 +109,7 @@ public interface ResourceLimiterRegistry {
         return disabled == null || Boolean.FALSE.equals(disabled);
     }
 
-    /**
-     * Return the Matchers registered to {@link Registries#matchers()}
-     *
-     * Registration is done by calling any of the <code>register</code> methods of the returned
-     * {@link io.github.poshjosh.ratelimiter.web.core.Registry}
-     *
-     * @return The registered matchers
-     * @see #getMatchers(String)
-     */
-    UnmodifiableRegistry<Matcher<HttpServletRequest>> matchers();
-
     RateLimitProperties properties();
+
+    UnmodifiableRegistries registries();
 }

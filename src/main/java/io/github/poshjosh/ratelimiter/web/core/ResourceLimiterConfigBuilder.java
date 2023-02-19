@@ -155,9 +155,6 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
         @Override public List<String> getResourcePackages() {
             return Collections.emptyList();
         }
-        @Override public Map<String, Rates> getRateLimitConfigs() {
-            return Collections.emptyMap();
-        }
     }
 
     private static final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> {

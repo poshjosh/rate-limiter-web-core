@@ -2,7 +2,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
-import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import org.slf4j.Logger;
@@ -37,14 +36,8 @@ final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest
     }
 
     @Override
-    public Matcher<HttpServletRequest> createMatcher(Node<RateConfig> node) {
-        RateConfig rateConfig = requireRateConfig(node);
+    public Matcher<HttpServletRequest> createMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
-        if(!rates.hasLimits() && !parentHasLimits(node)) {
-            LOG.debug("No limits specified for group, so no matcher will be created for: {}",
-                    node.getName());
-            return Matcher.matchNone();
-        }
         final RateSource source = rateConfig.getSource();
         Optional<Matcher<HttpServletRequest>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
         if (!source.isGroupType() && source.getSource() instanceof GenericDeclaration) {
@@ -58,23 +51,8 @@ final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> createMatchers(Node<RateConfig> node) {
-        RateConfig rateConfig = requireRateConfig(node);
+    public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
         return createSupplementaryMatchers(rateConfig.getRates());
-    }
-
-    private boolean parentHasLimits(Node<RateConfig> node) {
-        return node.getParentOptional()
-                .filter(parent -> parent.hasNodeValue() && requireRates(parent).hasLimits())
-                .isPresent();
-    }
-
-    private Rates requireRates(Node<RateConfig> node) {
-        return Objects.requireNonNull(Checks.requireNodeValue(node).getRates());
-    }
-
-    private RateConfig requireRateConfig(Node<RateConfig> node) {
-        return Objects.requireNonNull(node.getValueOrDefault(null));
     }
 
     private Optional<Matcher<HttpServletRequest>> createSupplementaryMatcher(Rates rates) {

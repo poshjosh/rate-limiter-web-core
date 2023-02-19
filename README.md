@@ -1,6 +1,6 @@
 # rate limiter web core
 
-Light-weight rate limiting library for java web apps, based on
+Enterprise rate limiter for java web apps, based on
 [rate-limiter-annotation](https://github.com/poshjosh/rate-limiter-annotation).
 
 We believe that rate limiting should be as simple as:
@@ -75,14 +75,16 @@ exposing a `ResourceLimiterConfigurer` as shown below:
 ```java
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 
-@Configuration public class Configurer implements ResourceLimiterConfigurer<HttpServletRequest> {
+@Configuration 
+public class Configurer implements ResourceLimiterConfigurer {
 
-  @Override public void configure(Registries<HttpServletRequest> registries) {
+  @Override 
+  public void configure(Registries registries) {
 
     // Register usage listeners
     // ------------------------
 
-    registries.listeners().register((context, resourceId, hits, limit) -> {
+    registries.registerListener((request, resourceId, hits, limit) -> {
 
       // For example, log the limit that was exceeded
       System.out.println("For " + resourceId + ", exceeded limit: " + limit);
@@ -107,7 +109,19 @@ import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 
     javax.cache.Cache cache = null; // PROVIDE THIS
     
-    registries.registerStore(BandwidthsStore.ofCache(cache));
+    registries.registerStore(new BandwidthsStoreForCache(cache));
+  }
+  private static final class BandwidthsStoreForCache<K> implements BandwidthsStore<K> {
+    private final javax.cache.Cache<K, Bandwidth> cache;
+    public BandwidthsStoreForCache(javax.cache.Cache<K, Bandwidth> cache) {
+      this.cache = cache;
+    }
+    @Override public Bandwidth get(K key) {
+      return cache.get(key);
+    }
+    @Override public void put(K key, Bandwidth bandwidth) {
+      cache.put(key, bandwidth);
+    }
   }
 }
 ```
@@ -172,12 +186,12 @@ class `MyRateLimitedResource.class`. To bind to a method replace `IdProvider.ofC
 with `IdProvider.ofMethod()`.
 
 ```java
-public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer<HttpServletRequest> {
+public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer {
 
     private final String resourceId = ElementId.of(MyRateLimitedResource.class);
     
     @Override
-    public void configure(Registries<HttpServletRequest> registries) {
+    public void configure(Registries registries) {
         registries.matchers().register(resourceId, request -> request.getRequestURI());
     }
     

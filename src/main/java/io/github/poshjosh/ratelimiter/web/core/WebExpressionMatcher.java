@@ -171,7 +171,7 @@ public abstract class WebExpressionMatcher
         final String name;
         final Expression<Object> result;
         if (Type.OBJ_RHS.equals(type)) {
-            final Expression<String> rhs = Expression.of(withoutObjectBrackets(expression.requireRight()));
+            final Expression<String> rhs = expression.requireRightAsExpression();
             name = requireName(rhs.requireLeft(), rhs);
             final Object fromWebRequest = getValue(request, key, name);
             final Object fromExpression;
@@ -247,10 +247,6 @@ public abstract class WebExpressionMatcher
         } else {
             return noopConverter;
         }
-    }
-
-    private String withoutObjectBrackets(String value) {
-        return without(value, "{", "}");
     }
 
     private Object splitIntoArrayIfNeed(String name, String fromExpression, Object fromWebRequest, Transformer<?> transformer) {
@@ -369,6 +365,6 @@ public abstract class WebExpressionMatcher
 
     @Override
     public boolean isSupported(Operator operator) {
-        return Operator.EQUALS.equals(operator.positive());
+        return operator.equalsIgnoreNegation(Operator.EQUALS);
     }
 }

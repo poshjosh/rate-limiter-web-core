@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 class ResourceLimiterRegistryTest {
 
     @Test void shouldCreateResourceLimiter() {
-        ResourceInfoProvider resourceInfoProvider = element -> ResourceInfoProvider.NONE;
+        ResourceInfoProvider resourceInfoProvider = ResourceInfoProvider.NONE;
         ResourceLimiterConfig config = ResourceLimiterConfig.builder()
                 .resourceInfoProvider(resourceInfoProvider)
                 .build();

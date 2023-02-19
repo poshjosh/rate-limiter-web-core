@@ -14,6 +14,7 @@ public interface Registry<T> extends UnmodifiableRegistry<T> {
             @Override public T getDefault() {
                 return registry.getDefault();
             }
+            @Override public String toString() { return "Unmodifiable{" + registry + "}"; }
         };
     }
 

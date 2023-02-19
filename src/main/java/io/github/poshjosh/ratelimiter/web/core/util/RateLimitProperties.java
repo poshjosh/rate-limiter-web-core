@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public interface RateLimitProperties {
      * If using annotations, implement either this, {@link #getResourcePackages()}, or both.
      * If not using annotations, simply return an empty list.
      *
-     * @return the packages containing resources having rate-limit related annotations.
+     * @return the class resources having rate-limit related annotations.
      */
     List<Class<?>> getResourceClasses();
 
@@ -58,9 +59,11 @@ public interface RateLimitProperties {
     }
 
     /**
-     * If not using properties, simply return an empty map
+     * Rates to apply to rate limiters.
      *
-     * @return Configurations for building a customizable {@link ResourceLimiter}
+     * The default implementation returns an empty map. Override this to provide custom rates.
+     *
+     * @return Rates to apply to rate limiters
      */
-    Map<String, Rates> getRateLimitConfigs();
+    default Map<String, Rates> getRateLimitConfigs() { return Collections.emptyMap(); }
 }

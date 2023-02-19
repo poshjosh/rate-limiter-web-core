@@ -13,12 +13,12 @@
     <artifactId>rate-limiter-web-core</artifactId>
     <version>${rate-limiter.version}</version>
     <name>${project.artifactId}</name>
-    <description>Light weight rate limiting library for java web apps, based on https://github.com/poshjosh/rate-limiter</description>
+    <description>Enterprise rate limiter for java web apps, based on, based on https://github.com/poshjosh/rate-limiter</description>
 
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <rate-limiter.version>0.4.0</rate-limiter.version>
+        <rate-limiter.version>0.4.1B-SNAPSHOT</rate-limiter.version>
         <javax.servlet.version>4.0.1</javax.servlet.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
@@ -42,12 +42,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.6</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>cache-api</artifactId>
-            <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
         <dependency>
