@@ -2,8 +2,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 import io.github.poshjosh.ratelimiter.node.Node;
-
-import java.util.Arrays;
 import java.util.Objects;
 
 final class Checks {
@@ -24,11 +22,5 @@ final class Checks {
             throw new IllegalStateException(
                     "Parent and child nodes may not have the same name: " + parent);
         }
-    }
-    static RuntimeException illegal(Enum en) {
-        return new IllegalArgumentException("Unexpected " +
-                en.getDeclaringClass().getSimpleName() + ": " + en +
-                ", supported: " + Arrays.toString(en.getClass().getEnumConstants()));
-
     }
 }

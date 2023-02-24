@@ -30,7 +30,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     private final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
 
-    private final SleepingTicker ticker = SleepingTicker.ofDefaults();
+    private final Ticker ticker = ResourceLimiter.DEFAULT_TICKER;
 
     private final Registries registries;
     private final ResourceLimiterConfig resourceLimiterConfig;
