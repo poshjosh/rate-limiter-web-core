@@ -18,7 +18,7 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <rate-limiter.version>0.4.2C-SNAPSHOT</rate-limiter.version>
+        <rate-limiter.version>0.5.0</rate-limiter.version>
         <javax.servlet.version>4.0.1</javax.servlet.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>

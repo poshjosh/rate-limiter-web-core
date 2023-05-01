@@ -44,7 +44,7 @@ To add a dependency on `rate-limiter-web-core` using Maven, use the following:
         <dependency>
             <groupId>io.github.poshjosh</groupId>
             <artifactId>rate-limiter-web-core</artifactId>
-            <version>0.4.2</version> 
+            <version>0.5.0</version> 
         </dependency>
 ```
 

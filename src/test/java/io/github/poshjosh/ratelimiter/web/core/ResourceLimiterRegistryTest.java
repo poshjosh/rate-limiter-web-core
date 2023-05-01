@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletRequest;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 class ResourceLimiterRegistryTest {
 
     @Test void shouldCreateResourceLimiter() {
@@ -15,6 +17,7 @@ class ResourceLimiterRegistryTest {
                 .build();
         ResourceLimiter<HttpServletRequest> limiter =
                 ResourceLimiterRegistry.of(config).createResourceLimiter();
+        assertTrue(limiter != null);
     }
 
     @Test void isRateLimited() {
@@ -33,6 +36,9 @@ class ResourceLimiterRegistryTest {
     }
 
     @Test void matchers() {
+    }
+
+    @Test void listeners() {
     }
 
     @Test void getStore() {
