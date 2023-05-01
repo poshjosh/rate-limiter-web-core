@@ -84,7 +84,7 @@ public class Configurer implements ResourceLimiterConfigurer {
     // Register usage listeners
     // ------------------------
 
-    registries.registerListener((request, resourceId, hits, limit) -> {
+    registries.listeners().register("limitBySession", (request, resourceId, hits, limit) -> {
 
       // For example, log the limit that was exceeded
       System.out.println("For " + resourceId + ", exceeded limit: " + limit);
@@ -103,25 +103,6 @@ public class Configurer implements ResourceLimiterConfigurer {
     // Rate limit users from a specific utm_source e.g facebook
     registries.matchers().register("limitByUtmSourceIsFacebook",
             request -> "facebook".equals(request.getParameter("utm_source")));
-
-    // You could use a variety of Cache flavours
-    // -----------------------------------------
-
-    javax.cache.Cache cache = null; // PROVIDE THIS
-    
-    registries.registerStore(new BandwidthsStoreForCache(cache));
-  }
-  private static final class BandwidthsStoreForCache<K> implements BandwidthsStore<K> {
-    private final javax.cache.Cache<K, Bandwidth> cache;
-    public BandwidthsStoreForCache(javax.cache.Cache<K, Bandwidth> cache) {
-      this.cache = cache;
-    }
-    @Override public Bandwidth get(K key) {
-      return cache.get(key);
-    }
-    @Override public void put(K key, Bandwidth bandwidth) {
-      cache.put(key, bandwidth);
-    }
   }
 }
 ```

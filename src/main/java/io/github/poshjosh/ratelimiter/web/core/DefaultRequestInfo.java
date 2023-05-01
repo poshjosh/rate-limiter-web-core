@@ -1,11 +1,18 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
 final class DefaultRequestInfo implements RequestInfo {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestInfo.class);
+
     private final HttpServletRequest request;
     DefaultRequestInfo(HttpServletRequest request) {
         this.request = Objects.requireNonNull(request);
@@ -36,8 +43,7 @@ final class DefaultRequestInfo implements RequestInfo {
                 ? Collections.emptyList() : Arrays.asList(values);
     }
     @Override public String getRemoteAddr() {
-        String remoteAddr = request.getRemoteAddr();
-        return remoteAddr == null ? "" : remoteAddr;
+        return getClientIpAddress(request, "");
     }
     @Override public List<Locale> getLocales() {
         Enumeration<Locale> locales = request.getLocales();
@@ -55,5 +61,42 @@ final class DefaultRequestInfo implements RequestInfo {
     @Override public String getSessionId() {
         final String id = request.getSession(true).getId();
         return id == null ? "" : id;
+    }
+
+    private static final String[] IP_ADDR_RELATED_HEADERS = {
+            "X-Forwarded-For",
+            "Proxy-Client-IP",
+            "WL-Proxy-Client-IP",
+            "HTTP_X_FORWARDED_FOR",
+            "HTTP_X_FORWARDED",
+            "HTTP_X_CLUSTER_CLIENT_IP",
+            "HTTP_CLIENT_IP",
+            "HTTP_FORWARDED_FOR",
+            "HTTP_FORWARDED",
+            "HTTP_VIA",
+            "REMOTE_ADDR" };
+
+    private String getClientIpAddress(ServletRequest request, String resultIfNone) {
+        String ip = null;
+        try {
+            if(request instanceof HttpServletRequest) {
+                HttpServletRequest httpServletRequest = (HttpServletRequest)request;
+                for (String header : IP_ADDR_RELATED_HEADERS) {
+                    ip = httpServletRequest.getHeader(header);
+                    if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                        if (ip.contains(",")) {
+                            ip = ip.split(",")[0];
+                        }
+                        break;
+                    }
+                }
+            }
+        }catch(Exception e) {
+            LOG.warn("Error resolving ip address", e);
+        }
+        if(ip == null) {
+            ip = request.getRemoteAddr();
+        }
+        return ip == null ? resultIfNone : ip;
     }
 }

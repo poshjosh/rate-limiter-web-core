@@ -7,7 +7,6 @@ import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -52,7 +51,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
         Node<RateConfig> annoRoot = resourceLimiterConfig.getClassRateProcessor()
                 .processAll(Node.of("root.annotations"),
-                        (src, node) -> {}, resourceLimiterConfig.getResourceClasses());
+                        (src, node) -> {}, resourceLimiterConfig.getResourceClassesSupplier().get());
 
         List<String> transferredToAnnotations = new ArrayList<>();
         Function<Node<RateConfig>, RateConfig> overrideWithPropertyValue = node -> {
@@ -254,10 +253,16 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
     private ResourceLimiter<HttpServletRequest> createResourceLimiter(
             Node<LimiterConfig<HttpServletRequest>> node) {
         ResourceLimiter<HttpServletRequest> resourceLimiter = ResourceLimiter.of(
-                registries.getListenerOrDefault(),
-                (BandwidthsStore)registries.getStoreOrDefault(),
+                getUsageListener(node.getName()),
+                (RateLimiterProvider)resourceLimiterConfig.getRateLimiterProvider(),
                 node);
         return new ResourceLimiterWrapper(resourceLimiter, this::isRateLimitingEnabled);
+    }
+
+    private UsageListener getUsageListener(String name) {
+        UsageListener global = resourceLimiterConfig.getUsageListener();
+        return name == null || name.isEmpty() ? global : registries.listeners().get(name)
+                .map(listener -> listener.andThen(global)).orElse(global);
     }
 
     private Node<RateConfig> createNode(Node<RateConfig> parent, Class<?> source) {

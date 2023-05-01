@@ -1,7 +1,10 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.RateLimiterProvider;
+import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -11,49 +14,122 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Supplier;
 
-public abstract class ResourceLimiterConfig {
+public interface ResourceLimiterConfig {
 
-    public static Builder builder() {
+    /**
+     * Users of the returned builder are required (at the minimum) to provide:
+     * {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
+     * @return A builder for {@link ResourceLimiterConfig}
+     */
+    static Builder builder() {
         return new ResourceLimiterConfigBuilder();
     }
 
-    public interface Builder {
+    /**
+     * Users are required (at the minimum) to provide: {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
+     */
+    interface Builder {
 
         ResourceLimiterConfig build();
 
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param properties The properties containing rate limit specifications
+         * @return this builder
+         */
         Builder properties(RateLimitProperties properties);
 
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param configurer The configurer for fine-grained configuration of rate limiting
+         * @return this builder
+         */
         Builder configurer(ResourceLimiterConfigurer configurer);
 
-        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest, Object> expressionMatcher);
-
-        Builder resourceInfoProvider(ResourceInfoProvider resourceInfoProvider);
-
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param classesInPackageFinder For locating classes in named packages
+         * @return this builder
+         */
         Builder classesInPackageFinder(ClassesInPackageFinder classesInPackageFinder);
 
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param expressionMatcher For matching rate condition expressions
+         * @return this builder
+         */
+        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest, Object> expressionMatcher);
+
+        /**
+         * <p><b>Mandatory</b></p>
+         * @param resourceInfoProvider For extracting resource info from javax.servlet.http.HttpServletRequests
+         * @return this builder
+         */
+        Builder resourceInfoProvider(ResourceInfoProvider resourceInfoProvider);
+
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param rateProcessor For processing rates specified via Classes and their members
+         * @return this builder
+         */
         Builder classRateProcessor(RateProcessor<Class<?>> rateProcessor);
 
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param rateProcessor For processing rates specified via io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperites
+         * @return this builder
+         */
         Builder propertyRateProcessor(RateProcessor<RateLimitProperties> rateProcessor);
+
+        /**
+         * <p><b>Not mandatory.</b> If not specified an in-memory instance is used</p>
+         * @param store For storing bandwidths
+         * @return this builder
+         */
+        Builder store(BandwidthsStore<?> store);
+
+        Builder addUsageListener(UsageListener listener);
+
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param listener Listener for usage of rate limited resources
+         * @return this builder
+         */
+        Builder usageListener(UsageListener listener);
+
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param rateLimiterProvider For provider rate limiters
+         * @return this builder
+         */
+        Builder rateLimiterProvider(RateLimiterProvider<HttpServletRequest, ?> rateLimiterProvider);
     }
 
-    // Package access getters
-    //
-    abstract RateLimitProperties getProperties();
+    RateLimitProperties getProperties();
 
-    abstract Optional<ResourceLimiterConfigurer> getConfigurer();
+    Optional<ResourceLimiterConfigurer> getConfigurer();
 
-    abstract Supplier<List<Class<?>>> getResourceClassesSupplier();
+    ClassesInPackageFinder getClassesInPackageFinder();
 
-    abstract MatcherProvider<HttpServletRequest> getMatcherProvider();
-
-    abstract RateProcessor<Class<?>> getClassRateProcessor();
-
-    abstract RateProcessor<RateLimitProperties> getPropertyRateProcessor();
-
-    Set<Class<?>> getResourceClasses() {
-        Set<Class<?>> classes = new HashSet<>();
-        classes.addAll(getProperties().getResourceClasses());
-        classes.addAll(getResourceClassesSupplier().get());
-        return Collections.unmodifiableSet(classes);
+    default Supplier<Set<Class<?>>> getResourceClassesSupplier() {
+        return () -> {
+            Set<Class<?>> classes = new HashSet<>();
+            classes.addAll(getProperties().getResourceClasses());
+            classes.addAll(getClassesInPackageFinder()
+                    .findClasses(getProperties().getResourcePackages()));
+            return Collections.unmodifiableSet(classes);
+        };
     }
+
+    MatcherProvider<HttpServletRequest> getMatcherProvider();
+
+    RateProcessor<Class<?>> getClassRateProcessor();
+
+    RateProcessor<RateLimitProperties> getPropertyRateProcessor();
+
+    BandwidthsStore<?> getStore();
+
+    UsageListener getUsageListener();
+
+    RateLimiterProvider<HttpServletRequest, ?> getRateLimiterProvider();
 }
