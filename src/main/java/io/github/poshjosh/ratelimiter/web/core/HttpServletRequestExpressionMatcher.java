@@ -334,6 +334,7 @@ final class HttpServletRequestExpressionMatcher implements
                     .findAny().orElse(RequestInfo.Cookie.of("", ""));
             case HEADER: return getInfo(request).getHeaders(name);
             case PARAMETER: return getInfo(request).getParameters(name);
+            case IP:
             case REMOTE_ADDRESS: return getInfo(request).getRemoteAddr();
             case LOCALE: return getInfo(request).getLocales();
             case USER_ROLE: return getInfo(request).isUserInRole(name) ? name : "";

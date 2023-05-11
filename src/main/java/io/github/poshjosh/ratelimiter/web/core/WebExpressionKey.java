@@ -6,12 +6,21 @@ public interface WebExpressionKey {
     String AUTH_SCHEME = "web.request.auth.scheme";
     String COOKIE = "web.request.cookie";
     String HEADER = "web.request.header";
+    /**
+     * The ip address of the request.
+     * Alias for {@link #REMOTE_ADDRESS}
+     */
+    String IP = "web.request.ip";
 
     /**
      * Format en-US, de-DE etc
      */
     String LOCALE = "web.request.locale";
     String PARAMETER = "web.request.parameter";
+    /**
+     * The ip address of the request.
+     * Alias for {@link #IP}
+     */
     String REMOTE_ADDRESS = "web.request.remote.address";
     String REQUEST_URI = "web.request.uri";
     String USER_ROLE = "web.request.user.role";
@@ -40,6 +49,7 @@ public interface WebExpressionKey {
             case AUTH_SCHEME:
             case COOKIE:
             case HEADER:
+            case IP:
             case LOCALE:
             case PARAMETER:
             case REMOTE_ADDRESS:

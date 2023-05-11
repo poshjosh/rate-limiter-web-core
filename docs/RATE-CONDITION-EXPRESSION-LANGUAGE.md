@@ -43,6 +43,8 @@ In addition to those listed in the [core specification](https://github.com/poshj
 
 `web.request.parameter`
 
+`web.request.ip`
+
 `web.request.remote.address`
 
 `web.request.uri`
