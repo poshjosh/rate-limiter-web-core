@@ -6,6 +6,10 @@ Please first read the [core specification](https://github.com/poshjosh/rate-limi
 
 ### Format
 
+An expression is of format `LHS` `OPERATOR` `RHS` e.g `jvm.thread.count.started>99`
+
+`LHS` = `jvm.thread.count`,  `OPERATOR` = `>`,  `RHS` = `99`
+
 | format          | example                                   | description                                             |  
 |-----------------|-------------------------------------------|---------------------------------------------------------|
 | LHS=RHS         | web.request.header=X-RateLimit-Limit      | true, when the X-RateLimit-Limit header exists          |  
@@ -16,6 +20,14 @@ Please first read the [core specification](https://github.com/poshjosh/rate-limi
 | LHS={key=[A&B]} | web.request.header={name=[val_0&val_1]}   | true, when both val_0 and val_1 are set as headers      |  
 
 __Note:__ `|` equals OR. `!` is used above for OR because markdown does not support `|` in tables
+
+Example:
+
+```java
+// 5 permits per second when available system memory is less than 1 giga byte
+@Rate(permits = 5, when = "sys.memory.available<500MB")
+class Resource{ }
+```
 
 ### Supported LHS
 

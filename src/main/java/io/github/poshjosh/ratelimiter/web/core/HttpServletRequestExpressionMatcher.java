@@ -72,18 +72,8 @@ final class HttpServletRequestExpressionMatcher implements
     }
 
     @Override
-    public ExpressionMatcher<HttpServletRequest, Object> with(String expression) {
-        return delegate.with(expression);
-    }
-
-    @Override
-    public ExpressionMatcher<HttpServletRequest, Object> with(Expression<String> expression) {
-        return delegate.with(expression);
-    }
-
-    @Override
-    public boolean isSupported(String expression) {
-        return delegate.isSupported(expression);
+    public ExpressionMatcher<HttpServletRequest, Object> matcher(Expression<String> expression) {
+        return delegate.matcher(expression);
     }
 
     @Override

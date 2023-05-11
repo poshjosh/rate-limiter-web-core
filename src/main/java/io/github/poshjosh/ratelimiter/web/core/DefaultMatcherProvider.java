@@ -17,21 +17,17 @@ import java.util.stream.Collectors;
 
 final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultMatcherProvider.class);
-
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
     private final ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
-    private final ExpressionMatcher<HttpServletRequest, Object> defaultExpressionMatcher;
 
     DefaultMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
         this.resourceInfoProvider = Objects.requireNonNull(resourceInfoProvider);
-        this.expressionMatcher = Objects.requireNonNull(expressionMatcher);
-        this.defaultExpressionMatcher = ExpressionMatcher.ofDefault();
+        this.expressionMatcher = ExpressionMatcher.any(expressionMatcher, ExpressionMatcher.ofDefault());
         this.urlPathHelper = new UrlPathHelper(applicationPath);
     }
 
@@ -45,7 +41,7 @@ final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest
             if (!supplementaryMatcherOpt.isPresent()) {
                 return main;
             }
-            return main.andThen(supplementaryMatcherOpt.get());
+            return main.and(supplementaryMatcherOpt.get());
         }
         return supplementaryMatcherOpt.orElse(Matcher.matchNone());
     }
@@ -67,17 +63,7 @@ final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest
     }
 
     private Optional<Matcher<HttpServletRequest>> createExpressionMatcher(String expression) {
-        if (!StringUtils.hasText(expression)) {
-            return Optional.empty();
-        }
-        if (expressionMatcher.isSupported(expression)) {
-            return Optional.of(expressionMatcher.with(expression));
-        } else if (defaultExpressionMatcher.isSupported(expression)) {
-            return Optional.of(defaultExpressionMatcher.with(expression));
-        }
-        throw new UnsupportedOperationException("Expression not supported: " + expression +
-                " by any of: [" + expressionMatcher.getClass().getSimpleName() +
-                "," + expressionMatcher.getClass().getSimpleName() + "]");
+        return expressionMatcher.matcher(expression);
     }
 
     private Matcher<HttpServletRequest> createWebRequestMatcher(RateSource rateSource) {

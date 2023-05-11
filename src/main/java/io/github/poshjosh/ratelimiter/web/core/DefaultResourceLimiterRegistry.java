@@ -396,7 +396,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             }
 
             LOG.debug("Found existing matcher for {}, matcher: {}", id, existing);
-            Matcher<HttpServletRequest> result = created == null ? existing : created.andThen(existing);
+            Matcher<HttpServletRequest> result = created == null ? existing : created.and(existing);
             onMatcherCreated.accept(id, result);
             return result;
         }

@@ -7,10 +7,14 @@ final class DefaultResourceInfo implements ResourceInfoProvider.ResourceInfo {
     private final PathPatterns<String> pathPatterns;
     private final String id;
     DefaultResourceInfo(PathPatterns<String> pathPatterns, String...httpMethods) {
-        this.httpMethods = Collections.unmodifiableCollection(new HashSet<>(Arrays.asList(httpMethods)));
+        this.httpMethods = toCollection(httpMethods);
         this.pathPatterns = Objects.requireNonNull(pathPatterns);
         final List<String> paths = getPathPatterns().getPatterns();
         this.id = paths.isEmpty() ? this.httpMethods.toString() : this.httpMethods.toString() + paths;
+    }
+    private Collection<String> toCollection(String...arr) {
+        return arr.length == 0 ? Collections.emptyList() : arr.length == 1 ?
+                Collections.singletonList(arr[0]) : Collections.unmodifiableList(Arrays.asList(arr));
     }
     @Override public String getId() { return id; }
     @Override public Collection<String> getHttpMethods() { return httpMethods; }
