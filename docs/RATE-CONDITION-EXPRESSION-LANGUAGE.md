@@ -24,9 +24,17 @@ __Note:__ `|` equals OR. `!` is used above for OR because markdown does not supp
 Example:
 
 ```java
-// 5 permits per second when available system memory is less than 1 giga byte
-@Rate(permits = 5, when = "sys.memory.available<500MB")
-class Resource{ }
+// 5 permits per second when available system memory is less than 1 GB
+@Rate(permits = 5, when = "jvm.memory.available<1G")
+class ResourceA{ }
+
+class ResourceB{
+    // 2 permits per second when available system memory is less than 1 GB, and user role is GUEST
+    @Rate(permits = 2, when = "jvm.memory.available<1G & web.request.user.role=GUEST")
+    void smile() {
+        return ":)";
+    }
+}
 ```
 
 ### Supported LHS
