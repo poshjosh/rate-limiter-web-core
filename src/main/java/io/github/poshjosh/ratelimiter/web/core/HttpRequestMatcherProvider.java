@@ -4,8 +4,6 @@ import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.GenericDeclaration;
@@ -15,14 +13,14 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-final class DefaultMatcherProvider implements MatcherProvider<HttpServletRequest> {
+final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletRequest> {
 
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
     private final ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
 
-    DefaultMatcherProvider(
+    HttpRequestMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {

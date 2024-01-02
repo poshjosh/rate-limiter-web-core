@@ -1,10 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
-import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
-import io.github.poshjosh.ratelimiter.annotation.ElementId;
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
-import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.annotation.*;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.util.*;
@@ -277,13 +274,13 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     private RateConfig createRateConfig(Class<?> source) {
         Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(RateSource.of(source), rates);
+        return RateConfig.of(RateSourceFactory.of(source), rates);
     }
 
 
     private RateConfig createRateConfig(Method source) {
         Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(RateSource.of(source), rates);
+        return RateConfig.of(RateSourceFactory.of(source), rates);
     }
 
     private MatcherProvider<HttpServletRequest> getUnregisteredMatcherProvider() {

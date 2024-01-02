@@ -44,11 +44,11 @@ final class HttpServletRequestExpressionMatcher implements
     private static final class Composite{
         private final String raw;
         private final Object [] values;
-        private final io.github.poshjosh.ratelimiter.Operator operator;
+        private final io.github.poshjosh.ratelimiter.util.Operator operator;
         private Composite(String raw, String operatorSymbol, Object[] values) {
             this.raw = Objects.requireNonNull(raw);
             this.values = Objects.requireNonNull(values);
-            this.operator = io.github.poshjosh.ratelimiter.Operator.ofSymbol(operatorSymbol);
+            this.operator = io.github.poshjosh.ratelimiter.util.Operator.ofSymbol(operatorSymbol);
         }
         @Override public String toString() {
             return raw;

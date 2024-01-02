@@ -105,7 +105,7 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
             propertyRateProcessor(new PropertyRateProcessor());
         }
 
-        configuration.matcherProvider = new DefaultMatcherProvider(
+        configuration.matcherProvider = new HttpRequestMatcherProvider(
                 configuration.properties.getApplicationPath(),
                 configuration.resourceInfoProvider,
                 configuration.expressionMatcher);
