@@ -39,7 +39,7 @@ class ResourceB{
 
 ### Supported LHS
 
-In addition to those listed in the [core specification](https://github.com/poshjosh/rate-limiter-annotation/blob/main/docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md), the following are supported:
+In addition to those listed in the [annotation specification](https://github.com/poshjosh/rate-limiter-annotation/blob/main/docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md), the following are supported:
 
 `web.request.attribute`
 

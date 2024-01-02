@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core.util;
 
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 
 import java.util.Collection;
 

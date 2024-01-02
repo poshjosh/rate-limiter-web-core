@@ -4,6 +4,10 @@ import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.annotation.*;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
@@ -118,22 +122,22 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     @Override
     public Matcher<HttpServletRequest> getOrCreateMatcher(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createMatcher(createRateConfig(clazz));
+        return getUnregisteredMatcherProvider().createParentMatcher(createRateConfig(clazz));
     }
 
     @Override
     public Matcher<HttpServletRequest> getOrCreateMatcher(Method method) {
-        return getUnregisteredMatcherProvider().createMatcher(createRateConfig(method));
+        return getUnregisteredMatcherProvider().createParentMatcher(createRateConfig(method));
     }
 
     @Override
     public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(clazz));
+        return getUnregisteredMatcherProvider().createChildMatchers(createRateConfig(clazz));
     }
 
     @Override
     public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Method method) {
-        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(method));
+        return getUnregisteredMatcherProvider().createChildMatchers(createRateConfig(method));
     }
 
     @Override
@@ -378,14 +382,14 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             this.onMatcherCreated = Objects.requireNonNull(onMatcherCreated);
         }
         @Override
-        public Matcher<HttpServletRequest> createMatcher(RateConfig rateConfig) {
+        public Matcher<HttpServletRequest> createParentMatcher(RateConfig rateConfig) {
 
             final String id = rateConfig.getId();
 
             // If no Matcher or a NO_OP Matcher exists, create new
             Matcher<HttpServletRequest> existing = registry.get(id).orElse(Matcher.matchNone());
 
-            Matcher<HttpServletRequest> created = delegate.createMatcher(rateConfig);
+            Matcher<HttpServletRequest> created = delegate.createParentMatcher(rateConfig);
 
             if (Matcher.matchNone().equals(existing)) {
                 onMatcherCreated.accept(id, created);
@@ -398,8 +402,8 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             return result;
         }
         @Override
-        public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
-            List<Matcher<HttpServletRequest>> result = delegate.createMatchers(rateConfig);
+        public List<Matcher<HttpServletRequest>> createChildMatchers(RateConfig rateConfig) {
+            List<Matcher<HttpServletRequest>> result = delegate.createChildMatchers(rateConfig);
             result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
             return result;
         }

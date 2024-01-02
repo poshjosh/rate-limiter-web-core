@@ -1,7 +1,9 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
@@ -30,7 +32,7 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     }
 
     @Override
-    public Matcher<HttpServletRequest> createMatcher(RateConfig rateConfig) {
+    public Matcher<HttpServletRequest> createParentMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
         Optional<Matcher<HttpServletRequest>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
@@ -45,7 +47,7 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
+    public List<Matcher<HttpServletRequest>> createChildMatchers(RateConfig rateConfig) {
         return createSupplementaryMatchers(rateConfig.getRates());
     }
 
