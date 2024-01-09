@@ -353,4 +353,9 @@ final class HttpServletRequestExpressionMatcher implements
     public boolean isSupported(Operator operator) {
         return operator.equalsIgnoreNegation(Operator.EQUALS);
     }
+
+    @Override
+    public String toString() {
+        return "HttpServletRequestExpressionMatcher{delegate=" + delegate + '}';
+    }
 }

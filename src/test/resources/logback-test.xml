@@ -7,9 +7,9 @@
         </encoder>
     </appender>
 
-    <logger name="io.github.poshjosh.web.core" level="debug"/>
+    <logger name="io.github.poshjosh.web.core" level="trace"/>
 
-    <root level="debug">
+    <root level="trace">
         <appender-ref ref="STDOUT"/>
     </root>
 

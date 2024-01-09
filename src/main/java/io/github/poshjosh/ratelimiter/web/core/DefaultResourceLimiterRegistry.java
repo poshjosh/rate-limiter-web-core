@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.annotation.*;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
@@ -122,22 +123,22 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     @Override
     public Matcher<HttpServletRequest> getOrCreateMatcher(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createParentMatcher(createRateConfig(clazz));
+        return getUnregisteredMatcherProvider().createGroupMatcher(createRateConfig(clazz));
     }
 
     @Override
     public Matcher<HttpServletRequest> getOrCreateMatcher(Method method) {
-        return getUnregisteredMatcherProvider().createParentMatcher(createRateConfig(method));
+        return getUnregisteredMatcherProvider().createGroupMatcher(createRateConfig(method));
     }
 
     @Override
     public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createChildMatchers(createRateConfig(clazz));
+        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(clazz));
     }
 
     @Override
     public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Method method) {
-        return getUnregisteredMatcherProvider().createChildMatchers(createRateConfig(method));
+        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(method));
     }
 
     @Override
@@ -278,13 +279,13 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     private RateConfig createRateConfig(Class<?> source) {
         Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(RateSourceFactory.of(source), rates);
+        return RateConfig.of(JavaRateSource.of(source), rates);
     }
 
 
     private RateConfig createRateConfig(Method source) {
         Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(RateSourceFactory.of(source), rates);
+        return RateConfig.of(JavaRateSource.of(source), rates);
     }
 
     private MatcherProvider<HttpServletRequest> getUnregisteredMatcherProvider() {
@@ -337,6 +338,9 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             this.delegate = Objects.requireNonNull(delegate);
             this.isEnabled = Objects.requireNonNull(isEnabled);
         }
+        @Override public List<BandwidthState> getBandwidths(HttpServletRequest key) {
+            return delegate.getBandwidths(key);
+        }
         @Override
         public ResourceLimiter<HttpServletRequest> listener(UsageListener listener) {
             return delegate.listener(listener);
@@ -382,14 +386,14 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             this.onMatcherCreated = Objects.requireNonNull(onMatcherCreated);
         }
         @Override
-        public Matcher<HttpServletRequest> createParentMatcher(RateConfig rateConfig) {
+        public Matcher<HttpServletRequest> createGroupMatcher(RateConfig rateConfig) {
 
             final String id = rateConfig.getId();
 
             // If no Matcher or a NO_OP Matcher exists, create new
             Matcher<HttpServletRequest> existing = registry.get(id).orElse(Matcher.matchNone());
 
-            Matcher<HttpServletRequest> created = delegate.createParentMatcher(rateConfig);
+            Matcher<HttpServletRequest> created = delegate.createGroupMatcher(rateConfig);
 
             if (Matcher.matchNone().equals(existing)) {
                 onMatcherCreated.accept(id, created);
@@ -402,8 +406,8 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             return result;
         }
         @Override
-        public List<Matcher<HttpServletRequest>> createChildMatchers(RateConfig rateConfig) {
-            List<Matcher<HttpServletRequest>> result = delegate.createChildMatchers(rateConfig);
+        public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
+            List<Matcher<HttpServletRequest>> result = delegate.createMatchers(rateConfig);
             result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
             return result;
         }
