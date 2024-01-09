@@ -163,8 +163,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
 ```
 
 You could bind rate limits from properties to a class or method. For example to bind to 
-class `MyRateLimitedResource.class`. To bind to a method replace `IdProvider.ofClass()` 
-with `IdProvider.ofMethod()`.
+class `MyRateLimitedResource.class`:
 
 ```java
 public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer {
