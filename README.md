@@ -7,22 +7,16 @@ We believe that rate limiting should be as simple as:
 
 ```java
 @Rate(10) // 10 permits per second for all methods in this class
-@Controller
 @RequestMapping("/api/v1")
 public class GreetingResource {
 
-  // GUESTs - 1 call per second, USERs - 3 calls per second 
-  @Rate(permits=1, when="web.request.user.role=GUEST")
-  @Rate(permits=3, when="web.request.user.role=USER")
+  @Rate(permits=10, when="web.request.user.role=GUEST")
   @GetMapping("/smile")
   public String smile() {
     return ":)";
   }
 
-  // When system available memory < 1GB - 10 calls per minute
-  @Rate(permits=10, timeUnit=TimeUnit.MINUTES, when="jvm.memory.available<1gb")
-  // When request parameter `who` has value of either ALICE or BOB - 1 permit per second
-  @Rate(permits=1, when="web.request.parameter={who=[ALICE|BOB]}")
+  @Rate(permits=1, when="jvm.memory.available<1gb")
   @GetMapping("/greet")
   public String greet(@RequestParam("who") String who) {
     return "Hello " + who;
