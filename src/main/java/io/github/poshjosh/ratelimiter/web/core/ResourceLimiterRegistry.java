@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatterns;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
@@ -80,19 +80,19 @@ public interface ResourceLimiterRegistry {
 
     List<RateLimiter> createRateLimiters(Method method);
 
-    LimiterConfig<HttpServletRequest> createConfig(Class<?> source);
+    LimiterContext<HttpServletRequest> createConfig(Class<?> source);
 
-    LimiterConfig<HttpServletRequest> createConfig(Method source);
+    LimiterContext<HttpServletRequest> createConfig(Method source);
 
-    default Optional<LimiterConfig<HttpServletRequest>> getConfig(Class<?> clazz) {
+    default Optional<LimiterContext<HttpServletRequest>> getConfig(Class<?> clazz) {
         return getConfig(ElementId.of(clazz));
     }
 
-    default Optional<LimiterConfig<HttpServletRequest>> getConfig(Method method) {
+    default Optional<LimiterContext<HttpServletRequest>> getConfig(Method method) {
         return getConfig(ElementId.of(method));
     }
 
-    Optional<LimiterConfig<HttpServletRequest>> getConfig(String id);
+    Optional<LimiterContext<HttpServletRequest>> getConfig(String id);
 
     boolean isRateLimited(String id);
 
