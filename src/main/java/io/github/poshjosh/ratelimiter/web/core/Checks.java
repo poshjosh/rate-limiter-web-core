@@ -14,9 +14,6 @@ final class Checks {
                 complainer.getSimpleName() + " does not support: " + unsupported
         );
     }
-    static <V> V requireNodeValue(Node<V> node) {
-        return node.getValueOptional().orElseThrow(() -> new NodeValueAbsentException(node));
-    }
     static void requireParentNameDoesNotMatchChild(String parent, String child) {
         if ( Objects.equals(parent, child)) {
             throw new IllegalStateException(

@@ -34,13 +34,13 @@ public interface ResourceLimiterRegistry {
 
     boolean register(Method source);
 
-    Matcher<HttpServletRequest> getOrCreateMatcher(Class<?> clazz);
+    Matcher<HttpServletRequest> getOrCreateMainMatcher(Class<?> clazz);
 
-    Matcher<HttpServletRequest> getOrCreateMatcher(Method method);
+    Matcher<HttpServletRequest> getOrCreateMainMatcher(Method method);
 
-    List<Matcher<HttpServletRequest>> getOrCreateMatchers(Class<?> clazz);
+    List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Class<?> clazz);
 
-    List<Matcher<HttpServletRequest>> getOrCreateMatchers(Method method);
+    List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method);
 
     ResourceLimiter<HttpServletRequest> createResourceLimiter();
 

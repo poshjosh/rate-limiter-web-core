@@ -32,7 +32,7 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     }
 
     @Override
-    public Matcher<HttpServletRequest> createGroupMatcher(RateConfig rateConfig) {
+    public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
         Optional<Matcher<HttpServletRequest>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
@@ -47,7 +47,7 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
+    public List<Matcher<HttpServletRequest>> createSubMatchers(RateConfig rateConfig) {
         return createSupplementaryMatchers(rateConfig.getRates());
     }
 

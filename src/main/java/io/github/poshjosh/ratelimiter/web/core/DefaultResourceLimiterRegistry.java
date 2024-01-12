@@ -60,7 +60,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             if (node.isRoot()) {
                 return node.getValueOrDefault(null);
             }
-            RateConfig annotationConfig = Checks.requireNodeValue(node);
+            RateConfig annotationConfig = node.requireValue();
             return propertyConfigs.get(node.getName())
                     .map(propertyConfig -> {
                         transferredToAnnotations.add(node.getName());
@@ -122,23 +122,23 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
     }
 
     @Override
-    public Matcher<HttpServletRequest> getOrCreateMatcher(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createGroupMatcher(createRateConfig(clazz));
+    public Matcher<HttpServletRequest> getOrCreateMainMatcher(Class<?> clazz) {
+        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(clazz));
     }
 
     @Override
-    public Matcher<HttpServletRequest> getOrCreateMatcher(Method method) {
-        return getUnregisteredMatcherProvider().createGroupMatcher(createRateConfig(method));
+    public Matcher<HttpServletRequest> getOrCreateMainMatcher(Method method) {
+        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(method));
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(clazz));
+    public List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Class<?> clazz) {
+        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(clazz));
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> getOrCreateMatchers(Method method) {
-        return getUnregisteredMatcherProvider().createMatchers(createRateConfig(method));
+    public List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method) {
+        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(method));
     }
 
     @Override
@@ -187,14 +187,14 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
     public LimiterConfig<HttpServletRequest> createConfig(Class<?> source) {
         Node<RateConfig> node = createNode(null, source);
         return toLimiterConfigNode(null, node, getUnregisteredMatcherProvider())
-                .getValueOptional().orElseThrow(AssertionError::new);
+                .requireValue();
     }
 
     @Override
     public LimiterConfig<HttpServletRequest> createConfig(Method source) {
         Node<RateConfig> node = createNode(null, source);
         return toLimiterConfigNode(null, node, getUnregisteredMatcherProvider())
-                .getValueOptional().orElseThrow(AssertionError::new);
+                .requireValue();
     }
 
     @Override
@@ -386,14 +386,14 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             this.onMatcherCreated = Objects.requireNonNull(onMatcherCreated);
         }
         @Override
-        public Matcher<HttpServletRequest> createGroupMatcher(RateConfig rateConfig) {
+        public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
 
             final String id = rateConfig.getId();
 
             // If no Matcher or a NO_OP Matcher exists, create new
             Matcher<HttpServletRequest> existing = registry.get(id).orElse(Matcher.matchNone());
 
-            Matcher<HttpServletRequest> created = delegate.createGroupMatcher(rateConfig);
+            Matcher<HttpServletRequest> created = delegate.createMainMatcher(rateConfig);
 
             if (Matcher.matchNone().equals(existing)) {
                 onMatcherCreated.accept(id, created);
@@ -406,8 +406,8 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             return result;
         }
         @Override
-        public List<Matcher<HttpServletRequest>> createMatchers(RateConfig rateConfig) {
-            List<Matcher<HttpServletRequest>> result = delegate.createMatchers(rateConfig);
+        public List<Matcher<HttpServletRequest>> createSubMatchers(RateConfig rateConfig) {
+            List<Matcher<HttpServletRequest>> result = delegate.createSubMatchers(rateConfig);
             result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
             return result;
         }
