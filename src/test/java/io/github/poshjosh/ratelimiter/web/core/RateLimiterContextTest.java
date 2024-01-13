@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ResourceLimiterConfigTest {
+class RateLimiterContextTest {
 
     @Test void build_withoutResourceInfoProvider_shouldThrowException() {
-        assertThrows(RuntimeException.class, () -> ResourceLimiterConfig.builder().build());
+        assertThrows(RuntimeException.class, () -> RateLimiterContext.builder().build());
     }
 
     @Test void build_withResourceInfoProvider_shouldSucceed() {
-        ResourceLimiterConfig config = ResourceLimiterConfig.builder()
+        RateLimiterContext config = RateLimiterContext.builder()
                 .resourceInfoProvider(ResourceInfoProvider.NONE)
                 .build();
         assertTrue(config != null);

@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core.util;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
 
@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The class allows for the customization of {@link ResourceLimiter}s via properties.
- * The properties defined here will be used to create a {@link ResourceLimiter} independent
+ * The class allows for the customization of {@link RateLimiter}s via properties.
+ * The properties defined here will be used to create a {@link RateLimiter} independent
  * of those created from the various {@link Rate} annotations.
  */
 public interface RateLimitProperties {

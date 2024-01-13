@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import org.junit.jupiter.api.Test;
 
@@ -8,16 +8,16 @@ import javax.servlet.http.HttpServletRequest;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ResourceLimiterRegistryTest {
+class RateLimiterRegistryTest {
 
-    @Test void shouldCreateResourceLimiter() {
+    @Test void shouldCreateRateLimiterFactory() {
         ResourceInfoProvider resourceInfoProvider = ResourceInfoProvider.NONE;
-        ResourceLimiterConfig config = ResourceLimiterConfig.builder()
+        RateLimiterContext config = RateLimiterContext.builder()
                 .resourceInfoProvider(resourceInfoProvider)
                 .build();
-        ResourceLimiter<HttpServletRequest> limiter =
-                ResourceLimiterRegistry.of(config).createResourceLimiter();
-        assertTrue(limiter != null);
+        RateLimiterFactory<HttpServletRequest> rateLimiterFactory =
+                RateLimiterRegistry.of(config).createRateLimiterFactory();
+        assertTrue(rateLimiterFactory != null);
     }
 
     @Test void isRateLimited() {

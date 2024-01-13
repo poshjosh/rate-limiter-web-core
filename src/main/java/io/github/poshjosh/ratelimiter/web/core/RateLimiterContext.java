@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.RateLimiterProvider;
-import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
@@ -12,19 +11,18 @@ import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.Supplier;
 
-public interface ResourceLimiterConfig {
+public interface RateLimiterContext {
 
     /**
      * Users of the returned builder are required (at the minimum) to provide:
      * {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
-     * @return A builder for {@link ResourceLimiterConfig}
+     * @return A builder for {@link RateLimiterContext}
      */
     static Builder builder() {
-        return new ResourceLimiterConfigBuilder();
+        return new RateLimiterContextBuilder();
     }
 
     /**
@@ -32,7 +30,7 @@ public interface ResourceLimiterConfig {
      */
     interface Builder {
 
-        ResourceLimiterConfig build();
+        RateLimiterContext build();
 
         /**
          * <p><b>Not mandatory</b></p>
@@ -46,7 +44,7 @@ public interface ResourceLimiterConfig {
          * @param configurer The configurer for fine-grained configuration of rate limiting
          * @return this builder
          */
-        Builder configurer(ResourceLimiterConfigurer configurer);
+        Builder configurer(RateLimiterConfigurer configurer);
 
         /**
          * <p><b>Not mandatory</b></p>
@@ -90,15 +88,6 @@ public interface ResourceLimiterConfig {
          */
         Builder store(BandwidthsStore<?> store);
 
-        Builder addUsageListener(UsageListener listener);
-
-        /**
-         * <p><b>Not mandatory</b></p>
-         * @param listener Listener for usage of rate limited resources
-         * @return this builder
-         */
-        Builder usageListener(UsageListener listener);
-
         /**
          * <p><b>Not mandatory</b></p>
          * @param rateLimiterProvider For provider rate limiters
@@ -116,7 +105,7 @@ public interface ResourceLimiterConfig {
 
     RateLimitProperties getProperties();
 
-    Optional<ResourceLimiterConfigurer> getConfigurer();
+    Optional<RateLimiterConfigurer> getConfigurer();
 
     ClassesInPackageFinder getClassesInPackageFinder();
 
@@ -137,8 +126,6 @@ public interface ResourceLimiterConfig {
     RateProcessor<RateLimitProperties> getPropertyRateProcessor();
 
     BandwidthsStore<?> getStore();
-
-    UsageListener getUsageListener();
 
     RateLimiterProvider<?> getRateLimiterProvider();
 

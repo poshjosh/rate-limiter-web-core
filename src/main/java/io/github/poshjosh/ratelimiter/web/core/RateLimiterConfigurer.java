@@ -6,7 +6,7 @@ package io.github.poshjosh.ratelimiter.web.core;
  * @see #configure(Registries)
  */
 @FunctionalInterface
-public interface ResourceLimiterConfigurer {
+public interface RateLimiterConfigurer {
 
     /**
      * Implement this method for fine-grained configuration of rate limiting.
@@ -18,7 +18,7 @@ public interface ResourceLimiterConfigurer {
      * <pre>
      * <code>
      * @Component
-     * public class MyResourceLimiterConfigurer implements ResourceLimiterConfigurer{
+     * public class MyRateLimiterConfigurer implements RateLimiterConfigurer{
      *   public void configure(Registries registries) {
      *
      *     // Register consumption listeners

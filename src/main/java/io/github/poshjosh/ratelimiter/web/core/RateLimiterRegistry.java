@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatterns;
@@ -13,20 +13,20 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
-public interface ResourceLimiterRegistry {
+public interface RateLimiterRegistry {
 
-    static ResourceLimiterRegistry ofDefaults() {
+    static RateLimiterRegistry ofDefaults() {
         return of(rateSource -> ResourceInfoProvider.ResourceInfo.of(PathPatterns.matchALL()));
     }
 
-    static ResourceLimiterRegistry of(ResourceInfoProvider resourceInfoProvider) {
-        return of(ResourceLimiterConfig.builder()
+    static RateLimiterRegistry of(ResourceInfoProvider resourceInfoProvider) {
+        return of(RateLimiterContext.builder()
                 .resourceInfoProvider(resourceInfoProvider)
                 .build());
     }
 
-    static ResourceLimiterRegistry of(ResourceLimiterConfig resourceLimiterConfig) {
-        return new DefaultResourceLimiterRegistry(resourceLimiterConfig);
+    static RateLimiterRegistry of(RateLimiterContext rateLimiterContext) {
+        return new DefaultRateLimiterRegistry(rateLimiterContext);
     }
 
     boolean register(Class<?> source);
@@ -41,11 +41,11 @@ public interface ResourceLimiterRegistry {
 
     List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method);
 
-    ResourceLimiter<HttpServletRequest> createResourceLimiter();
+    RateLimiterFactory<HttpServletRequest> createRateLimiterFactory();
 
-    ResourceLimiter<HttpServletRequest> createResourceLimiter(Class<?> clazz);
+    RateLimiterFactory<HttpServletRequest> createRateLimiterFactory(Class<?> clazz);
 
-    ResourceLimiter<HttpServletRequest> createResourceLimiter(Method method);
+    RateLimiterFactory<HttpServletRequest> createRateLimiterFactory(Method method);
 
     default boolean hasMatching(String id) {
         return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));

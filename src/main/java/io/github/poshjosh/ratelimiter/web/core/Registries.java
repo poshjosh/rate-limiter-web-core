@@ -1,17 +1,16 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import javax.servlet.http.HttpServletRequest;
 
 public interface Registries extends UnmodifiableRegistries {
 
     static Registries ofDefaults() {
-        return of(Matcher.matchNone(), UsageListener.NO_OP);
+        return of(Matcher.matchNone());
     }
 
-    static Registries of(Matcher<HttpServletRequest> matcher, UsageListener listener) {
-        return new DefaultRegistries(matcher, listener);
+    static Registries of(Matcher<HttpServletRequest> matcher) {
+        return new DefaultRegistries(matcher);
     }
 
     static UnmodifiableRegistries unmodifiable(Registries registries) {
@@ -19,14 +18,9 @@ public interface Registries extends UnmodifiableRegistries {
             @Override public UnmodifiableRegistry<Matcher<HttpServletRequest>> matchers() {
                 return Registry.unmodifiable(registries.matchers());
             }
-            @Override public UnmodifiableRegistry<UsageListener> listeners() {
-                return Registry.unmodifiable(registries.listeners());
-            }
             @Override public String toString() { return "Unmodifiable{" + registries + "}"; }
         };
     }
 
     Registry<Matcher<HttpServletRequest>> matchers();
-
-    Registry<UsageListener> listeners();
 }

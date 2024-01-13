@@ -64,13 +64,13 @@ class GreetingResource {
 __(Optional) Configure rate limiting__
 
 Limiters, matchers, caches and listeners, could be configured by implementing and
-exposing a `ResourceLimiterConfigurer` as shown below:
+exposing a `RateLimiterConfigurer` as shown below:
 
 ```java
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 
 @Configuration 
-public class Configurer implements ResourceLimiterConfigurer {
+public class Configurer implements RateLimiterConfigurer {
 
   @Override 
   public void configure(Registries registries) {

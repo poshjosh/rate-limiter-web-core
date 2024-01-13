@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.RateLimiterProvider;
-import io.github.poshjosh.ratelimiter.UsageListener;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
@@ -20,21 +19,21 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
+class RateLimiterContextBuilder implements RateLimiterContext.Builder {
 
     /**
      * To maintain a synchronized time between distributed services, prefer the time since epoch.
      */
     private static final Ticker DEFAULT_TICKER = Ticker.SYSTEM_EPOCH_MILLIS;
 
-    private final ResourceLimiterConfigImpl configuration;
+    private final RateLimiterContextImpl configuration;
 
-    ResourceLimiterConfigBuilder() {
-        this.configuration = new ResourceLimiterConfigImpl();
+    RateLimiterContextBuilder() {
+        this.configuration = new RateLimiterContextImpl();
     }
 
     @Override
-    public ResourceLimiterConfig build() {
+    public RateLimiterContext build() {
 
         if (configuration.expressionMatcher == null) {
             expressionMatcher(WebExpressionMatcher.ofHttpServletRequest());
@@ -66,10 +65,6 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
             store(BandwidthsStore.ofDefaults());
         }
 
-        if (configuration.usageListener == null) {
-            usageListener(UsageListener.NO_OP);
-        }
-
         if (configuration.ticker == null) {
             ticker(DEFAULT_TICKER);
         }
@@ -87,82 +82,68 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
         return configuration;
     }
 
-    @Override public ResourceLimiterConfig.Builder properties(
+    @Override public RateLimiterContext.Builder properties(
             RateLimitProperties properties) {
         configuration.properties = properties;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder configurer(
-            ResourceLimiterConfigurer configurer) {
+    @Override public RateLimiterContext.Builder configurer(
+            RateLimiterConfigurer configurer) {
         configuration.configurer = configurer;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder classesInPackageFinder(
+    @Override public RateLimiterContext.Builder classesInPackageFinder(
             ClassesInPackageFinder classesInPackageFinder) {
         configuration.classesInPackageFinder = classesInPackageFinder;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder resourceInfoProvider(
+    @Override public RateLimiterContext.Builder resourceInfoProvider(
             ResourceInfoProvider resourceInfoProvider) {
         configuration.resourceInfoProvider = resourceInfoProvider;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder expressionMatcher(
+    @Override public RateLimiterContext.Builder expressionMatcher(
             ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
         configuration.expressionMatcher = expressionMatcher;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder classRateProcessor(
+    @Override public RateLimiterContext.Builder classRateProcessor(
             RateProcessor<Class<?>> rateProcessor) {
         configuration.classRateProcessor = rateProcessor;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder propertyRateProcessor(
+    @Override public RateLimiterContext.Builder propertyRateProcessor(
             RateProcessor<RateLimitProperties> rateProcessor) {
         configuration.propertyRateProcessor = rateProcessor;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder store(BandwidthsStore<?> store) {
+    @Override public RateLimiterContext.Builder store(BandwidthsStore<?> store) {
         configuration.store = store;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder addUsageListener(UsageListener listener) {
-        if (configuration.usageListener == null) {
-            usageListener(listener);
-        } else {
-            usageListener(configuration.usageListener.andThen(listener));
-        }
-        return this;
-    }
-
-    @Override public ResourceLimiterConfig.Builder usageListener(UsageListener listener) {
-        configuration.usageListener = listener;
-        return this;
-    }
-
-    @Override public ResourceLimiterConfig.Builder rateLimiterProvider(
+    @Override public RateLimiterContext.Builder rateLimiterProvider(
             RateLimiterProvider<?> rateLimiterProvider) {
         configuration.rateLimiterProvider = rateLimiterProvider;
         return this;
     }
 
-    @Override public ResourceLimiterConfig.Builder ticker(Ticker ticker) {
+    @Override public RateLimiterContext.Builder ticker(Ticker ticker) {
         configuration.ticker = ticker;
         return this;
     }
 
-    static final class ResourceLimiterConfigImpl implements ResourceLimiterConfig {
+    static final class RateLimiterContextImpl implements RateLimiterContext {
 
         private RateLimitProperties properties;
-        private ResourceLimiterConfigurer configurer;
+        private RateLimiterConfigurer configurer;
         private ClassesInPackageFinder classesInPackageFinder;
         private ResourceInfoProvider resourceInfoProvider;
         private ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
@@ -173,8 +154,6 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
 
         private BandwidthsStore<?> store;
 
-        private UsageListener usageListener;
-
         private RateLimiterProvider<?> rateLimiterProvider;
 
         private Ticker ticker;
@@ -183,7 +162,7 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
             return properties;
         }
 
-        @Override public Optional<ResourceLimiterConfigurer> getConfigurer() {
+        @Override public Optional<RateLimiterConfigurer> getConfigurer() {
             return Optional.ofNullable(configurer);
         }
 
@@ -205,10 +184,6 @@ class ResourceLimiterConfigBuilder implements ResourceLimiterConfig.Builder {
 
         @Override public BandwidthsStore<?> getStore() {
             return store;
-        }
-
-        @Override public UsageListener getUsageListener() {
-            return usageListener;
         }
 
         @Override public RateLimiterProvider<?> getRateLimiterProvider() {
