@@ -7,10 +7,12 @@ import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
+import io.github.poshjosh.ratelimiter.util.Ticker;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -102,7 +104,14 @@ public interface ResourceLimiterConfig {
          * @param rateLimiterProvider For provider rate limiters
          * @return this builder
          */
-        Builder rateLimiterProvider(RateLimiterProvider<HttpServletRequest, ?> rateLimiterProvider);
+        Builder rateLimiterProvider(RateLimiterProvider<?> rateLimiterProvider);
+
+        /**
+         * <p><b>Not mandatory</b></p>
+         * @param ticker The ticker to keep track of time.
+         * @return this builder
+         */
+        Builder ticker(Ticker ticker);
     }
 
     RateLimitProperties getProperties();
@@ -131,5 +140,7 @@ public interface ResourceLimiterConfig {
 
     UsageListener getUsageListener();
 
-    RateLimiterProvider<HttpServletRequest, ?> getRateLimiterProvider();
+    RateLimiterProvider<?> getRateLimiterProvider();
+
+    Ticker getTicker();
 }

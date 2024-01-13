@@ -3,9 +3,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.annotation.*;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
-import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -21,18 +18,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.*;
-import java.util.stream.Collectors;
 
 final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceLimiterRegistry.class);
 
     private final AnnotationConverter<Rate, Rates> annotationConverter = AnnotationConverter.ofRate();
-
-    private final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
-
-    private final Ticker ticker = ResourceLimiter.DEFAULT_TICKER;
-
     private final Registries registries;
     private final ResourceLimiterConfig resourceLimiterConfig;
     private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
@@ -87,7 +78,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
         annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
                 .orElseGet(() -> Node.of("root.annotations"))
-                .getRoot().transform(rateToLimiterConfig(matcherProvider));
+                .getRoot().transform(rateToLimiterContext(matcherProvider));
 
         LOG.debug("Nodes:\n{}", annotationsRootNode);
 
@@ -96,7 +87,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
         propertiesRootNode = propRoot.retainAll(nodesNotTransferred)
                 .orElseGet(() -> Node.of("root.properties"))
-                .getRoot().transform(rateToLimiterConfig(matcherProvider));
+                .getRoot().transform(rateToLimiterContext(matcherProvider));
 
         LOG.debug("Nodes:\n{}", propertiesRootNode);
     }
@@ -107,7 +98,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             return false;
         }
         Node<RateConfig> node = createNode(null, source);
-        toLimiterConfigNode(annotationsRootNode, node, getRegisteredMatcherProvider());
+        toLimiterContextNode(annotationsRootNode, node, getRegisteredMatcherProvider());
         return true;
     }
 
@@ -117,7 +108,7 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
             return false;
         }
         Node<RateConfig> node = createNode(null, source);
-        toLimiterConfigNode(annotationsRootNode, node, getRegisteredMatcherProvider());
+        toLimiterContextNode(annotationsRootNode, node, getRegisteredMatcherProvider());
         return true;
     }
 
@@ -153,58 +144,26 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
 
     @Override
     public ResourceLimiter<HttpServletRequest> createResourceLimiter(Class<?> source) {
-        LimiterContext<HttpServletRequest> config = getConfig(source).orElseGet(() -> createConfig(source));
-        return createResourceLimiter(Node.of(config.getId(), config, null));
+        LimiterContext<HttpServletRequest> context = getLimiterContext(source).orElseGet(() -> createLimiterContext(source));
+        return createResourceLimiter(Node.of(context.getId(), context, null));
     }
 
     @Override
     public ResourceLimiter<HttpServletRequest> createResourceLimiter(Method source) {
-        LimiterContext<HttpServletRequest> config = getConfig(source).orElseGet(() -> createConfig(source));
-        return createResourceLimiter(Node.of(config.getId(), config, null));
+        LimiterContext<HttpServletRequest> context = getLimiterContext(source).orElseGet(() -> createLimiterContext(source));
+        return createResourceLimiter(Node.of(context.getId(), context, null));
     }
 
     @Override
-    public List<RateLimiter> createRateLimiters(Class<?> clazz) {
-        LimiterContext<HttpServletRequest> config = getConfig(clazz).orElseGet(() -> createConfig(clazz));
-        return createRateLimiters(config.getId(), config.getRates());
+    public Optional<RateLimiter> getRateLimiter(Class<?> clazz) {
+        LimiterContext<HttpServletRequest> context = getLimiterContext(clazz).orElseGet(() -> createLimiterContext(clazz));
+        return getRateLimiter(ElementId.of(clazz), context.getRates());
     }
 
     @Override
-    public List<RateLimiter> createRateLimiters(Method method) {
-        LimiterContext<HttpServletRequest> config = getConfig(method).orElseGet(() -> createConfig(method));
-        return createRateLimiters(config.getId(), config.getRates());
-    }
-
-    private List<RateLimiter> createRateLimiters(String id, Rates rates) {
-        if (!rates.hasLimits()) {
-            return Collections.emptyList();
-        }
-        Bandwidth[] bandwidths = rateToBandwidthConverter.convert(id, rates, ticker.elapsedMicros());
-        return Arrays.stream(bandwidths).map(RateLimiter::of).collect(Collectors.toList());
-    }
-
-    @Override
-    public LimiterContext<HttpServletRequest> createConfig(Class<?> source) {
-        Node<RateConfig> node = createNode(null, source);
-        return toLimiterConfigNode(null, node, getUnregisteredMatcherProvider())
-                .requireValue();
-    }
-
-    @Override
-    public LimiterContext<HttpServletRequest> createConfig(Method source) {
-        Node<RateConfig> node = createNode(null, source);
-        return toLimiterConfigNode(null, node, getUnregisteredMatcherProvider())
-                .requireValue();
-    }
-
-    @Override
-    public Optional<LimiterContext<HttpServletRequest>> getConfig(String id) {
-        LimiterContext<HttpServletRequest> limiterContext = propertiesRootNode
-                .findFirstChild(node -> isName(id, node))
-                .flatMap(Node::getValueOptional)
-                .orElseGet(() -> annotationsRootNode.findFirstChild(node -> isName(id, node))
-                        .flatMap(Node::getValueOptional).orElse(null));
-        return Optional.ofNullable(limiterContext);
+    public Optional<RateLimiter> getRateLimiter(Method method) {
+        LimiterContext<HttpServletRequest> context = getLimiterContext(method).orElseGet(() -> createLimiterContext(method));
+        return getRateLimiter(ElementId.of(method), context.getRates());
     }
 
     @Override
@@ -232,20 +191,53 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
         return Registries.unmodifiable(registries);
     }
 
+    private Optional<RateLimiter> getRateLimiter(String key, Rates rates) {
+        if (!rates.hasLimits()) {
+            return Optional.empty();
+        }
+        RateLimiterProvider provider = resourceLimiterConfig.getRateLimiterProvider();
+        return Optional.of(provider.getRateLimiter(key, rates));
+    }
+
+    private LimiterContext<HttpServletRequest> createLimiterContext(Class<?> source) {
+        Node<RateConfig> node = createNode(null, source);
+        return toLimiterContextNode(null, node, getUnregisteredMatcherProvider())
+                .requireValue();
+    }
+    private LimiterContext<HttpServletRequest> createLimiterContext(Method source) {
+        Node<RateConfig> node = createNode(null, source);
+        return toLimiterContextNode(null, node, getUnregisteredMatcherProvider())
+                .requireValue();
+    }
+    private Optional<LimiterContext<HttpServletRequest>> getLimiterContext(Class<?> clazz) {
+        return getLimiterContext(ElementId.of(clazz));
+    }
+    private Optional<LimiterContext<HttpServletRequest>> getLimiterContext(Method method) {
+        return getLimiterContext(ElementId.of(method));
+    }
+    private Optional<LimiterContext<HttpServletRequest>> getLimiterContext(String id) {
+        LimiterContext<HttpServletRequest> limiterContext = propertiesRootNode
+                .findFirstChild(node -> isName(id, node))
+                .flatMap(Node::getValueOptional)
+                .orElseGet(() -> annotationsRootNode.findFirstChild(node -> isName(id, node))
+                        .flatMap(Node::getValueOptional).orElse(null));
+        return Optional.ofNullable(limiterContext);
+    }
+
     private <T> boolean isName(String id, Node<T> node) {
         return id.equals(node.getName());
     }
 
-    private Node<LimiterContext<HttpServletRequest>> toLimiterConfigNode(
+    private Node<LimiterContext<HttpServletRequest>> toLimiterContextNode(
             Node<LimiterContext<HttpServletRequest>> parent,
             Node<RateConfig> node,
             MatcherProvider<HttpServletRequest> matcherProvider) {
-        return Node.of(node.getName(), rateToLimiterConfig(matcherProvider).apply(node), parent);
+        return Node.of(node.getName(), rateToLimiterContext(matcherProvider).apply(node), parent);
     }
 
-    private Function<Node<RateConfig>, LimiterContext<HttpServletRequest>> rateToLimiterConfig(
+    private Function<Node<RateConfig>, LimiterContext<HttpServletRequest>> rateToLimiterContext(
             MatcherProvider<HttpServletRequest> matcherProvider) {
-        return node -> LimiterContext.of(rateToBandwidthConverter, matcherProvider, ticker, node);
+        return node -> LimiterContext.of(matcherProvider, node);
     }
 
     private boolean testTree(Node<RateConfig> node, Predicate<Node<RateConfig>> test) {
@@ -337,9 +329,6 @@ final class DefaultResourceLimiterRegistry implements ResourceLimiterRegistry {
         private ResourceLimiterWrapper(ResourceLimiter<HttpServletRequest> delegate, BooleanSupplier isEnabled) {
             this.delegate = Objects.requireNonNull(delegate);
             this.isEnabled = Objects.requireNonNull(isEnabled);
-        }
-        @Override public List<BandwidthState> getBandwidths(HttpServletRequest key) {
-            return delegate.getBandwidths(key);
         }
         @Override
         public ResourceLimiter<HttpServletRequest> listener(UsageListener listener) {

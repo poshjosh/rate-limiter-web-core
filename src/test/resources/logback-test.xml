@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="io.github.poshjosh.web.core" level="trace"/>
+    <logger name="io.github.poshjosh.ratelimiter.web.core" level="trace"/>
 
     <root level="trace">
         <appender-ref ref="STDOUT"/>

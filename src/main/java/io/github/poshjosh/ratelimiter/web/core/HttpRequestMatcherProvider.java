@@ -35,30 +35,22 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
-        Optional<Matcher<HttpServletRequest>> supplementaryMatcherOpt = createSupplementaryMatcher(rates);
+        Optional<Matcher<HttpServletRequest>> expressionMatcherOpt =
+                createExpressionMatcher(rates.getRateCondition());
         if (!source.isGroupType() && source.getSource() instanceof GenericDeclaration) {
-            Matcher<HttpServletRequest> main = createWebRequestMatcher(source);
-            if (!supplementaryMatcherOpt.isPresent()) {
-                return main;
+            Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(source);
+            if (!expressionMatcherOpt.isPresent()) {
+                return webRequestMatcher;
             }
-            return main.and(supplementaryMatcherOpt.get());
+            return webRequestMatcher.and(expressionMatcherOpt.get());
         }
-        return supplementaryMatcherOpt.orElse(Matcher.matchNone());
+        return expressionMatcherOpt.orElse(Matcher.matchNone());
     }
 
     @Override
     public List<Matcher<HttpServletRequest>> createSubMatchers(RateConfig rateConfig) {
-        return createSupplementaryMatchers(rateConfig.getRates());
-    }
-
-    private Optional<Matcher<HttpServletRequest>> createSupplementaryMatcher(Rates rates) {
-        return createExpressionMatcher(rates.getRateCondition());
-    }
-
-    private List<Matcher<HttpServletRequest>> createSupplementaryMatchers(Rates rates) {
-        return rates.getLimits().stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(null))
-                .filter(Objects::nonNull)
+        return rateConfig.getRates().getSubLimits().stream()
+                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matcher.matchNone()))
                 .collect(Collectors.toList());
     }
 
