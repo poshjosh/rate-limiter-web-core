@@ -21,15 +21,6 @@ public interface RateLimiterConfigurer {
      * public class MyRateLimiterConfigurer implements RateLimiterConfigurer{
      *   public void configure(Registries registries) {
      *
-     *     // Register consumption listeners
-     *     // ------------------------------
-     *
-     *     registries.listeners().register("limitBySession", (context, resourceId, hits, limit) -> {
-     *
-     *       // For example, log the limit that was exceeded
-     *       System.out.println("For " + resourceId + ", the following limits are exceeded: " + limit);
-     *     });
-     *
      *     // Register request matchers
      *     // -------------------------
      *

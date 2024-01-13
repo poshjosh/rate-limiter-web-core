@@ -75,15 +75,6 @@ public class Configurer implements RateLimiterConfigurer {
   @Override 
   public void configure(Registries registries) {
 
-    // Register usage listeners
-    // ------------------------
-
-    registries.listeners().register("limitBySession", (request, resourceId, hits, limit) -> {
-
-      // For example, log the limit that was exceeded
-      System.out.println("For " + resourceId + ", exceeded limit: " + limit);
-    });
-
     // Register request matchers
     // -------------------------
 
