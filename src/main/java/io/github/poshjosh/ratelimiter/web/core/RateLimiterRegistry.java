@@ -3,14 +3,12 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
-import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.util.PathPatterns;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Optional;
 
 public interface RateLimiterRegistry {
@@ -29,51 +27,25 @@ public interface RateLimiterRegistry {
         return new DefaultRateLimiterRegistry(rateLimiterContext);
     }
 
-    boolean register(Class<?> source);
+    /**
+     * @param source The class to register as a rate limited resource
+     * @throws IllegalArgumentException If the class is already registered,
+     * or if it is already part of the hierarchy of nodes.
+     */
+    void register(Class<?> source) throws IllegalArgumentException;
 
-    boolean register(Method source);
-
-    Matcher<HttpServletRequest> getOrCreateMainMatcher(Class<?> clazz);
-
-    Matcher<HttpServletRequest> getOrCreateMainMatcher(Method method);
-
-    List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Class<?> clazz);
-
-    List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method);
+    /**
+     * @param source The method to register as a rate limited resource
+     * @throws IllegalArgumentException If the method is already registered,
+     * or if it is already part of the hierarchy of nodes.
+     */
+    void register(Method source) throws IllegalArgumentException;
 
     RateLimiterFactory<HttpServletRequest> createRateLimiterFactory();
 
     RateLimiterFactory<HttpServletRequest> createRateLimiterFactory(Class<?> clazz);
 
     RateLimiterFactory<HttpServletRequest> createRateLimiterFactory(Method method);
-
-    default boolean hasMatching(String id) {
-        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
-    }
-
-    /**
-     * @param clazz The class bearing the matchers to return
-     * @return All the matchers that will be applied for the given id
-     * @see #getMatchers(String)
-     */
-    default List<Matcher<HttpServletRequest>> getMatchers(Class<?> clazz) {
-        return getMatchers(ElementId.of(clazz));
-    }
-
-    /**
-     * @param method The method bearing the matchers to return
-     * @return All the matchers that will be applied for the given id
-     * @see #getMatchers(String)
-     */
-    default List<Matcher<HttpServletRequest>> getMatchers(Method method) {
-        return getMatchers(ElementId.of(method));
-    }
-
-    /**
-     * @param id The id of the matchers to return
-     * @return All the matchers that will be applied for the given id
-     */
-    List<Matcher<HttpServletRequest>> getMatchers(String id);
 
     Optional<RateLimiter> getRateLimiter(Class<?> clazz);
 
@@ -93,6 +65,8 @@ public interface RateLimiterRegistry {
         final Boolean disabled = properties().getDisabled();
         return disabled == null || Boolean.FALSE.equals(disabled);
     }
+
+    boolean hasMatching(String id);
 
     RateLimitProperties properties();
 

@@ -92,43 +92,21 @@ final class DefaultRateLimiterRegistry implements RateLimiterRegistry {
     }
 
     @Override
-    public boolean register(Class<?> source) {
+    public void register(Class<?> source) {
         if (isRateLimited(ElementId.of(source))) {
-            return false;
+            throw new IllegalArgumentException("Already registered: " + source);
         }
         Node<RateConfig> node = createNode(null, source);
         toLimiterContextNode(annotationsRootNode, node, getRegisteredMatcherProvider());
-        return true;
     }
 
     @Override
-    public boolean register(Method source) {
+    public void register(Method source) {
         if (isRateLimited(ElementId.of(source))) {
-            return false;
+            throw new IllegalArgumentException("Already registered: " + source);
         }
         Node<RateConfig> node = createNode(null, source);
         toLimiterContextNode(annotationsRootNode, node, getRegisteredMatcherProvider());
-        return true;
-    }
-
-    @Override
-    public Matcher<HttpServletRequest> getOrCreateMainMatcher(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(clazz));
-    }
-
-    @Override
-    public Matcher<HttpServletRequest> getOrCreateMainMatcher(Method method) {
-        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(method));
-    }
-
-    @Override
-    public List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Class<?> clazz) {
-        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(clazz));
-    }
-
-    @Override
-    public List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method) {
-        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(method));
     }
 
     @Override
@@ -174,21 +152,17 @@ final class DefaultRateLimiterRegistry implements RateLimiterRegistry {
     }
 
     @Override
+    public boolean hasMatching(String id) {
+        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+    }
+
+    @Override
     public RateLimitProperties properties() {
         return rateLimiterContext.getProperties();
     }
 
-    /**
-     * @param id The id of the matchers to return
-     * @return All the matchers that will be applied for the given id
-     */
     @Override
-    public List<Matcher<HttpServletRequest>> getMatchers(String id) {
-        List<Matcher<HttpServletRequest>> result = matchers.get(id);
-        return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
-    }
-
-    @Override public UnmodifiableRegistries registries() {
+    public UnmodifiableRegistries registries() {
         return Registries.unmodifiable(registries);
     }
 
@@ -268,10 +242,35 @@ final class DefaultRateLimiterRegistry implements RateLimiterRegistry {
         return RateConfig.of(JavaRateSource.of(source), rates);
     }
 
-
     private RateConfig createRateConfig(Method source) {
         Rates rates = annotationConverter.convert(source);
         return RateConfig.of(JavaRateSource.of(source), rates);
+    }
+
+    /**
+     * @param id The id of the matchers to return
+     * @return All the matchers that will be applied for the given id
+     */
+    private List<Matcher<HttpServletRequest>> getMatchers(String id) {
+        List<Matcher<HttpServletRequest>> result = matchers.get(id);
+        return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
+    }
+
+
+    private Matcher<HttpServletRequest> getOrCreateMainMatcher(Class<?> clazz) {
+        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(clazz));
+    }
+
+    private Matcher<HttpServletRequest> getOrCreateMainMatcher(Method method) {
+        return getUnregisteredMatcherProvider().createMainMatcher(createRateConfig(method));
+    }
+
+    private List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Class<?> clazz) {
+        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(clazz));
+    }
+
+    private List<Matcher<HttpServletRequest>> getOrCreateSubMatchers(Method method) {
+        return getUnregisteredMatcherProvider().createSubMatchers(createRateConfig(method));
     }
 
     private MatcherProvider<HttpServletRequest> getUnregisteredMatcherProvider() {
