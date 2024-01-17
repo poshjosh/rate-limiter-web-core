@@ -1,43 +1,37 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.RateLimiterContext;
 import io.github.poshjosh.ratelimiter.RateLimiterProvider;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
+import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.util.Ticker;
-import io.github.poshjosh.ratelimiter.web.core.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
-import java.util.function.Supplier;
 
-public interface RateLimiterContext {
+public interface WebRateLimiterContext extends RateLimiterContext<HttpServletRequest> {
 
     /**
      * Users of the returned builder are required (at the minimum) to provide:
      * {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
-     * @return A builder for {@link RateLimiterContext}
+     * @return A builder for {@link WebRateLimiterContext}
      */
     static Builder builder() {
-        return new RateLimiterContextBuilder();
+        return new WebRateLimiterContextBuilder();
     }
 
     /**
      * Users are required (at the minimum) to provide: {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
      */
-    interface Builder {
+    interface Builder extends RateLimiterContext.Builder<HttpServletRequest> {
 
-        RateLimiterContext build();
-
-        /**
-         * <p><b>Not mandatory</b></p>
-         * @param properties The properties containing rate limit specifications
-         * @return this builder
-         */
-        Builder properties(RateLimitProperties properties);
+        WebRateLimiterContext build();
 
         /**
          * <p><b>Not mandatory</b></p>
@@ -81,53 +75,22 @@ public interface RateLimiterContext {
          */
         Builder propertyRateProcessor(RateProcessor<RateLimitProperties> rateProcessor);
 
-        /**
-         * <p><b>Not mandatory.</b> If not specified an in-memory instance is used</p>
-         * @param store For storing bandwidths
-         * @return this builder
-         */
-        Builder store(BandwidthsStore<?> store);
+        @Override Builder packages(String... packages);
 
-        /**
-         * <p><b>Not mandatory</b></p>
-         * @param rateLimiterProvider For provider rate limiters
-         * @return this builder
-         */
-        Builder rateLimiterProvider(RateLimiterProvider<?> rateLimiterProvider);
+        @Override Builder classes(Class<?>... classes);
 
-        /**
-         * <p><b>Not mandatory</b></p>
-         * @param ticker The ticker to keep track of time.
-         * @return this builder
-         */
-        Builder ticker(Ticker ticker);
+        @Override Builder rates(Map<String, Rates> rates);
+
+        @Override Builder properties(RateLimitProperties properties);
+
+        @Override Builder matcherProvider(MatcherProvider<HttpServletRequest> matcherProvider);
+
+        @Override Builder rateLimiterProvider(RateLimiterProvider rateLimiterProvider);
+
+        @Override Builder store(BandwidthsStore<?> store);
+
+        @Override Builder ticker(Ticker ticker);
     }
 
-    RateLimitProperties getProperties();
-
-    Optional<RateLimiterConfigurer> getConfigurer();
-
-    ClassesInPackageFinder getClassesInPackageFinder();
-
-    default Supplier<Set<Class<?>>> getResourceClassesSupplier() {
-        return () -> {
-            Set<Class<?>> classes = new HashSet<>();
-            classes.addAll(getProperties().getResourceClasses());
-            classes.addAll(getClassesInPackageFinder()
-                    .findClasses(getProperties().getResourcePackages()));
-            return Collections.unmodifiableSet(classes);
-        };
-    }
-
-    MatcherProvider<HttpServletRequest> getMatcherProvider();
-
-    RateProcessor<Class<?>> getClassRateProcessor();
-
-    RateProcessor<RateLimitProperties> getPropertyRateProcessor();
-
-    BandwidthsStore<?> getStore();
-
-    RateLimiterProvider<?> getRateLimiterProvider();
-
-    Ticker getTicker();
+    Optional<RateLimiterConfigurer> getConfigurerOptional();
 }
