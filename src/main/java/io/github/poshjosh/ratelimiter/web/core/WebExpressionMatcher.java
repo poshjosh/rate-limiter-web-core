@@ -7,6 +7,6 @@ public interface WebExpressionMatcher
         extends ExpressionMatcher<HttpServletRequest, Object>, WebExpressionKey{
 
     static WebExpressionMatcher ofHttpServletRequest() {
-        return new HttpServletRequestExpressionMatcher();
+        return new HttpRequestExpressionMatcher();
     }
 }

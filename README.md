@@ -153,11 +153,11 @@ class `MyRateLimitedResource.class`:
 ```java
 public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiterConfigurer {
 
-    private final String resourceId = ElementId.of(MyRateLimitedResource.class);
+    private final Object resource = MyRateLimitedResource.class;
     
     @Override
     public void configure(Registries registries) {
-        registries.matchers().register(resourceId, request -> request.getRequestURI());
+        registries.matchers().register(resource, request -> request.getRequestURI());
     }
     
     @Override
@@ -167,7 +167,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
 
     @Override
     public Map<String, Rates> getRateLimitConfigs() {
-        return Collections.singletonMap(resourceId, Rates.of(Rate.ofMinutes(10)));
+        return Collections.singletonMap(RateId.of(resource), Rates.of(Rate.ofMinutes(10)));
     }
 }
 ```

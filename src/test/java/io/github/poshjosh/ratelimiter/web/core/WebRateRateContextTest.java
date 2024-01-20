@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class WebRateLimiterContextTest {
+class WebRateRateContextTest {
 
     @Test void build_withoutResourceInfoProvider_shouldThrowException() {
         assertThrows(RuntimeException.class, () -> WebRateLimiterContext.builder().build());

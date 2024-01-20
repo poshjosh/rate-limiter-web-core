@@ -10,24 +10,20 @@ import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.GenericDeclaration;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletRequest> {
+final class HttpRequestMatcherProvider extends AbstractMatcherProvider<HttpServletRequest> {
 
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
-    private final ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
 
     HttpRequestMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
+        super(ExpressionMatcher.any(expressionMatcher, ExpressionMatcher.ofDefault()));
         this.resourceInfoProvider = Objects.requireNonNull(resourceInfoProvider);
-        this.expressionMatcher = ExpressionMatcher.any(expressionMatcher, ExpressionMatcher.ofDefault());
         this.urlPathHelper = new UrlPathHelper(applicationPath);
     }
 
@@ -35,53 +31,56 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
     public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
-        Optional<Matcher<HttpServletRequest>> expressionMatcherOpt =
-                createExpressionMatcher(rates.getRateCondition());
+        final Matcher<HttpServletRequest> expressionMatcher =
+                createExpressionMatcher(rates.getRateCondition()).orElse(null);
+        if (isMatchNone(rateConfig, expressionMatcher != null)) {
+            return Matcher.matchNone();
+        }
         if (!source.isGroupType() && source.getSource() instanceof GenericDeclaration) {
-            Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(source);
-            if (!expressionMatcherOpt.isPresent()) {
+            Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(rateConfig);
+            if (expressionMatcher == null) {
                 return webRequestMatcher;
             }
-            return webRequestMatcher.and(expressionMatcherOpt.get());
+            return webRequestMatcher.and(expressionMatcher);
         }
-        return expressionMatcherOpt.orElse(Matcher.matchNone());
+        return expressionMatcher == null ? Matcher.matchNone() : expressionMatcher;
     }
 
     @Override
-    public List<Matcher<HttpServletRequest>> createSubMatchers(RateConfig rateConfig) {
-        return rateConfig.getRates().getSubLimits().stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matcher.matchNone()))
-                .collect(Collectors.toList());
+    protected boolean isMatchNone(RateConfig rateConfig, boolean isExpressionPresent) {
+        return super.isMatchNone(rateConfig, isExpressionPresent)
+                && !rateConfig.shouldDelegateToParent();
     }
 
-    private Optional<Matcher<HttpServletRequest>> createExpressionMatcher(String expression) {
-        return expressionMatcher.matcher(expression);
-    }
-
-    private Matcher<HttpServletRequest> createWebRequestMatcher(RateSource rateSource) {
+    private Matcher<HttpServletRequest> createWebRequestMatcher(RateConfig rateConfig) {
+        final RateSource rateSource = rateConfig.getSource();
         ResourceInfoProvider.ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
-        return new HttpRequestMatcher(urlPathHelper, resourceInfo);
+        if (ResourceInfoProvider.ResourceInfo.none().equals(resourceInfo)) {
+            return Matcher.matchNone();
+        }
+        return new HttpRequestMatcher(rateConfig, urlPathHelper, resourceInfo);
     }
 
     /**
      * Matcher to match http request by (path patterns, request method etc) declared on an element.
      */
     private static class HttpRequestMatcher implements Matcher<HttpServletRequest> {
-
+        private final RateConfig rateConfig;
         private final UrlPathHelper urlPathHelper;
-
         private final ResourceInfoProvider.ResourceInfo resourceInfo;
 
         public HttpRequestMatcher(
+                RateConfig rateConfig,
                 UrlPathHelper urlPathHelper,
                 ResourceInfoProvider.ResourceInfo resourceInfo) {
+            this.rateConfig = Objects.requireNonNull(rateConfig);
             this.urlPathHelper = Objects.requireNonNull(urlPathHelper);
             this.resourceInfo = Objects.requireNonNull(resourceInfo);
         }
 
         @Override
         public String match(HttpServletRequest target) {
-            return matches(target) ? resourceInfo.getId() : Matcher.NO_MATCH;
+            return matches(target) ? getId() : Matcher.NO_MATCH;
         }
 
         @Override
@@ -92,6 +91,14 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
             return resourceInfo.getPathPatterns().matches(getPathForMatching(request));
         }
 
+        private String getId() {
+            if (rateConfig.shouldDelegateToParent()) {
+                return rateConfig.getParentOptional()
+                        .map(RateConfig::getId)
+                        .orElse(resourceInfo.getId());
+            }
+            return resourceInfo.getId();
+        }
         /**
          * Get path for matching purposes.
          * @param request The HttpServletRequest for which a path will be returned
@@ -100,7 +107,6 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
         private String getPathForMatching(HttpServletRequest request) {
             return urlPathHelper.getPathWithinServlet(request);
         }
-
         private boolean matchesHttpMethod(String httpMethod) {
             Collection<String> httpMethods = resourceInfo.getHttpMethods();
             if (httpMethods.isEmpty()) { // If no method is defined, match all methods
@@ -113,8 +119,8 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
             }
             return false;
         }
-
-        @Override public boolean equals(Object o) {
+        @Override
+        public boolean equals(Object o) {
             if (this == o)
                 return true;
             if (o == null || getClass() != o.getClass())
@@ -122,11 +128,9 @@ final class HttpRequestMatcherProvider implements MatcherProvider<HttpServletReq
             HttpRequestMatcher that = (HttpRequestMatcher) o;
             return resourceInfo.equals(that.resourceInfo);
         }
-
         @Override public int hashCode() {
             return Objects.hash(resourceInfo);
         }
-
         @Override
         public String toString() {
             return "HttpRequestMatcher{" + resourceInfo + "}";
