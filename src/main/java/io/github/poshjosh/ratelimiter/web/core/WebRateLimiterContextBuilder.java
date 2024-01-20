@@ -143,7 +143,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
             }
 
             if (getMatcherProvider() == null) {
-                MatcherProvider<HttpServletRequest> matcherProvider = new HttpRequestMatcherProvider(
+                MatcherProvider<HttpServletRequest> matcherProvider = new WebMatcherProvider(
                         getProperties().getApplicationPath(),
                         resourceInfoProvider,
                         expressionMatcher);

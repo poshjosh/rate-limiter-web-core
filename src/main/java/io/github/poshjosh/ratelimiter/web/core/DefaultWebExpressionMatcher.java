@@ -10,12 +10,12 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-final class HttpRequestExpressionMatcher implements
+final class DefaultWebExpressionMatcher implements
         WebExpressionMatcher,
         ExpressionParser<HttpServletRequest, Object>,
         ExpressionResolver<Object> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HttpRequestExpressionMatcher.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultWebExpressionMatcher.class);
 
     interface Transformer<T>{
         T [] transform(String name, String [] toTransform, List<T> fromWebRequest);
@@ -60,7 +60,7 @@ final class HttpRequestExpressionMatcher implements
     private final Transformer<Locale> stringToLocaleConverter;
     private final Transformer<String> noopConverter;
 
-    HttpRequestExpressionMatcher() {
+    DefaultWebExpressionMatcher() {
         delegate = ExpressionMatcher.of(this, this, ATTRIBUTE + "=0");
         stringToLocaleConverter = new StringToLocaleTransformer();
         noopConverter = new NoopTransformer();
@@ -356,6 +356,6 @@ final class HttpRequestExpressionMatcher implements
 
     @Override
     public String toString() {
-        return "HttpRequestExpressionMatcher{delegate=" + delegate + '}';
+        return "DefaultWebExpressionMatcher{delegate=" + delegate + '}';
     }
 }

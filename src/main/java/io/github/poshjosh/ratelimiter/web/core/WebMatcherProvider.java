@@ -12,13 +12,13 @@ import java.lang.reflect.GenericDeclaration;
 import java.util.Collection;
 import java.util.Objects;
 
-final class HttpRequestMatcherProvider extends AbstractMatcherProvider<HttpServletRequest> {
+final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletRequest> {
 
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
 
-    HttpRequestMatcherProvider(
+    WebMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
