@@ -21,8 +21,4 @@ public interface WebRateLimiterRegistry extends RateLimiterRegistry<HttpServletR
     static WebRateLimiterRegistry of(WebRateLimiterContext webRateLimiterContext) {
         return new DefaultWebRateLimiterRegistry(webRateLimiterContext);
     }
-
-    boolean hasMatching(String id);
-
-    UnmodifiableRegistries registries();
 }

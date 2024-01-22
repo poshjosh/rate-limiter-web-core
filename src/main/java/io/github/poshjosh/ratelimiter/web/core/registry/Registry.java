@@ -1,4 +1,4 @@
-package io.github.poshjosh.ratelimiter.web.core;
+package io.github.poshjosh.ratelimiter.web.core.registry;
 
 public interface Registry<T> extends UnmodifiableRegistry<T> {
 

@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
+import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

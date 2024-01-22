@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
+import io.github.poshjosh.ratelimiter.web.core.registry.Registries;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -66,7 +67,7 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     }
 
     @Override
-    public boolean hasMatching(String id) {
+    public boolean hasMatcher(String id) {
         return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
     }
 
@@ -77,11 +78,6 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     private List<Matcher<HttpServletRequest>> getMatchers(String id) {
         List<Matcher<HttpServletRequest>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public UnmodifiableRegistries registries() {
-        return Registries.unmodifiable(registries);
     }
 
     private static final class MatcherCollector implements BiConsumer<String, Matcher<HttpServletRequest>> {

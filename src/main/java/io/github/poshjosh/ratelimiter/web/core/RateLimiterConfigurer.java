@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.web.core.registry.Registries;
+
 /**
  * For fine-grained configuration of rate limiting.
  *

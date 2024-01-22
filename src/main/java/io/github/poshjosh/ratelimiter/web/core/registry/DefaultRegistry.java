@@ -1,4 +1,4 @@
-package io.github.poshjosh.ratelimiter.web.core;
+package io.github.poshjosh.ratelimiter.web.core.registry;
 
 import java.util.Map;
 import java.util.Objects;
