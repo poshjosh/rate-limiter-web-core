@@ -80,11 +80,6 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     }
 
     @Override
-    public RateLimitProperties properties() {
-        return properties;
-    }
-
-    @Override
     public UnmodifiableRegistries registries() {
         return Registries.unmodifiable(registries);
     }
