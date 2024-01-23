@@ -17,53 +17,28 @@ final class DefaultWebExpressionMatcher implements
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultWebExpressionMatcher.class);
 
-    interface Transformer<T>{
-        T [] transform(String name, String [] toTransform, List<T> fromWebRequest);
-    }
-
-    private static class StringToLocaleTransformer implements Transformer<Locale>{
-        @Override
-        public Locale[] transform(String name, String[] toTransform, List<Locale> fromWebRequest) {
-            if (toTransform.length == 0) {
-                return new Locale[0];
-            }
-            return Arrays.stream(toTransform).map(sval -> toLocale(sval))
-                    .collect(Collectors.toList()).toArray(new Locale[0]);
-        }
-        private Locale toLocale(String value) {
-            return Locale.forLanguageTag(value.replace('_', '-'));
-        }
-    }
-
-    private static class NoopTransformer implements Transformer<String> {
-        @Override public String[] transform(String name, String[] toTransform, List<String> fromWebRequest) {
-            return toTransform;
-        }
-    }
-
-    private static final class Composite{
-        private final String raw;
-        private final Object [] values;
-        private final io.github.poshjosh.ratelimiter.util.Operator operator;
-        private Composite(String raw, String operatorSymbol, Object[] values) {
-            this.raw = Objects.requireNonNull(raw);
-            this.values = Objects.requireNonNull(values);
-            this.operator = io.github.poshjosh.ratelimiter.util.Operator.ofSymbol(operatorSymbol);
-        }
-        @Override public String toString() {
-            return raw;
-        }
-    }
-
+    private enum Type{OBJ_RHS, NON_OBJ_RHS, NON_OBJ_RHS__PAIR_TYPE}
     private final ExpressionMatcher<HttpServletRequest, Object> delegate;
 
     private final Transformer<Locale> stringToLocaleConverter;
     private final Transformer<String> noopConverter;
 
     DefaultWebExpressionMatcher() {
-        delegate = ExpressionMatcher.of(this, this, ATTRIBUTE + "=0");
+        // With parseAtMatchTime we don't have to implement parseLeft(..) or parseRight(..)
+        delegate = ExpressionMatcher.ofParseAtMatchTime(
+                this, this, Expression.of(ATTRIBUTE + "=0"));
         stringToLocaleConverter = new StringToLocaleTransformer();
         noopConverter = new NoopTransformer();
+    }
+
+    @Override
+    public Object parseLeft(HttpServletRequest request, Expression<String> expression) {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+    @Override
+    public Object parseRight(Expression<String> expression) {
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
@@ -88,33 +63,15 @@ final class DefaultWebExpressionMatcher implements
         return true;
     }
 
-    private void validate(Expression<String> expression) {
-        final Type type = getType(expression);
-        final String rhs = expression.getRightOrDefault(null);
-        if (!Type.OBJ_RHS.equals(type)) {
-            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && (!StringUtils.hasText(rhs))) {
-                throw Checks.notSupported(this, expression);
-            }
-            return;
-        }
-        if(!StringUtils.hasText(Expression.of(rhs).requireLeft())) {
-            throw Checks.notSupported(this, rhs);
-        }
-        if(rhs.startsWith("{") && rhs.endsWith("}")) {
-            return;
-        }
-        throw Checks.notSupported(this, rhs);
+    @Override
+    public boolean isSupported(Operator operator) {
+        return operator.equalsIgnoreNegation(Operator.EQUALS);
     }
 
-    private enum Type{OBJ_RHS, NON_OBJ_RHS, NON_OBJ_RHS__PAIR_TYPE}
-
-    private Type getType(Expression<String> expression) {
-        final String right = expression.getRightOrDefault(null);
-        if (right != null && right.contains("=")) {
-            return Type.OBJ_RHS;
-        }
-        return WebExpressionKey.isNameValueType(expression.requireLeft())
-                ? Type.NON_OBJ_RHS__PAIR_TYPE : Type.NON_OBJ_RHS;
+    @Override
+    public boolean resolve(Object left, Operator operator, Object right) {
+        final boolean result = resolve(left, right);
+        return operator.isNegation() != result;
     }
 
     /**
@@ -196,6 +153,50 @@ final class DefaultWebExpressionMatcher implements
         LOG.trace("Type: {}, key: {}, name: {}, output: {}, input: {}",
                 type, key, name, result, expression);
         return result;
+    }
+
+    private boolean resolve(Object fromWebRequest, Object fromExpression) {
+        fromWebRequest = convertArrayToListIfNeed(fromWebRequest); // Support for arrays
+        if (fromExpression instanceof Composite) {
+            Composite composite = (Composite)fromExpression;
+            Object [] inputArr = composite.values;
+            if (fromWebRequest instanceof List) {
+                List fromReqList = (List)fromWebRequest;
+                return MatchUtils.matches(composite.operator, fromReqList, inputArr);
+            }
+            return MatchUtils.matches(composite.operator, fromWebRequest, inputArr);
+        }
+        if (fromWebRequest instanceof List) {
+            List fromReqList = (List)fromWebRequest;
+            return fromReqList.size() == 1 ? Objects.equals(fromReqList.get(0), fromExpression) : false;
+        }
+        return Objects.equals(fromWebRequest, fromExpression);
+    }
+
+    private void validate(Expression<String> expression) {
+        final Type type = getType(expression);
+        final String rhs = expression.getRightOrDefault(null);
+        if (!Type.OBJ_RHS.equals(type)) {
+            if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type) && (!StringUtils.hasText(rhs))) {
+                throw Checks.notSupported(this, expression);
+            }
+            return;
+        }
+        if(!StringUtils.hasText(Expression.of(rhs).requireLeft())) {
+            throw Checks.notSupported(this, rhs);
+        }
+        if(rhs.startsWith("{") && rhs.endsWith("}")) {
+            return;
+        }
+        throw Checks.notSupported(this, rhs);
+    }
+
+    private Type getType(Expression<String> expression) {
+        if(isRightAnExpression(expression)) {
+            return Type.OBJ_RHS;
+        }
+        return WebExpressionKey.isNameValueType(expression.requireLeft())
+                ? Type.NON_OBJ_RHS__PAIR_TYPE : Type.NON_OBJ_RHS;
     }
 
     private boolean hasValue(Object fromWebRequest, String key) {
@@ -295,32 +296,6 @@ final class DefaultWebExpressionMatcher implements
         return value;
     }
 
-    @Override
-    public boolean resolve(Expression<Object> expression) {
-        final Object fromWebRequest = expression.getLeftOrDefault(null);
-        final Object fromExpression = expression.getRightOrDefault(null);
-        final boolean result = resolve(fromWebRequest, fromExpression);
-        return expression.getOperator().isNegation() != result;
-    }
-
-    private boolean resolve(Object fromWebRequest, Object fromExpression) {
-        fromWebRequest = convertArrayToListIfNeed(fromWebRequest); // Support for arrays
-        if (fromExpression instanceof Composite) {
-            Composite composite = (Composite)fromExpression;
-            Object [] inputArr = composite.values;
-            if (fromWebRequest instanceof List) {
-                List fromReqList = (List)fromWebRequest;
-                return MatchUtils.matches(composite.operator, fromReqList, inputArr);
-            }
-            return MatchUtils.matches(composite.operator, fromWebRequest, inputArr);
-        }
-        if (fromWebRequest instanceof List) {
-            List fromReqList = (List)fromWebRequest;
-            return fromReqList.size() == 1 ? Objects.equals(fromReqList.get(0), fromExpression) : false;
-        }
-        return Objects.equals(fromWebRequest, fromExpression);
-    }
-
     private Object convertArrayToListIfNeed(Object obj) {
         return obj instanceof Object[] ? Arrays.asList((Object[])obj) : obj;
     }
@@ -350,12 +325,45 @@ final class DefaultWebExpressionMatcher implements
     }
 
     @Override
-    public boolean isSupported(Operator operator) {
-        return operator.equalsIgnoreNegation(Operator.EQUALS);
-    }
-
-    @Override
     public String toString() {
         return "DefaultWebExpressionMatcher{delegate=" + delegate + '}';
+    }
+
+    private interface Transformer<T>{
+        T [] transform(String name, String [] toTransform, List<T> fromWebRequest);
+    }
+
+    private static class StringToLocaleTransformer implements Transformer<Locale>{
+        @Override
+        public Locale[] transform(String name, String[] toTransform, List<Locale> fromWebRequest) {
+            if (toTransform.length == 0) {
+                return new Locale[0];
+            }
+            return Arrays.stream(toTransform).map(sval -> toLocale(sval))
+                    .collect(Collectors.toList()).toArray(new Locale[0]);
+        }
+        private Locale toLocale(String value) {
+            return Locale.forLanguageTag(value.replace('_', '-'));
+        }
+    }
+
+    private static class NoopTransformer implements Transformer<String> {
+        @Override public String[] transform(String name, String[] toTransform, List<String> fromWebRequest) {
+            return toTransform;
+        }
+    }
+
+    private static final class Composite{
+        private final String raw;
+        private final Object [] values;
+        private final io.github.poshjosh.ratelimiter.util.Operator operator;
+        private Composite(String raw, String operatorSymbol, Object[] values) {
+            this.raw = Objects.requireNonNull(raw);
+            this.values = Objects.requireNonNull(values);
+            this.operator = io.github.poshjosh.ratelimiter.util.Operator.ofSymbol(operatorSymbol);
+        }
+        @Override public String toString() {
+            return raw;
+        }
     }
 }

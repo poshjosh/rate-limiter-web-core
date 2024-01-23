@@ -12,6 +12,7 @@
     <!--    <logger name="io.github.poshjosh.ratelimiter.RateContext" level="trace"/>-->
     <!--    <logger name="io.github.poshjosh.ratelimiter.RateLimiterComposite" level="trace"/>-->
     <!--    <logger name="io.github.poshjosh.ratelimiter.MatchUtil" level="trace"/>-->
+<!--    <logger name="io.github.poshjosh.ratelimiter.web.core.DefaultWebExpressionMatcher" level="trace"/>-->
 
     <root level="debug">
         <appender-ref ref="STDOUT"/>
