@@ -32,7 +32,7 @@ final class DefaultWebExpressionMatcher implements
     }
 
     @Override
-    public Object parseLeft(HttpServletRequest request, Expression<String> expression) {
+    public Object parseLeft(HttpServletRequest context, Expression<String> expression) {
         throw new UnsupportedOperationException("Not supported");
     }
 
@@ -95,12 +95,12 @@ final class DefaultWebExpressionMatcher implements
      *  - If the user is not in role GUEST: GUEST=''
      * </pre>
      *
-     * @param request The web request
+     * @param context The web request
      * @param expression The expression to be parsed
      * @return A parsed version of the expression
      */
     @Override
-    public Expression<Object> parse(HttpServletRequest request, Expression<String> expression) {
+    public Expression<Object> parse(HttpServletRequest context, Expression<String> expression) {
         if (!isSupported(expression)) {
             throw Checks.notSupported(this, expression);
         }
@@ -111,7 +111,7 @@ final class DefaultWebExpressionMatcher implements
         if (Type.OBJ_RHS.equals(type)) {
             final Expression<String> rhs = expression.requireRightAsExpression();
             name = requireName(rhs.requireLeft(), rhs);
-            final Object fromWebRequest = getValue(request, key, name);
+            final Object fromWebRequest = getValue(context, key, name);
             final Object fromExpression;
             if (COOKIE.equals(key)) {
                 fromExpression = hasValue(fromWebRequest, key) ? fromWebRequest : "";
@@ -124,7 +124,7 @@ final class DefaultWebExpressionMatcher implements
         } else {
             if(Type.NON_OBJ_RHS__PAIR_TYPE.equals(type)) {
                 name = requireName(expression.getRightOrDefault(null), expression);
-                final Object fromWebRequest = getValue(request, key, name);
+                final Object fromWebRequest = getValue(context, key, name);
                 final boolean hasValue = hasValue(fromWebRequest, key);
                 if (COOKIE.equals(key)) {
                     final Object fromExpression = hasValue ? fromWebRequest : "";
@@ -143,7 +143,7 @@ final class DefaultWebExpressionMatcher implements
                 }
             } else {
                 name = "";
-                final Object fromWebRequest = getValue(request, key, name);
+                final Object fromWebRequest = getValue(context, key, name);
                 final Object fromExpression = splitIntoArrayIfNeed(
                         "", expression.getRightOrDefault(null), 
                         fromWebRequest, getTransformer(key));

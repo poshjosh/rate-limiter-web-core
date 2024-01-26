@@ -93,9 +93,8 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
 
         private String getId() {
             if (rateConfig.shouldDelegateToParent()) {
-                return rateConfig.getParentOptional()
-                        .map(RateConfig::getId)
-                        .orElse(resourceInfo.getId());
+                final String parentId = rateConfig.getParent().getId();
+                return parentId.isEmpty() ? resourceInfo.getId() : parentId;
             }
             return resourceInfo.getId();
         }
