@@ -36,7 +36,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matcher.matchNone();
         }
-        if (!source.isGroupType() && source.getSource() instanceof GenericDeclaration) {
+        if (!source.isGroupType() && source.isGenericDeclaration()) {
             Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(rateConfig);
             if (expressionMatcher == null) {
                 return webRequestMatcher;
