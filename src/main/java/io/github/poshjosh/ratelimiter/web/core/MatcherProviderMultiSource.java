@@ -47,8 +47,8 @@ final class MatcherProviderMultiSource implements MatcherProvider<HttpServletReq
         return result;
     }
     @Override
-    public List<Matcher<HttpServletRequest>> createSubMatchers(RateConfig rateConfig) {
-        List<Matcher<HttpServletRequest>> result = delegate.createSubMatchers(rateConfig);
+    public List<Matcher<HttpServletRequest>> createLimitMatchers(RateConfig rateConfig) {
+        List<Matcher<HttpServletRequest>> result = delegate.createLimitMatchers(rateConfig);
         result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
         return result;
     }
