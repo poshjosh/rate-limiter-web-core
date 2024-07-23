@@ -15,13 +15,13 @@ final class DefaultRegistry<T> implements Registry<T> {
         this.defaultInstance = Objects.requireNonNull(defaultInstance);
     }
 
-    @Override public Registry<T> register(T rateLimiterFactory) {
-        defaultInstance = Objects.requireNonNull(rateLimiterFactory);
+    @Override public Registry<T> register(T defaultInstance) {
+        this.defaultInstance = Objects.requireNonNull(defaultInstance);
         return this;
     }
 
-    @Override public Registry<T> register(String name, T rateLimiterFactory) {
-        registered.put(name, Objects.requireNonNull(rateLimiterFactory));
+    @Override public Registry<T> register(String name, T instance) {
+        registered.put(name, Objects.requireNonNull(instance));
         return this;
     }
 

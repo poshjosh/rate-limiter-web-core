@@ -45,16 +45,16 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         return delegate.register(source);
     }
 
-    @Override public RateLimiterFactory<HttpServletRequest> createRateLimiterFactory() {
-        return delegate.createRateLimiterFactory();
+    @Override public Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz) {
+        return delegate.getClassRateLimiterOptional(clazz);
     }
 
-    @Override public Optional<RateLimiter> getRateLimiter(Class<?> clazz) {
-        return delegate.getRateLimiter(clazz);
+    @Override public Optional<RateLimiter> getMethodRateLimiterOptional(Method method) {
+        return delegate.getMethodRateLimiterOptional(method);
     }
 
-    @Override public Optional<RateLimiter> getRateLimiter(Method method) {
-        return delegate.getRateLimiter(method);
+    @Override public Optional<RateLimiter> getRateLimiterOptional(HttpServletRequest request) {
+        return delegate.getRateLimiterOptional(request);
     }
 
     @Override public boolean isRegistered(String name) {
