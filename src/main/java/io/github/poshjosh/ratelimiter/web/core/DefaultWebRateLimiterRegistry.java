@@ -2,7 +2,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.util.*;
-import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registries;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,8 +14,6 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
     private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
     private final Registries registries;
-
-    private final RateLimitProperties properties;
     private final RateLimiterRegistry<HttpServletRequest> delegate;
 
     DefaultWebRateLimiterRegistry(WebRateLimiterContext webRateLimiterContext) {
@@ -36,8 +33,6 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         // Add composed config to context
         webRateLimiterContext = (WebRateLimiterContext)webRateLimiterContext
                 .withMatcherProvider(matcherProvider);
-
-        this.properties = webRateLimiterContext.getProperties();
 
         this.delegate = RateLimiterRegistry.of(webRateLimiterContext);
     }
