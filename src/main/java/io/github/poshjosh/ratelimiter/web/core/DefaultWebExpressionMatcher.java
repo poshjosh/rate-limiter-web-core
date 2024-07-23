@@ -18,7 +18,7 @@ final class DefaultWebExpressionMatcher implements
     private static final Logger LOG = LoggerFactory.getLogger(DefaultWebExpressionMatcher.class);
 
     private enum Type{OBJ_RHS, NON_OBJ_RHS, NON_OBJ_RHS__PAIR_TYPE}
-    private final ExpressionMatcher<HttpServletRequest, Object> delegate;
+    private final ExpressionMatcher<HttpServletRequest> delegate;
 
     private final Transformer<Locale> stringToLocaleConverter;
     private final Transformer<String> noopConverter;
@@ -47,7 +47,7 @@ final class DefaultWebExpressionMatcher implements
     }
 
     @Override
-    public ExpressionMatcher<HttpServletRequest, Object> matcher(Expression<String> expression) {
+    public ExpressionMatcher<HttpServletRequest> matcher(Expression<String> expression) {
         return delegate.matcher(expression);
     }
 
@@ -76,7 +76,6 @@ final class DefaultWebExpressionMatcher implements
 
     /**
      * Parse an expression into a state that is easily resolved to true or false.
-     *
      * Examples:
      *
      * <pre>

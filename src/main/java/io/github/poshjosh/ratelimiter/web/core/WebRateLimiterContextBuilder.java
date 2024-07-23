@@ -73,7 +73,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
     }
 
     @Override public WebRateLimiterContext.Builder expressionMatcher(
-            ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
+            ExpressionMatcher<HttpServletRequest> expressionMatcher) {
         context.expressionMatcher = expressionMatcher;
         return this;
     }
@@ -111,7 +111,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
         private RateLimiterConfigurer configurer;
         private ClassesInPackageFinder classesInPackageFinder;
         private ResourceInfoProvider resourceInfoProvider;
-        private ExpressionMatcher<HttpServletRequest, Object> expressionMatcher;
+        private ExpressionMatcher<HttpServletRequest> expressionMatcher;
         private RateProcessor<Class<?>> classRateProcessor;
         private RateProcessor<RateLimitProperties> propertyRateProcessor;
 

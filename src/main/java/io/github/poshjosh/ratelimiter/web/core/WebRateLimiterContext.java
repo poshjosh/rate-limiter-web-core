@@ -52,7 +52,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<HttpServletReq
          * @param expressionMatcher For matching rate condition expressions
          * @return this builder
          */
-        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest, Object> expressionMatcher);
+        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest> expressionMatcher);
 
         /**
          * <p><b>Mandatory</b></p>

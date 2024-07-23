@@ -8,7 +8,6 @@ import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.GenericDeclaration;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -21,7 +20,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
     WebMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
-            ExpressionMatcher<HttpServletRequest, Object> expressionMatcher) {
+            ExpressionMatcher<HttpServletRequest> expressionMatcher) {
         super(ExpressionMatcher.any(expressionMatcher, ExpressionMatcher.ofDefault()));
         this.resourceInfoProvider = Objects.requireNonNull(resourceInfoProvider);
         this.urlPathHelper = new UrlPathHelper(applicationPath);
