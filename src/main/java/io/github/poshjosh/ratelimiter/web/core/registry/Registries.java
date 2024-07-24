@@ -1,12 +1,14 @@
 package io.github.poshjosh.ratelimiter.web.core.registry;
 
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.Matchers;
+
 import javax.servlet.http.HttpServletRequest;
 
 public interface Registries extends UnmodifiableRegistries {
 
     static Registries ofDefaults() {
-        return of(Matcher.matchNone());
+        return of(Matchers.matchNone());
     }
 
     static Registries of(Matcher<HttpServletRequest> matcher) {

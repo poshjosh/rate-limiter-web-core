@@ -34,7 +34,7 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         webRateLimiterContext = (WebRateLimiterContext)webRateLimiterContext
                 .withMatcherProvider(matcherProvider);
 
-        this.delegate = RateLimiterRegistry.of(webRateLimiterContext);
+        this.delegate = RateLimiterRegistries.of(webRateLimiterContext);
     }
 
     @Override public RateLimiterRegistry<HttpServletRequest> register(Class<?> source) {
@@ -63,7 +63,7 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
     @Override
     public boolean hasMatcher(String id) {
-        return getMatchers(id).stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+        return getMatchers(id).stream().anyMatch(matcher -> !Matchers.matchNone().equals(matcher));
     }
 
     /**

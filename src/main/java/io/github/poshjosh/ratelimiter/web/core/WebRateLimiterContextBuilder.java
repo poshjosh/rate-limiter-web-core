@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.RateLimiterContextImpl;
 import io.github.poshjosh.ratelimiter.RateLimiterProvider;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
@@ -135,11 +136,11 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
                 // This is because, any of the nodes may have its rate limit related info, specified
                 // via properties. Such a node needs to be accepted at this point as property
                 // sourced rate limited data will later be transferred to class/method nodes
-                classRateProcessor = (RateProcessor.ofClass(source -> true));
+                classRateProcessor = (RateProcessors.ofClass(source -> true));
             }
 
             if (propertyRateProcessor == null) {
-                propertyRateProcessor = (RateProcessor.ofProperties());
+                propertyRateProcessor = (RateProcessors.ofProperties());
             }
 
             if (getMatcherProvider() == null) {

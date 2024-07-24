@@ -25,8 +25,8 @@ final class DefaultWebExpressionMatcher implements
 
     DefaultWebExpressionMatcher() {
         // With parseAtMatchTime we don't have to implement parseLeft(..) or parseRight(..)
-        delegate = ExpressionMatcher.ofParseAtMatchTime(
-                this, this, Expression.of(ATTRIBUTE + "=0"));
+        delegate = ExpressionMatchers.ofParseAtMatchTime(
+                this, this, Expression.ofDefault(ATTRIBUTE + "=0"));
         stringToLocaleConverter = new StringToLocaleTransformer();
         noopConverter = new NoopTransformer();
     }
@@ -181,7 +181,7 @@ final class DefaultWebExpressionMatcher implements
             }
             return;
         }
-        if(!StringUtils.hasText(Expression.of(rhs).requireLeft())) {
+        if(!StringUtils.hasText(Expression.ofDefault(rhs).requireLeft())) {
             throw Checks.notSupported(this, rhs);
         }
         if(rhs.startsWith("{") && rhs.endsWith("}")) {

@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
+import io.github.poshjosh.ratelimiter.util.Matchers;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +33,11 @@ final class MatcherProviderMultiSource implements MatcherProvider<HttpServletReq
         final String id = rateConfig.getId();
 
         // If no Matcher or a NO_OP Matcher exists, create new
-        Matcher<HttpServletRequest> existing = registry.get(id).orElse(Matcher.matchNone());
+        Matcher<HttpServletRequest> existing = registry.get(id).orElse(Matchers.matchNone());
 
         Matcher<HttpServletRequest> created = delegate.createMainMatcher(rateConfig);
 
-        if (Matcher.matchNone().equals(existing)) {
+        if (Matchers.matchNone().equals(existing)) {
             onMatcherCreated.accept(id, created);
             return created;
         }

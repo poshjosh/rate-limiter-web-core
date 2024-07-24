@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
+import io.github.poshjosh.ratelimiter.expression.ExpressionMatchers;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
@@ -21,7 +22,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<HttpServletRequest> expressionMatcher) {
-        super(ExpressionMatcher.any(expressionMatcher, ExpressionMatcher.ofDefault()));
+        super(ExpressionMatchers.any(expressionMatcher, ExpressionMatchers.ofDefaults()));
         this.resourceInfoProvider = Objects.requireNonNull(resourceInfoProvider);
         this.urlPathHelper = new UrlPathHelper(applicationPath);
     }
@@ -33,7 +34,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         final Matcher<HttpServletRequest> expressionMatcher =
                 createExpressionMatcher(rates.getRateCondition()).orElse(null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
-            return Matcher.matchNone();
+            return Matchers.matchNone();
         }
         if (!source.isGroupType() && source.isGenericDeclaration()) {
             Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(rateConfig);
@@ -42,7 +43,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
             }
             return webRequestMatcher.and(expressionMatcher);
         }
-        return expressionMatcher == null ? Matcher.matchNone() : expressionMatcher;
+        return expressionMatcher == null ? Matchers.matchNone() : expressionMatcher;
     }
 
     @Override
@@ -55,7 +56,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         final RateSource rateSource = rateConfig.getSource();
         ResourceInfoProvider.ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
         if (ResourceInfoProvider.ResourceInfo.none().equals(resourceInfo)) {
-            return Matcher.matchNone();
+            return Matchers.matchNone();
         }
         return new HttpRequestMatcher(rateConfig, urlPathHelper, resourceInfo);
     }
@@ -79,7 +80,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
 
         @Override
         public String match(HttpServletRequest target) {
-            return matches(target) ? getId() : Matcher.NO_MATCH;
+            return matches(target) ? getId() : Matchers.NO_MATCH;
         }
 
         @Override
