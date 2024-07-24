@@ -37,6 +37,6 @@ class WebRateLimiterRegistryTest {
                 .resourceInfoProvider(ResourceInfoProvider.NONE)
                 .classes(this.getClass())
                 .build();
-        return WebRateLimiterRegistry.of(config);
+        return WebRateLimiterRegistries.of(config);
     }
 }

@@ -6,7 +6,9 @@ import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfo;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
+import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfos;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
@@ -54,8 +56,8 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
 
     private Matcher<HttpServletRequest> createWebRequestMatcher(RateConfig rateConfig) {
         final RateSource rateSource = rateConfig.getSource();
-        ResourceInfoProvider.ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
-        if (ResourceInfoProvider.ResourceInfo.none().equals(resourceInfo)) {
+        ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
+        if (ResourceInfos.none().equals(resourceInfo)) {
             return Matchers.matchNone();
         }
         return new HttpRequestMatcher(rateConfig, urlPathHelper, resourceInfo);
@@ -67,12 +69,12 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
     private static class HttpRequestMatcher implements Matcher<HttpServletRequest> {
         private final RateConfig rateConfig;
         private final UrlPathHelper urlPathHelper;
-        private final ResourceInfoProvider.ResourceInfo resourceInfo;
+        private final ResourceInfo resourceInfo;
 
         public HttpRequestMatcher(
                 RateConfig rateConfig,
                 UrlPathHelper urlPathHelper,
-                ResourceInfoProvider.ResourceInfo resourceInfo) {
+                ResourceInfo resourceInfo) {
             this.rateConfig = Objects.requireNonNull(rateConfig);
             this.urlPathHelper = Objects.requireNonNull(urlPathHelper);
             this.resourceInfo = Objects.requireNonNull(resourceInfo);
@@ -88,7 +90,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
             if (!matchesHttpMethod(request.getMethod())) {
                 return false;
             }
-            return resourceInfo.getPathPatterns().matches(getPathForMatching(request));
+            return resourceInfo.getResourcePath().matches(getPathForMatching(request));
         }
 
         private String getId() {

@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 final class DefaultWebExpressionMatcher implements
-        WebExpressionMatcher,
+        ExpressionMatcher<HttpServletRequest>, WebExpressionKey,
         ExpressionParser<HttpServletRequest, Object>,
         ExpressionResolver<Object> {
 
@@ -320,7 +320,7 @@ final class DefaultWebExpressionMatcher implements
     }
 
     private RequestInfo getInfo(HttpServletRequest request) {
-        return RequestInfo.of(request);
+        return RequestInfos.of(request);
     }
 
     @Override

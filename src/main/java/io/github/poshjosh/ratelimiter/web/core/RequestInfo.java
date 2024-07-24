@@ -1,15 +1,11 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
-import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
 public interface RequestInfo {
-    static RequestInfo of(HttpServletRequest request) {
-        return new DefaultRequestInfo(request);
-    }
     interface Cookie {
         static Cookie of(String name, String value) {
             Objects.requireNonNull(name);

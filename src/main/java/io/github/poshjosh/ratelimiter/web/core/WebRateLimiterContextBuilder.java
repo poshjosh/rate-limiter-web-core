@@ -126,7 +126,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
             }
 
             if (expressionMatcher == null) {
-                expressionMatcher = (WebExpressionMatcher.ofHttpServletRequest());
+                expressionMatcher = (WebExpressionMatchers.ofHttpServletRequest());
             }
             if (classesInPackageFinder == null) {
                 classesInPackageFinder = (ClassesInPackageFinder.ofDefaults());

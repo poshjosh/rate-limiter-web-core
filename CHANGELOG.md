@@ -15,6 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changes from [rate-limiter-annotation v0.7.2](https://github.com/poshjosh/rate-limiter-annotation/blob/v0.7.2/CHANGELOG.md)
 
+### Changed
+
+- Renamed `PathPatterns` to `ResourcePath`.
+
+### Moved
+
+- Static factory methods from `.util.ResourcePath` to `.util.ResourcePaths`.
+- Static factory methods from `.util.ResourceInfoProvider.ResourceInfo` to `.util.ResourceInfos`.
+- Static factory methods from `.RequestInfo` to `.RequestInfos`.
+- Static factory methods from `.WebExpressionMatcher` to `.WebExpressionMatchers`.
+- Static factory methods from `.WebRateLimiterRegistry` to `.WebRateLimiterRegistries`.
+- Static factory methods from `.WebRateLimiterRegistrySpring` to `.WebRateLimiterRegistries`.
+
 ## [ [0.7.1](https://github.com/poshjosh/rate-limiter-web-core/tree/v0.7.1) ] - 2024-01-26
 
 ### Added
