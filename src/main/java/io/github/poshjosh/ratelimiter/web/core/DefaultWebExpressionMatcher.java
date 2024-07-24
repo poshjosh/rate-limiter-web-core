@@ -42,8 +42,8 @@ final class DefaultWebExpressionMatcher implements
     }
 
     @Override
-    public String match(HttpServletRequest request) {
-        return delegate.match(request);
+    public String match(HttpServletRequest toMatch) {
+        return delegate.match(toMatch);
     }
 
     @Override
