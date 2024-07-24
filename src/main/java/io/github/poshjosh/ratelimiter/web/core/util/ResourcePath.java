@@ -14,13 +14,12 @@ import java.util.List;
  * | *        | Matches zero or more characters.  |
  * | **       | Matches zero or more directories. |
  * +----------+-----------------------------------+
- * @param <PATH> The of object that may be matched
  */
-public interface ResourcePath<PATH> extends Serializable {
+public interface ResourcePath extends Serializable {
 
-    ResourcePath<PATH> combine(ResourcePath<PATH> other);
+    ResourcePath combine(ResourcePath other);
 
     List<String> getPatterns();
 
-    boolean matches(PATH path);
+    boolean matches(String path);
 }

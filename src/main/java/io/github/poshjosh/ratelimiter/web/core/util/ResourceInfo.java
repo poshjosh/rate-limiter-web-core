@@ -6,7 +6,7 @@ public interface ResourceInfo {
 
     String getId();
 
-    ResourcePath<String> getResourcePath();
+    ResourcePath getResourcePath();
 
     Collection<String> getHttpMethods();
 }

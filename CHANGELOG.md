@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Renamed `PathPatterns` to `ResourcePath`.
+- `ResourcePath<String>` to `ResourcePath`. The generic type is always a string.
 
 ### Moved
 

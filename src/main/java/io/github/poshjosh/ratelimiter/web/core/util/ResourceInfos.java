@@ -10,7 +10,7 @@ public interface ResourceInfos {
             return "";
         }
 
-        @Override public ResourcePath<String> getResourcePath() {
+        @Override public ResourcePath getResourcePath() {
             return ResourcePaths.matchNone();
         }
 
@@ -32,7 +32,7 @@ public interface ResourceInfos {
         return of(ResourcePaths.matchNone(), httpMethods);
     }
 
-    static ResourceInfo of(ResourcePath<String> resourcePath, String... httpMethods) {
+    static ResourceInfo of(ResourcePath resourcePath, String... httpMethods) {
         if (ResourcePaths.matchNone().equals(resourcePath) && (httpMethods == null
                 || httpMethods.length == 0)) {
             return none();

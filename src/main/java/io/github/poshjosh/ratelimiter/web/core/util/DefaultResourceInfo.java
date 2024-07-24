@@ -4,9 +4,9 @@ import java.util.*;
 
 final class DefaultResourceInfo implements ResourceInfo {
     private final Collection<String> httpMethods;
-    private final ResourcePath<String> resourcePath;
+    private final ResourcePath resourcePath;
     private final String id;
-    DefaultResourceInfo(ResourcePath<String> resourcePath, String...httpMethods) {
+    DefaultResourceInfo(ResourcePath resourcePath, String...httpMethods) {
         this.httpMethods = toCollection(httpMethods);
         this.resourcePath = Objects.requireNonNull(resourcePath);
         final List<String> paths = getResourcePath().getPatterns();
@@ -18,7 +18,7 @@ final class DefaultResourceInfo implements ResourceInfo {
     }
     @Override public String getId() { return id; }
     @Override public Collection<String> getHttpMethods() { return httpMethods; }
-    @Override public ResourcePath<String> getResourcePath() { return resourcePath; }
+    @Override public ResourcePath getResourcePath() { return resourcePath; }
     @Override public boolean equals(Object o) {
         if (this == o)
             return true;
