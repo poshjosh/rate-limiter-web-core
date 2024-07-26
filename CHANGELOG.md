@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed `PathPatterns` to `ResourcePath`.
 - `ResourcePath<String>` to `ResourcePath`. The generic type is always a string.
+- Removed `.registry.Registries` and moved its methods to `.WebRateLimiterRegistry`.
 
 ### Moved
 

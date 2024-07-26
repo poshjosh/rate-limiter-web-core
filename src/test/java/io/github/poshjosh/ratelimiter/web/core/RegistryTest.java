@@ -3,6 +3,8 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RegistryTest {
@@ -19,18 +21,19 @@ class RegistryTest {
 
     protected void shouldRegister(String value) {
         Registry<String> instance = getInstance();
-        instance.register(value);
-        assertEquals(value, instance.getDefault());
+        final String name = UUID.randomUUID().toString();
+        instance.register(name, value);
+        assertEquals(value, instance.getOrDefault(name, null));
     }
 
     protected void shouldRegisterByName(String value) {
         Registry<String> instance = getInstance();
         final String name = "name";
         instance.register(name, value);
-        assertEquals(instance.getOrDefault(name), value);
+        assertEquals(instance.getOrDefault(name, null), value);
     }
 
     private Registry<String> getInstance() {
-        return Registry.of("default");
+        return Registry.ofDefaults();
     }
 }

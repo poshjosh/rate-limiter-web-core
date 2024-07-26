@@ -8,16 +8,8 @@ final class DefaultRegistry<T> implements Registry<T> {
 
     private final Map<String, T> registered;
 
-    private T defaultInstance;
-
-    DefaultRegistry(T defaultInstance) {
+    DefaultRegistry() {
         this.registered = new ConcurrentHashMap<>();
-        this.defaultInstance = Objects.requireNonNull(defaultInstance);
-    }
-
-    @Override public Registry<T> register(T defaultInstance) {
-        this.defaultInstance = Objects.requireNonNull(defaultInstance);
-        return this;
     }
 
     @Override public Registry<T> register(String name, T instance) {
@@ -29,12 +21,7 @@ final class DefaultRegistry<T> implements Registry<T> {
         return registered.getOrDefault(name, resultIfNone);
     }
 
-    @Override public T getDefault() {
-        return this.defaultInstance;
-    }
-
     @Override public String toString() {
-        return "DefaultRegistry{" + "registered=" + registered.keySet() +
-                ", defaultInstance=" + defaultInstance + '}';
+        return "DefaultRegistry{" + "registered=" + registered.keySet() + '}';
     }
 }

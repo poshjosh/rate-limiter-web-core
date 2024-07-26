@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.util.*;
-import io.github.poshjosh.ratelimiter.web.core.registry.Registries;
+import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -13,21 +13,21 @@ import java.util.function.*;
 final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
     private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
-    private final Registries registries;
+    private final Registry<Matcher<HttpServletRequest>> matcherRegistry;
     private final RateLimiterRegistry<HttpServletRequest> delegate;
 
     DefaultWebRateLimiterRegistry(WebRateLimiterContext webRateLimiterContext) {
         this.matchers = new ConcurrentHashMap<>();
-        this.registries = Registries.ofDefaults();
+        this.matcherRegistry = Registry.ofDefaults();
 
         // Collect user defined config
         webRateLimiterContext.getConfigurerOptional()
-                .ifPresent(configurer -> configurer.configure(this.registries));
+                .ifPresent(configurer -> configurer.configureMatchers(this.matcherRegistry));
 
         // Compose existing config and user defined config
         MatcherProvider<HttpServletRequest> matcherProvider = new MatcherProviderMultiSource(
                 webRateLimiterContext.getMatcherProvider(),
-                this.registries.matchers(),
+                this.matcherRegistry,
                 new MatcherCollector(this.matchers));
 
         // Add composed config to context

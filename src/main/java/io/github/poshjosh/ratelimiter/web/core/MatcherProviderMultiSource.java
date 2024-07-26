@@ -32,17 +32,24 @@ final class MatcherProviderMultiSource implements MatcherProvider<HttpServletReq
 
         final String id = rateConfig.getId();
 
-        Matcher<HttpServletRequest> registered = registry.get(id).orElse(Matchers.matchNone());
+        final Matcher<HttpServletRequest> registered = registry.getOrDefault(id, null);
+        LOG.debug("Found registered for {}, matcher: {}", id, registered);
+        final boolean noneRegistered = registered == null || Matchers.matchNone().equals(registered);
 
-        Matcher<HttpServletRequest> created = delegate.createMainMatcher(rateConfig);
+        final Matcher<HttpServletRequest> created = delegate.createMainMatcher(rateConfig);
+        final boolean noneCreated = created == null || Matchers.matchNone().equals(created);
 
-        if (Matchers.matchNone().equals(registered)) {
+        if (noneRegistered && noneCreated) {
+            LOG.debug("No matcher for {}", id);
+            return Matchers.matchNone();
+        }
+
+        if (noneRegistered) {
             onMatcherCreated.accept(id, created);
             return created;
         }
 
-        LOG.debug("Found registered for {}, matcher: {}", id, registered);
-        Matcher<HttpServletRequest> result = created == null ? registered : registered.and(created);
+        Matcher<HttpServletRequest> result = noneCreated ? registered : registered.and(created);
         onMatcherCreated.accept(id, result);
         return result;
     }

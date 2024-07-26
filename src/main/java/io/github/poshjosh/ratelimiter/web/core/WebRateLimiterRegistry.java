@@ -5,5 +5,4 @@ import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import javax.servlet.http.HttpServletRequest;
 
 public interface WebRateLimiterRegistry extends RateLimiterRegistry<HttpServletRequest> {
-
 }

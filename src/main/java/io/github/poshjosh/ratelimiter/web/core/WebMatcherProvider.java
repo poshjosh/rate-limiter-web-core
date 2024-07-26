@@ -81,16 +81,14 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         }
 
         @Override
-        public String match(HttpServletRequest target) {
-            return matches(target) ? getId() : Matchers.NO_MATCH;
-        }
-
-        @Override
-        public boolean matches(HttpServletRequest request) {
+        public String match(HttpServletRequest request) {
             if (!matchesHttpMethod(request.getMethod())) {
-                return false;
+                return Matchers.NO_MATCH;
             }
-            return resourceInfo.getResourcePath().matches(getPathForMatching(request));
+            if (!resourceInfo.getResourcePath().matches(getPathForMatching(request))) {
+                return Matchers.NO_MATCH;
+            }
+            return getId();
         }
 
         private String getId() {
