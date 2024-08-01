@@ -8,33 +8,35 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.*;
 
 final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
     private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
-    private final Registry<Matcher<HttpServletRequest>> matcherRegistry;
     private final RateLimiterRegistry<HttpServletRequest> delegate;
 
     DefaultWebRateLimiterRegistry(WebRateLimiterContext webRateLimiterContext) {
         this.matchers = new ConcurrentHashMap<>();
-        this.matcherRegistry = Registry.ofDefaults();
+
+        final Registry<Matcher<HttpServletRequest>> matcherRegistry = Registry.ofDefaults();
 
         // Collect user defined config
         webRateLimiterContext.getConfigurerOptional()
-                .ifPresent(configurer -> configurer.configureMatchers(this.matcherRegistry));
+                .ifPresent(configurer -> configurer.configureMatchers(matcherRegistry));
 
-        // Compose existing config and user defined config
-        MatcherProvider<HttpServletRequest> matcherProvider = new MatcherProviderMultiSource(
+        // Compose existing and user defined
+        final MatcherProvider<HttpServletRequest> matcherProvider = new MatcherProviderMultiSource(
                 webRateLimiterContext.getMatcherProvider(),
-                this.matcherRegistry,
-                new MatcherCollector(this.matchers));
+                matcherRegistry,
+                (name, matcher) -> {
+                    final List<Matcher<HttpServletRequest>> list = matchers
+                            .computeIfAbsent(name, k -> new ArrayList<>());
+                    if (!list.contains(matcher)) {
+                        list.add(matcher);
+                    }
+                });
 
-        // Add composed config to context
-        webRateLimiterContext = (WebRateLimiterContext)webRateLimiterContext
-                .withMatcherProvider(matcherProvider);
-
-        this.delegate = RateLimiterRegistries.of(webRateLimiterContext);
+        this.delegate = RateLimiterRegistries.of(
+                webRateLimiterContext.withMatcherProvider(matcherProvider));
     }
 
     @Override public RateLimiterRegistry<HttpServletRequest> register(Class<?> source) {
@@ -73,18 +75,5 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     private List<Matcher<HttpServletRequest>> getMatchers(String id) {
         List<Matcher<HttpServletRequest>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
-    }
-
-    private static final class MatcherCollector implements BiConsumer<String, Matcher<HttpServletRequest>> {
-        private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
-        private MatcherCollector(Map<String, List<Matcher<HttpServletRequest>>> matchers) {
-            this.matchers = Objects.requireNonNull(matchers);
-        }
-        @Override public void accept(String name, Matcher<HttpServletRequest> matcher) {
-            List<Matcher<HttpServletRequest>> list = matchers.computeIfAbsent(name, k -> new ArrayList<>());
-            if (!list.contains(matcher)) {
-                list.add(matcher);
-            }
-        }
     }
 }
