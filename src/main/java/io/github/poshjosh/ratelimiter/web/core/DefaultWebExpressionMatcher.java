@@ -26,7 +26,7 @@ final class DefaultWebExpressionMatcher implements
     DefaultWebExpressionMatcher() {
         // With parseAtMatchTime we don't have to implement parseLeft(..) or parseRight(..)
         delegate = ExpressionMatchers.ofParseAtMatchTime(
-                this, this, Expression.ofDefault(ATTRIBUTE + "=0"));
+                this, this, Expressions.of(ATTRIBUTE + "=0"));
         stringToLocaleConverter = new StringToLocaleTransformer();
         noopConverter = new NoopTransformer();
     }
@@ -130,7 +130,7 @@ final class DefaultWebExpressionMatcher implements
                     result = expression.with(fromWebRequest, fromExpression);
                 } else {
                     if (!hasValue) {
-                        result = Expression.FALSE;
+                        result = Expressions.FALSE;
                     } else {
                         // web.request.header=Content-Type  means: If the content type has a value
                         // We resolve the above to expression: Content-Type!=''  (i.e not equals)
@@ -181,7 +181,7 @@ final class DefaultWebExpressionMatcher implements
             }
             return;
         }
-        if(!StringUtils.hasText(Expression.ofDefault(rhs).requireLeft())) {
+        if(!StringUtils.hasText(Expressions.of(rhs).requireLeft())) {
             throw Checks.notSupported(this, rhs);
         }
         if(rhs.startsWith("{") && rhs.endsWith("}")) {
