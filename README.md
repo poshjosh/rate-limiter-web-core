@@ -10,13 +10,13 @@ We believe that rate limiting should be as simple as:
 @RequestMapping("/api/v1")
 public class GreetingResource {
 
-  @Rate(permits=10, when="web.request.user.role=GUEST")
+  @Rate(permits=10, when="web.request.user.role = GUEST")
   @GetMapping("/smile")
   public String smile() {
     return ":)";
   }
 
-  @Rate(permits=1, when="jvm.memory.available<1gb")
+  @Rate(permits=1, when="jvm.memory.available < 1gb")
   @GetMapping("/greet")
   public String greet(@RequestParam("who") String who) {
     return "Hello " + who;
@@ -53,7 +53,7 @@ class GreetingResource {
 
   // 2 calls per second, if the header X-Rate-Limited has a value
   @Rate(2)
-  @RateCondition("web.request.header=X-Rate-Limited")
+  @RateCondition("web.request.header = X-Rate-Limited")
   @GetMapping("/smile")
   String smile() {
     return ":)";

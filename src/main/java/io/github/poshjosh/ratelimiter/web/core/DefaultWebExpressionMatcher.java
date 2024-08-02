@@ -26,7 +26,7 @@ final class DefaultWebExpressionMatcher implements
     DefaultWebExpressionMatcher() {
         // With parseAtMatchTime we don't have to implement parseLeft(..) or parseRight(..)
         delegate = ExpressionMatchers.ofParseAtMatchTime(
-                this, this, Expressions.of(ATTRIBUTE + "=0"));
+                this, this, Expressions.of(ATTRIBUTE + " = 0"));
         stringToLocaleConverter = new StringToLocaleTransformer();
         noopConverter = new NoopTransformer();
     }
@@ -79,19 +79,19 @@ final class DefaultWebExpressionMatcher implements
      * Examples:
      *
      * <pre>
-     * web.request.header={Content-Type=text/plain} means: match if Content-Type = text/plain
-     * We resolve the above to expression: text/plain=[CONTENT_TYPE_OF_REQUEST]
+     * web.request.header = {Content-Type = text/plain} means: match if Content-Type = text/plain
+     * We resolve the above to expression: text/plain = [CONTENT_TYPE_OF_REQUEST]
      *
-     * web.request.header=Content-Type              means: match if Content-Type has a value
-     * We resolve the above to expression: Content-Type!=''  (i.e not equals)
+     * web.request.header = Content-Type              means: match if Content-Type has a value
+     * We resolve the above to expression: Content-Type != ''  (i.e not equals)
      *
-     * web.request.locale=[en_US|en_UK]             means: match either locales
-     * We resolve the above to expression: [en_US|en_UK]=[LOCALES_FROM_REQUEST]
+     * web.request.locale = [en_US | en_UK]             means: match either locales
+     * We resolve the above to expression: [en_US | en_UK] = [LOCALES_FROM_REQUEST]
      *
-     * web.request.user.role=GUEST                  means: match if the user role is GUEST
+     * web.request.user.role = GUEST                  means: match if the user role is GUEST
      * We resolve the above as follows:
-     *  - If the user is in role GUEST: GUEST=GUEST
-     *  - If the user is not in role GUEST: GUEST=''
+     *  - If the user is in role GUEST: GUEST = GUEST
+     *  - If the user is not in role GUEST: GUEST = ''
      * </pre>
      *
      * @param context The web request
@@ -132,7 +132,7 @@ final class DefaultWebExpressionMatcher implements
                     if (!hasValue) {
                         result = Expressions.FALSE;
                     } else {
-                        // web.request.header=Content-Type  means: If the content type has a value
+                        // web.request.header = Content-Type  means: If the content type has a value
                         // We resolve the above to expression: Content-Type!=''  (i.e not equals)
                         //
                         final Object fromExpression = splitIntoArrayIfNeed(
