@@ -181,9 +181,12 @@ final class DefaultWebExpressionMatcher implements
             }
             return;
         }
-        if(!StringUtils.hasText(Expressions.of(rhs).requireLeft())) {
-            throw Checks.notSupported(this, rhs);
-        }
+        try {
+            final Expression<String> rhsExpression = Expressions.of(rhs);
+            if(!StringUtils.hasText(rhsExpression.requireLeft())) {
+                throw Checks.notSupported(this, rhs);
+            }
+        } catch (UnsupportedOperationException ignored) { }
         if(rhs.startsWith("{") && rhs.endsWith("}")) {
             return;
         }
@@ -191,7 +194,7 @@ final class DefaultWebExpressionMatcher implements
     }
 
     private Type getType(Expression<String> expression) {
-        if(isRightAnExpression(expression)) {
+        if(expression.isRightAnExpression()) {
             return Type.OBJ_RHS;
         }
         return WebExpressionKey.isNameValueType(expression.requireLeft())
