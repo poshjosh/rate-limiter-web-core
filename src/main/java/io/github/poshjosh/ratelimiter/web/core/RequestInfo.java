@@ -7,6 +7,7 @@ import java.util.Objects;
 
 public interface RequestInfo {
     interface Cookie {
+        Cookie EMPTY = Cookie.of("", "");
         static Cookie of(String name, String value) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(value);

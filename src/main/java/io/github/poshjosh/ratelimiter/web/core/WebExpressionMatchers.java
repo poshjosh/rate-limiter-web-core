@@ -5,6 +5,6 @@ import javax.servlet.http.HttpServletRequest;
 
 public interface WebExpressionMatchers {
     static ExpressionMatcher<HttpServletRequest> ofHttpServletRequest() {
-        return new DefaultWebExpressionMatcher();
+        return new HttpRequestExpressionMatcher();
     }
 }

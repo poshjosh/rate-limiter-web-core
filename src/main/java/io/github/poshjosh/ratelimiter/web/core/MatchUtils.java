@@ -7,14 +7,14 @@ import java.util.*;
 
 final class MatchUtils {
     private MatchUtils() {}
-    static <T> boolean matches(Operator operator, List<T> values, T[] supplied) {
+    static <T> boolean matchesList(Operator operator, List<T> values, T[] supplied) {
         switch(operator) {
             case AND: return allMatch(values, supplied);
             case OR: return anyMatch(values, supplied);
             default: throw invalidOperator(operator);
         }
     }
-    static <T> boolean matches(Operator operator, T value, T[] supplied) {
+    static <T> boolean matchesValue(Operator operator, T value, T[] supplied) {
         switch(operator) {
             case AND: return allMatch(value, supplied);
             case OR: return anyMatch(value, supplied);

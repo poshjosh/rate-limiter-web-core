@@ -12,16 +12,11 @@ import java.util.stream.Collectors;
 final class DefaultRequestInfo implements RequestInfo {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestInfo.class);
-
-    private final HttpServletRequest request;
-    DefaultRequestInfo(HttpServletRequest request) {
-        this.request = Objects.requireNonNull(request);
-    }
-    @Override public String getAuthScheme() {
+    static String authScheme(HttpServletRequest request) {
         String authScheme = request.getAuthType();
         return authScheme == null ? "" : authScheme;
     }
-    @Override public List<Cookie> getCookies() {
+    static List<Cookie> cookies(HttpServletRequest request) {
         javax.servlet.http.Cookie [] cookies = request.getCookies();
         return cookies == null || cookies.length == 0 ? Collections.emptyList() :
                 Arrays.stream(request.getCookies())
@@ -29,25 +24,53 @@ final class DefaultRequestInfo implements RequestInfo {
                         .collect(Collectors.toList());
 
     }
-    @Override public List<String> getHeaders(String name) {
+    static List<String> headers(HttpServletRequest request, String name) {
         Enumeration<String> headers = request.getHeaders(name);
         return headers == null ? Collections.emptyList() :
                 Collections.list(request.getHeaders(name));
+    }
+    static List<String> parameters(HttpServletRequest request, String name) {
+        String [] values = request.getParameterValues(name);
+        return values == null || values.length == 0
+                ? Collections.emptyList() : Arrays.asList(values);
+    }
+    static String remoteAddr(HttpServletRequest request) {
+        return getClientIpAddress(request, "");
+    }
+    static List<Locale> locales(HttpServletRequest request) {
+        Enumeration<Locale> locales = request.getLocales();
+        return locales == null ? Collections.emptyList() : Collections.list(locales);
+    }
+    static String sessionId(HttpServletRequest request) {
+        final String id = request.getSession(true).getId();
+        return id == null ? "" : id;
+    }
+
+    private final HttpServletRequest request;
+    DefaultRequestInfo(HttpServletRequest request) {
+        this.request = Objects.requireNonNull(request);
+    }
+
+    @Override public String getAuthScheme() {
+        return authScheme(request);
+    }
+    @Override public List<Cookie> getCookies() {
+        return cookies(request);
+    }
+    @Override public List<String> getHeaders(String name) {
+        return headers(request, name);
     }
     @Override public Object getAttribute(String name) {
         return request.getAttribute(name);
     }
     @Override public List<String> getParameters(String name) {
-        String [] values = request.getParameterValues(name);
-        return values == null || values.length == 0
-                ? Collections.emptyList() : Arrays.asList(values);
+        return parameters(request, name);
     }
     @Override public String getRemoteAddr() {
-        return getClientIpAddress(request, "");
+        return remoteAddr(request);
     }
     @Override public List<Locale> getLocales() {
-        Enumeration<Locale> locales = request.getLocales();
-        return locales == null ? Collections.emptyList() : Collections.list(locales);
+        return locales(request);
     }
     @Override public boolean isUserInRole(String role) {
         return request.isUserInRole(role);
@@ -59,8 +82,7 @@ final class DefaultRequestInfo implements RequestInfo {
         return request.getRequestURI();
     }
     @Override public String getSessionId() {
-        final String id = request.getSession(true).getId();
-        return id == null ? "" : id;
+        return sessionId(request);
     }
 
     private static final String[] IP_ADDR_RELATED_HEADERS = {
@@ -76,7 +98,7 @@ final class DefaultRequestInfo implements RequestInfo {
             "HTTP_VIA",
             "REMOTE_ADDR" };
 
-    private String getClientIpAddress(ServletRequest request, String resultIfNone) {
+    private static String getClientIpAddress(ServletRequest request, String resultIfNone) {
         String ip = null;
         try {
             if(request instanceof HttpServletRequest) {

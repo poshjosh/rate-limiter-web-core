@@ -29,37 +29,17 @@ public interface WebExpressionKey {
     /** A Session will be created if none */
     String SESSION_ID = "web.session.id";
 
-    static boolean isNameValueType(String key) {
-        switch(key) {
-            case ATTRIBUTE:
-            case AUTH_SCHEME:
-            case COOKIE:
-            case HEADER:
-            case PARAMETER:
-            case USER_ROLE:
-                return true;
-            default :
-                return false;
-        }
+    static boolean isKeyValueType(String key) {
+        return key.startsWith(ATTRIBUTE) || key.startsWith(COOKIE) ||
+                key.startsWith(HEADER) || key.startsWith(PARAMETER);
     }
 
-    static boolean isKey(String expression) {
-        switch(expression) {
-            case ATTRIBUTE:
-            case AUTH_SCHEME:
-            case COOKIE:
-            case HEADER:
-            case IP:
-            case LOCALE:
-            case PARAMETER:
-            case REMOTE_ADDRESS:
-            case REQUEST_URI:
-            case USER_ROLE:
-            case USER_PRINCIPAL:
-            case SESSION_ID:
-                return true;
-            default:
-                return false;
-        }
+    static boolean isKey(String key) {
+        return key.startsWith(ATTRIBUTE) || key.startsWith(AUTH_SCHEME)
+        || key.startsWith(COOKIE) || key.startsWith(HEADER)
+        || key.startsWith(IP) || key.startsWith(LOCALE)
+        || key.startsWith(PARAMETER) || key.startsWith(REMOTE_ADDRESS)
+        || key.startsWith(REQUEST_URI) || key.startsWith(USER_ROLE)
+        || key.startsWith(USER_PRINCIPAL) || key.startsWith(SESSION_ID);
     }
 }
