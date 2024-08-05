@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Function;
 
-final class HttpRequestExpressionMatcher
+final class WebExpressionMatcher
         implements ExpressionMatcher<HttpServletRequest>, WebExpressionKey,
         ExpressionParser<HttpServletRequest, Object>, ExpressionResolver<Object> {
 
@@ -17,7 +17,7 @@ final class HttpRequestExpressionMatcher
 
     private final ExpressionMatcher<HttpServletRequest> delegate;
 
-    HttpRequestExpressionMatcher() {
+    WebExpressionMatcher() {
         delegate = ExpressionMatchers.ofParseAhead(
                 this, this, Expressions.of(ATTRIBUTE + " = 0"));
     }
@@ -133,8 +133,8 @@ final class HttpRequestExpressionMatcher
         if (right instanceof Composite) {
             final Composite composite = (Composite)right;
             if (composite.operator == io.github.poshjosh.ratelimiter.util.Operator.AND) {
-                throw Checks.notSupported(this,
-                        "AND (&) operator for roles, i.e: " + Arrays.toString(composite.values));
+                throw Checks.notSupported(this, composite.operator
+                        + " for " + WebExpressionKey.USER_ROLE + " values");
             }
             final String [] roles = (String[])composite.values;
             return Arrays.stream(roles).anyMatch(request::isUserInRole) ? right : null;
@@ -162,23 +162,24 @@ final class HttpRequestExpressionMatcher
 
     private Composite toCollection(String rhsText, Function<String, Object> mapper) {
         final boolean orList = isOrList(rhsText);
-        final String arraySeparatorRegex = orList ? "\\|" : "&";
+        final io.github.poshjosh.ratelimiter.util.Operator operator = orList ?
+                io.github.poshjosh.ratelimiter.util.Operator.OR :
+                io.github.poshjosh.ratelimiter.util.Operator.AND;
+        final String arraySeparatorRegex = orList ? "\\|" : operator.getSymbol();
         final String [] parts = withoutBrackets(rhsText).split(arraySeparatorRegex);
         final Object [] array =  Arrays.stream(parts)
                 .filter(StringUtils::hasText)
                 .map(String::trim)
                 .map(mapper)
                 .toArray();
-        return new Composite(array, orList ?
-                io.github.poshjosh.ratelimiter.util.Operator.OR :
-                io.github.poshjosh.ratelimiter.util.Operator.AND);
+        return new Composite(array, operator);
     }
 
     private boolean isOrList(String rhsText) {
-        if (rhsText.contains("|")) {
+        if (rhsText.contains(io.github.poshjosh.ratelimiter.util.Operator.OR.getSymbol())) {
             return true;
         }
-        if (rhsText.contains("&")) {
+        if (rhsText.contains(io.github.poshjosh.ratelimiter.util.Operator.AND.getSymbol())) {
             return false;
         }
         throw Checks.notSupported(this, "Right hand side text: " + rhsText);
@@ -211,6 +212,6 @@ final class HttpRequestExpressionMatcher
 
     @Override
     public String toString() {
-        return "HttpRequestExpressionMatcher{delegate=" + delegate + '}';
+        return "WebExpressionMatcher{delegate=" + delegate + '}';
     }
 }
