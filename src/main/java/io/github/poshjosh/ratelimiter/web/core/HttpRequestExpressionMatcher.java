@@ -169,7 +169,7 @@ final class HttpRequestExpressionMatcher
                 .map(String::trim)
                 .map(mapper)
                 .toArray();
-        return new Composite(rhsText, array, orList ?
+        return new Composite(array, orList ?
                 io.github.poshjosh.ratelimiter.util.Operator.OR :
                 io.github.poshjosh.ratelimiter.util.Operator.AND);
     }
@@ -198,18 +198,14 @@ final class HttpRequestExpressionMatcher
     }
 
     private static final class Composite{
-        private final String raw;
         private final Object [] values;
         private final io.github.poshjosh.ratelimiter.util.Operator operator;
-        private Composite(
-                String raw, Object[] values,
-                io.github.poshjosh.ratelimiter.util.Operator operator) {
-            this.raw = Objects.requireNonNull(raw);
+        private Composite(Object[] values, io.github.poshjosh.ratelimiter.util.Operator operator) {
             this.values = Objects.requireNonNull(values);
             this.operator = Objects.requireNonNull(operator);
         }
         @Override public String toString() {
-            return raw;
+            return Arrays.toString(values);
         }
     }
 
