@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 
@@ -37,6 +38,10 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
         this.delegate = RateLimiterRegistries.of(
                 webRateLimiterContext.withMatcherProvider(matcherProvider));
+    }
+
+    @Override public RateLimiterRegistry<HttpServletRequest> register(String id, Rates rates) {
+        return delegate.register(id, rates);
     }
 
     @Override public RateLimiterRegistry<HttpServletRequest> register(Class<?> source) {
