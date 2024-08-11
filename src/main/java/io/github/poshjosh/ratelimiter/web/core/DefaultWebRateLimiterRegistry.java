@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
@@ -38,6 +39,15 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
         this.delegate = RateLimiterRegistries.of(
                 webRateLimiterContext.withMatcherProvider(matcherProvider));
+    }
+
+    @Override public boolean isWithinLimit(HttpServletRequest httpServletRequest) {
+        return delegate.isWithinLimit(httpServletRequest);
+    }
+
+    @Override public boolean tryAcquire(HttpServletRequest httpServletRequest, int permits,
+            long timeout, TimeUnit timeUnit) {
+        return delegate.tryAcquire(httpServletRequest, permits, timeout, timeUnit);
     }
 
     @Override public RateLimiterRegistry<HttpServletRequest> register(String id, Rates rates) {

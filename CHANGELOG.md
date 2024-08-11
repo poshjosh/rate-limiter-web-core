@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Direct registration of Rates using Method `RateLimiterRegistry#register(String, Rates)`
+- Direct registration of Rates using  method: `RateLimiterRegistry#register(String, Rates)`.
+- Direct rate limiting using method: `RateLimiterRegistry#tryAcquire`.
+- Method `RateLimiterRegistry#isWithinLimit(K key)`.
 
 ## [ [0.8.0](https://github.com/poshjosh/rate-limiter-web-core/tree/v0.8.0) ] - 2024-08-05
 

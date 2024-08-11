@@ -87,7 +87,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<HttpServletReq
 
         @Override Builder rateLimiterProvider(RateLimiterProvider rateLimiterProvider);
 
-        @Override Builder store(BandwidthsStore<?> store);
+        @Override Builder store(BandwidthsStore<String> store);
 
         @Override Builder ticker(Ticker ticker);
     }

@@ -91,7 +91,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
         return this;
     }
 
-    @Override public WebRateLimiterContext.Builder store(BandwidthsStore<?> store) {
+    @Override public WebRateLimiterContext.Builder store(BandwidthsStore<String> store) {
         context.setStore(store);
         return this;
     }
