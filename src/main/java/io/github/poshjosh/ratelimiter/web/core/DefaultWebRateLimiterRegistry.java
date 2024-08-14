@@ -5,7 +5,6 @@ import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 
-import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,24 +12,24 @@ import java.util.concurrent.TimeUnit;
 
 final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
-    private final Map<String, List<Matcher<HttpServletRequest>>> matchers;
-    private final RateLimiterRegistry<HttpServletRequest> delegate;
+    private final Map<String, List<Matcher<RequestInfo>>> matchers;
+    private final RateLimiterRegistry<RequestInfo> delegate;
 
     DefaultWebRateLimiterRegistry(WebRateLimiterContext webRateLimiterContext) {
         this.matchers = new ConcurrentHashMap<>();
 
-        final Registry<Matcher<HttpServletRequest>> matcherRegistry = Registry.ofDefaults();
+        final Registry<Matcher<RequestInfo>> matcherRegistry = Registry.ofDefaults();
 
         // Collect user defined config
         webRateLimiterContext.getConfigurerOptional()
                 .ifPresent(configurer -> configurer.configureMatchers(matcherRegistry));
 
         // Compose existing and user defined
-        final MatcherProvider<HttpServletRequest> matcherProvider = new MatcherProviderMultiSource(
+        final MatcherProvider<RequestInfo> matcherProvider = new MatcherProviderMultiSource(
                 webRateLimiterContext.getMatcherProvider(),
                 matcherRegistry,
                 (name, matcher) -> {
-                    final List<Matcher<HttpServletRequest>> list = matchers
+                    final List<Matcher<RequestInfo>> list = matchers
                             .computeIfAbsent(name, k -> new ArrayList<>());
                     if (!list.contains(matcher)) {
                         list.add(matcher);
@@ -41,28 +40,28 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
                 webRateLimiterContext.withMatcherProvider(matcherProvider));
     }
 
-    @Override public boolean isWithinLimit(HttpServletRequest httpServletRequest) {
+    @Override public boolean isWithinLimit(RequestInfo httpServletRequest) {
         return delegate.isWithinLimit(httpServletRequest);
     }
 
-    @Override public boolean tryAcquire(HttpServletRequest httpServletRequest, int permits,
+    @Override public boolean tryAcquire(RequestInfo httpServletRequest, int permits,
             long timeout, TimeUnit timeUnit) {
         return delegate.tryAcquire(httpServletRequest, permits, timeout, timeUnit);
     }
 
-    @Override public RateLimiterRegistry<HttpServletRequest> deregister(String id) {
+    @Override public RateLimiterRegistry<RequestInfo> deregister(String id) {
         return delegate.deregister(id);
     }
 
-    @Override public RateLimiterRegistry<HttpServletRequest> register(String id, Rates rates) {
+    @Override public RateLimiterRegistry<RequestInfo> register(String id, Rates rates) {
         return delegate.register(id, rates);
     }
 
-    @Override public RateLimiterRegistry<HttpServletRequest> register(Class<?> source) {
+    @Override public RateLimiterRegistry<RequestInfo> register(Class<?> source) {
         return delegate.register(source);
     }
 
-    @Override public RateLimiterRegistry<HttpServletRequest> register(Method source) {
+    @Override public RateLimiterRegistry<RequestInfo> register(Method source) {
         return delegate.register(source);
     }
 
@@ -74,7 +73,7 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         return delegate.getMethodRateLimiterOptional(method);
     }
 
-    @Override public Optional<RateLimiter> getRateLimiterOptional(HttpServletRequest request) {
+    @Override public Optional<RateLimiter> getRateLimiterOptional(RequestInfo request) {
         return delegate.getRateLimiterOptional(request);
     }
 
@@ -91,8 +90,8 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
      * @param id The id of the matchers to return
      * @return All the matchers that will be applied for the given id
      */
-    private List<Matcher<HttpServletRequest>> getMatchers(String id) {
-        List<Matcher<HttpServletRequest>> result = matchers.get(id);
+    private List<Matcher<RequestInfo>> getMatchers(String id) {
+        List<Matcher<RequestInfo>> result = matchers.get(id);
         return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
     }
 }

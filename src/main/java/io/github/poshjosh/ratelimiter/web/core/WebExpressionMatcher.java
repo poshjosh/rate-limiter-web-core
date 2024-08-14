@@ -3,20 +3,18 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.expression.*;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Function;
 
 final class WebExpressionMatcher
-        implements ExpressionMatcher<HttpServletRequest>, WebExpressionKey,
-        ExpressionParser<HttpServletRequest, Object>, ExpressionResolver<Object> {
+        implements ExpressionMatcher<RequestInfo>, WebExpressionKey,
+        ExpressionParser<RequestInfo, Object>, ExpressionResolver<Object> {
 
     private static final Function<String, Object> TO_LOCALE = value ->
             Locale.forLanguageTag(value.replace('_', '-'));
     private static final Function<String, Object> IDENTITY = value -> value;
 
-    private final ExpressionMatcher<HttpServletRequest> delegate;
+    private final ExpressionMatcher<RequestInfo> delegate;
 
     WebExpressionMatcher() {
         delegate = ExpressionMatchers.ofParseAhead(
@@ -45,22 +43,22 @@ final class WebExpressionMatcher
      * @param request The web request
      * @param expression The expression to be parsed
      * @return A parsed version of the expression
-     * @see #parseLeft(HttpServletRequest, Expression)
+     * @see #parseLeft(RequestInfo, Expression)
      * @see #parseRight(Expression)
      */
     @Override
     public Expression<Object> parse(
-            HttpServletRequest request, Expression<String> expression) {
+            RequestInfo request, Expression<String> expression) {
         return ExpressionParser.super.parse(request, expression);
     }
 
     @Override
-    public String match(HttpServletRequest toMatch) {
+    public String match(RequestInfo toMatch) {
         return delegate.match(toMatch);
     }
 
     @Override
-    public ExpressionMatcher<HttpServletRequest> matcher(Expression<String> expression) {
+    public ExpressionMatcher<RequestInfo> matcher(Expression<String> expression) {
         return delegate.matcher(expression);
     }
 
@@ -78,7 +76,7 @@ final class WebExpressionMatcher
     }
 
     @Override
-    public Object parseLeft(HttpServletRequest request, Expression<String> expression) {
+    public Object parseLeft(RequestInfo request, Expression<String> expression) {
         final String left = expression.requireLeft();
         final String name = Expressions.getTextInSquareBracketsOrNull(left);
         final boolean keyValueType = WebExpressionKey.isKeyValueType(left);
@@ -87,22 +85,22 @@ final class WebExpressionMatcher
         }
         final String key = name != null ? left.substring(0, left.indexOf('[')) : left;
         switch(key) {
-            case ATTRIBUTE: return request.getAttribute(name);
-            case AUTH_SCHEME: return DefaultRequestInfo.authScheme(request, "");
+            case ATTRIBUTE: return request.getAttribute(name, "");
+            case AUTH_SCHEME: return request.getAuthScheme("");
             case COOKIE:
-                return DefaultRequestInfo.cookies(request).stream()
-                    .filter(c -> Objects.equals(name, c.getName()))
-                    .map(Cookie::getValue)
+                return request.getCookies().stream()
+                    .filter(c -> Objects.equals(name, c.name()))
+                    .map(RequestInfo.Cookie::value)
                     .findAny().orElse(null);
-            case HEADER: return DefaultRequestInfo.headers(request, name);
-            case PARAMETER: return DefaultRequestInfo.parameters(request, name);
+            case HEADER: return request.getHeaders(name);
+            case PARAMETER: return request.getParameters(name);
             case IP:
-            case REMOTE_ADDRESS: return DefaultRequestInfo.remoteAddr(request, "");
-            case LOCALE: return DefaultRequestInfo.locales(request);
+            case REMOTE_ADDRESS: return request.getRemoteAddr("");
+            case LOCALE: return request.getLocales();
             case USER_ROLE: return parseLeftForRole(request, expression);
-            case USER_PRINCIPAL: return request.getUserPrincipal().getName();
-            case REQUEST_URI: return request.getRequestURI();
-            case SESSION_ID: return DefaultRequestInfo.sessionId(request, "");
+            case USER_PRINCIPAL: return request.getUserPrincipal(() -> "").getName();
+            case REQUEST_URI: return request.getRequestUri();
+            case SESSION_ID: return request.getSessionId("");
             default: throw Checks.notSupported(this, key);
         }
     }
@@ -129,7 +127,7 @@ final class WebExpressionMatcher
         return operator.isNegation() != result;
     }
 
-    private Object parseLeftForRole(HttpServletRequest request, Expression<String> expression) {
+    private Object parseLeftForRole(RequestInfo request, Expression<String> expression) {
         final Object right = parseRight(expression); // Oh no! we are repeating this
         if (right instanceof Composite) {
             final Composite composite = (Composite)right;

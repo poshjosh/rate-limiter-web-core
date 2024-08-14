@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method `RateLimiterRegistry#isWithinLimit(K key)`.
 - Method `RateLimiterRegistry#deregister(String key)` and its variants for `Method` and `Class`.
 
+### Changed
+
+- Decoupled from `javax.servlet` by replaced `javax.servlet.HttpServletRequest` with `RequestInfo`.
+
 ## [ [0.8.0](https://github.com/poshjosh/rate-limiter-web-core/tree/v0.8.0) ] - 2024-08-05
 
 ### Added
@@ -130,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Used HttpServletRequest for javaee. (It is already used for spring).
+- Used RequestInfo for javaee. (It is already used for spring).
     * This fixes Issue #2 rate-limiter-javaee: Implement `MatchType.REMOTE_ADDRESS` for usage in `@RateRequestIf`
 - Fixed handling of multiple (non-composed) limits on a single node.
 - Fixed handling of multiple methods with same path but different http method.

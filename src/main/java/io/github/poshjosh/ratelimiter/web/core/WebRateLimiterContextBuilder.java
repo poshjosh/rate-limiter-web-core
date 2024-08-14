@@ -13,7 +13,6 @@ import io.github.poshjosh.ratelimiter.util.Ticker;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
@@ -44,7 +43,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
     }
 
     @Override public WebRateLimiterContext.Builder matcherProvider(
-            MatcherProvider<HttpServletRequest> matcherProvider) {
+            MatcherProvider<RequestInfo> matcherProvider) {
         context.setMatcherProvider(matcherProvider);
         return this;
     }
@@ -74,7 +73,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
     }
 
     @Override public WebRateLimiterContext.Builder expressionMatcher(
-            ExpressionMatcher<HttpServletRequest> expressionMatcher) {
+            ExpressionMatcher<RequestInfo> expressionMatcher) {
         context.expressionMatcher = expressionMatcher;
         return this;
     }
@@ -107,12 +106,12 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
         return this;
     }
 
-    private static final class WebRateLimiterContextImpl extends RateLimiterContextImpl<HttpServletRequest> implements WebRateLimiterContext {
+    private static final class WebRateLimiterContextImpl extends RateLimiterContextImpl<RequestInfo> implements WebRateLimiterContext {
 
         private RateLimiterConfigurer configurer;
         private ClassesInPackageFinder classesInPackageFinder;
         private ResourceInfoProvider resourceInfoProvider;
-        private ExpressionMatcher<HttpServletRequest> expressionMatcher;
+        private ExpressionMatcher<RequestInfo> expressionMatcher;
         private RateProcessor<Class<?>> classRateProcessor;
         private RateProcessor<RateLimitProperties> propertyRateProcessor;
 
@@ -144,7 +143,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
             }
 
             if (getMatcherProvider() == null) {
-                MatcherProvider<HttpServletRequest> matcherProvider = new WebMatcherProvider(
+                MatcherProvider<RequestInfo> matcherProvider = new WebMatcherProvider(
                         getProperties().getApplicationPath(),
                         resourceInfoProvider,
                         expressionMatcher);

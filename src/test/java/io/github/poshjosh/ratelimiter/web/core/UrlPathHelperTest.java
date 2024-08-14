@@ -3,15 +3,14 @@ package io.github.poshjosh.ratelimiter.web.core;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.servlet.http.HttpServletRequest;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class UrlPathHelperTest {
 
-    private HttpServletRequest request;
+    private RequestInfo request;
     private String encoding;
     private String contextPath;
     private String appPath;
@@ -23,12 +22,11 @@ class UrlPathHelperTest {
         contextPath = "/context-path";
         appPath = "/app-path";
         servletPath = "/servlet-path";
-        request = mock(HttpServletRequest.class);
+        request = mock(RequestInfo.class);
         when(request.getContextPath()).then(invocationOnMock -> contextPath);
         when(request.getServletPath()).then(invocationOnMock -> servletPath);
-        when(request.getPathInfo()).then(invocationOnMock -> null);
-        when(request.getRequestURI()).then(invocationOnMock -> contextPath + pathWithinApplication());
-        when(request.getCharacterEncoding()).then(invocationOnMock -> encoding);
+        when(request.getRequestUri()).then(invocationOnMock -> contextPath + pathWithinApplication());
+        when(request.getCharacterEncoding(anyString())).then(invocationOnMock -> encoding);
     }
 
     private String pathWithinServlet() {

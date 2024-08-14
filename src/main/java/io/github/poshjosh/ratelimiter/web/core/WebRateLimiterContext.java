@@ -12,10 +12,9 @@ import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.util.Ticker;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
-public interface WebRateLimiterContext extends RateLimiterContext<HttpServletRequest> {
+public interface WebRateLimiterContext extends RateLimiterContext<RequestInfo> {
 
     /**
      * Users of the returned builder are required (at the minimum) to provide:
@@ -29,7 +28,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<HttpServletReq
     /**
      * Users are required (at the minimum) to provide: {@link Builder#resourceInfoProvider(ResourceInfoProvider)}
      */
-    interface Builder extends RateLimiterContext.Builder<HttpServletRequest> {
+    interface Builder extends RateLimiterContext.Builder<RequestInfo> {
 
         WebRateLimiterContext build();
 
@@ -52,7 +51,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<HttpServletReq
          * @param expressionMatcher For matching rate condition expressions
          * @return this builder
          */
-        Builder expressionMatcher(ExpressionMatcher<HttpServletRequest> expressionMatcher);
+        Builder expressionMatcher(ExpressionMatcher<RequestInfo> expressionMatcher);
 
         /**
          * <p><b>Mandatory</b></p>
@@ -83,7 +82,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<HttpServletReq
 
         @Override Builder properties(RateLimitProperties properties);
 
-        @Override Builder matcherProvider(MatcherProvider<HttpServletRequest> matcherProvider);
+        @Override Builder matcherProvider(MatcherProvider<RequestInfo> matcherProvider);
 
         @Override Builder rateLimiterProvider(RateLimiterProvider rateLimiterProvider);
 

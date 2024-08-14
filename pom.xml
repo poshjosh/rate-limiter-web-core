@@ -19,7 +19,6 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
         <rate-limiter.version>0.8.1-SNAPSHOT</rate-limiter.version>
-        <javax.servlet.version>4.0.1</javax.servlet.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
         <maven.failsafle.plugin.version>2.22.2</maven.failsafle.plugin.version>
@@ -31,12 +30,6 @@
             <groupId>io.github.poshjosh</groupId>
             <artifactId>rate-limiter-annotation</artifactId>
             <version>${rate-limiter.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${javax.servlet.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>

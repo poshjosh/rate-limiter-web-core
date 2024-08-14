@@ -3,8 +3,6 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * For fine-grained configuration of rate limiting.
  */
@@ -20,7 +18,7 @@ public interface RateLimiterConfigurer {
      * <code>
      * @org.springframework.stereotype.Component
      * public class MyRateLimiterConfigurer implements RateLimiterConfigurer{
-     *   public void configureMatchers(Registry<Matcher<HttpServletRequest>> matcherRegistry) {
+     *   public void configureMatchers(Registry<Matcher<RequestInfo>> matcherRegistry) {
      *
      *     // Register request matchers
      *     // -------------------------
@@ -42,5 +40,5 @@ public interface RateLimiterConfigurer {
      * @param matcherRegistry provide means for registering various Matchers used for configuring
      *                        rate limiting
      */
-    void configureMatchers(Registry<Matcher<HttpServletRequest>> matcherRegistry);
+    void configureMatchers(Registry<Matcher<RequestInfo>> matcherRegistry);
 }

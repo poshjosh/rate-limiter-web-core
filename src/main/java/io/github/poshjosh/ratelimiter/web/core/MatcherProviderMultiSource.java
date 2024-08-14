@@ -8,35 +8,34 @@ import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 
-final class MatcherProviderMultiSource implements MatcherProvider<HttpServletRequest> {
+final class MatcherProviderMultiSource implements MatcherProvider<RequestInfo> {
     private static final Logger LOG = LoggerFactory.getLogger(MatcherProviderMultiSource.class);
-    private final MatcherProvider<HttpServletRequest> delegate;
-    private final Registry<Matcher<HttpServletRequest>> registry;
-    private final BiConsumer<String, Matcher<HttpServletRequest>> onMatcherCreated;
+    private final MatcherProvider<RequestInfo> delegate;
+    private final Registry<Matcher<RequestInfo>> registry;
+    private final BiConsumer<String, Matcher<RequestInfo>> onMatcherCreated;
 
     MatcherProviderMultiSource(
-            MatcherProvider<HttpServletRequest> delegate,
-            Registry<Matcher<HttpServletRequest>> registry,
-            BiConsumer<String, Matcher<HttpServletRequest>> onMatcherCreated) {
+            MatcherProvider<RequestInfo> delegate,
+            Registry<Matcher<RequestInfo>> registry,
+            BiConsumer<String, Matcher<RequestInfo>> onMatcherCreated) {
         this.delegate = Objects.requireNonNull(delegate);
         this.registry = Objects.requireNonNull(registry);
         this.onMatcherCreated = Objects.requireNonNull(onMatcherCreated);
     }
     @Override
-    public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
+    public Matcher<RequestInfo> createMainMatcher(RateConfig rateConfig) {
 
         final String id = rateConfig.getId();
 
-        final Matcher<HttpServletRequest> registered = registry.getOrDefault(id, null);
+        final Matcher<RequestInfo> registered = registry.getOrDefault(id, null);
         LOG.debug("Found registered for {}, matcher: {}", id, registered);
         final boolean noneRegistered = registered == null || Matchers.matchNone().equals(registered);
 
-        final Matcher<HttpServletRequest> created = delegate.createMainMatcher(rateConfig);
+        final Matcher<RequestInfo> created = delegate.createMainMatcher(rateConfig);
         final boolean noneCreated = created == null || Matchers.matchNone().equals(created);
 
         if (noneRegistered && noneCreated) {
@@ -49,13 +48,13 @@ final class MatcherProviderMultiSource implements MatcherProvider<HttpServletReq
             return created;
         }
 
-        Matcher<HttpServletRequest> result = noneCreated ? registered : registered.and(created);
+        Matcher<RequestInfo> result = noneCreated ? registered : registered.and(created);
         onMatcherCreated.accept(id, result);
         return result;
     }
     @Override
-    public List<Matcher<HttpServletRequest>> createLimitMatchers(RateConfig rateConfig) {
-        List<Matcher<HttpServletRequest>> result = delegate.createLimitMatchers(rateConfig);
+    public List<Matcher<RequestInfo>> createLimitMatchers(RateConfig rateConfig) {
+        List<Matcher<RequestInfo>> result = delegate.createLimitMatchers(rateConfig);
         result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
         return result;
     }

@@ -10,11 +10,10 @@ import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfo;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfos;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Objects;
 
-final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletRequest> {
+final class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
 
     private final UrlPathHelper urlPathHelper;
     
@@ -23,23 +22,23 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
     WebMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
-            ExpressionMatcher<HttpServletRequest> expressionMatcher) {
+            ExpressionMatcher<RequestInfo> expressionMatcher) {
         super(ExpressionMatchers.any(expressionMatcher, ExpressionMatchers.ofDefaults()));
         this.resourceInfoProvider = Objects.requireNonNull(resourceInfoProvider);
         this.urlPathHelper = new UrlPathHelper(applicationPath);
     }
 
     @Override
-    public Matcher<HttpServletRequest> createMainMatcher(RateConfig rateConfig) {
+    public Matcher<RequestInfo> createMainMatcher(RateConfig rateConfig) {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
-        final Matcher<HttpServletRequest> expressionMatcher =
+        final Matcher<RequestInfo> expressionMatcher =
                 createExpressionMatcher(rates.getRateCondition()).orElse(null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matchers.matchNone();
         }
         if (!source.isGroupType() && source.isGenericDeclaration()) {
-            Matcher<HttpServletRequest> webRequestMatcher = createWebRequestMatcher(rateConfig);
+            Matcher<RequestInfo> webRequestMatcher = createWebRequestMatcher(rateConfig);
             if (expressionMatcher == null) {
                 return webRequestMatcher;
             }
@@ -54,7 +53,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
                 && !rateConfig.shouldDelegateToParent();
     }
 
-    private Matcher<HttpServletRequest> createWebRequestMatcher(RateConfig rateConfig) {
+    private Matcher<RequestInfo> createWebRequestMatcher(RateConfig rateConfig) {
         final RateSource rateSource = rateConfig.getSource();
         ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
         if (ResourceInfos.none().equals(resourceInfo)) {
@@ -66,7 +65,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
     /**
      * Matcher to match http request by (path patterns, request method etc) declared on an element.
      */
-    private static class HttpRequestMatcher implements Matcher<HttpServletRequest> {
+    private static class HttpRequestMatcher implements Matcher<RequestInfo> {
         private final RateConfig rateConfig;
         private final UrlPathHelper urlPathHelper;
         private final ResourceInfo resourceInfo;
@@ -81,7 +80,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         }
 
         @Override
-        public String match(HttpServletRequest request) {
+        public String match(RequestInfo request) {
             if (!matchesHttpMethod(request.getMethod())) {
                 return Matchers.NO_MATCH;
             }
@@ -100,10 +99,10 @@ final class WebMatcherProvider extends AbstractMatcherProvider<HttpServletReques
         }
         /**
          * Get path for matching purposes.
-         * @param request The HttpServletRequest for which a path will be returned
+         * @param request The RequestInfo for which a path will be returned
          * @return a path for matching purposes.
          */
-        private String getPathForMatching(HttpServletRequest request) {
+        private String getPathForMatching(RequestInfo request) {
             return urlPathHelper.getPathWithinServlet(request);
         }
         private boolean matchesHttpMethod(String httpMethod) {
