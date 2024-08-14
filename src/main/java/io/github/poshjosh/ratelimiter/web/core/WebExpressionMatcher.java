@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.web.core;
 import io.github.poshjosh.ratelimiter.expression.*;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.function.Function;
@@ -87,21 +88,21 @@ final class WebExpressionMatcher
         final String key = name != null ? left.substring(0, left.indexOf('[')) : left;
         switch(key) {
             case ATTRIBUTE: return request.getAttribute(name);
-            case AUTH_SCHEME: return DefaultRequestInfo.authScheme(request);
+            case AUTH_SCHEME: return DefaultRequestInfo.authScheme(request, "");
             case COOKIE:
                 return DefaultRequestInfo.cookies(request).stream()
-                    .filter(c -> Objects.equals(name, c.name()))
-                    .map(RequestInfo.Cookie::value)
+                    .filter(c -> Objects.equals(name, c.getName()))
+                    .map(Cookie::getValue)
                     .findAny().orElse(null);
             case HEADER: return DefaultRequestInfo.headers(request, name);
             case PARAMETER: return DefaultRequestInfo.parameters(request, name);
             case IP:
-            case REMOTE_ADDRESS: return DefaultRequestInfo.remoteAddr(request);
+            case REMOTE_ADDRESS: return DefaultRequestInfo.remoteAddr(request, "");
             case LOCALE: return DefaultRequestInfo.locales(request);
             case USER_ROLE: return parseLeftForRole(request, expression);
             case USER_PRINCIPAL: return request.getUserPrincipal().getName();
             case REQUEST_URI: return request.getRequestURI();
-            case SESSION_ID: return DefaultRequestInfo.sessionId(request);
+            case SESSION_ID: return DefaultRequestInfo.sessionId(request, "");
             default: throw Checks.notSupported(this, key);
         }
     }

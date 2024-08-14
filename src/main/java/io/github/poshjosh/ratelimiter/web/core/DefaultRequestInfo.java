@@ -4,24 +4,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletRequest;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import java.util.*;
-import java.util.stream.Collectors;
 
-final class DefaultRequestInfo implements RequestInfo {
-
+final class DefaultRequestInfo {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRequestInfo.class);
-    static String authScheme(HttpServletRequest request) {
+    static String authScheme(HttpServletRequest request, String resultIfNone) {
         String authScheme = request.getAuthType();
-        return authScheme == null ? "" : authScheme;
+        return authScheme == null ? resultIfNone : authScheme;
     }
     static List<Cookie> cookies(HttpServletRequest request) {
         javax.servlet.http.Cookie [] cookies = request.getCookies();
-        return cookies == null || cookies.length == 0 ? Collections.emptyList() :
-                Arrays.stream(request.getCookies())
-                        .map(cookie -> Cookie.of(cookie.getName(), cookie.getValue()))
-                        .collect(Collectors.toList());
+        return cookies == null || cookies.length == 0 ?
+                Collections.emptyList() : Arrays.asList(cookies);
 
     }
     static List<String> headers(HttpServletRequest request, String name) {
@@ -34,55 +30,16 @@ final class DefaultRequestInfo implements RequestInfo {
         return values == null || values.length == 0
                 ? Collections.emptyList() : Arrays.asList(values);
     }
-    static String remoteAddr(HttpServletRequest request) {
-        return getClientIpAddress(request, "");
+    static String remoteAddr(HttpServletRequest request, String resultIfNone) {
+        return getClientIpAddress(request, resultIfNone);
     }
     static List<Locale> locales(HttpServletRequest request) {
         Enumeration<Locale> locales = request.getLocales();
         return locales == null ? Collections.emptyList() : Collections.list(locales);
     }
-    static String sessionId(HttpServletRequest request) {
+    static String sessionId(HttpServletRequest request, String resultIfNone) {
         final String id = request.getSession(true).getId();
-        return id == null ? "" : id;
-    }
-
-    private final HttpServletRequest request;
-    DefaultRequestInfo(HttpServletRequest request) {
-        this.request = Objects.requireNonNull(request);
-    }
-
-    @Override public String getAuthScheme() {
-        return authScheme(request);
-    }
-    @Override public List<Cookie> getCookies() {
-        return cookies(request);
-    }
-    @Override public List<String> getHeaders(String name) {
-        return headers(request, name);
-    }
-    @Override public Object getAttribute(String name) {
-        return request.getAttribute(name);
-    }
-    @Override public List<String> getParameters(String name) {
-        return parameters(request, name);
-    }
-    @Override public String getRemoteAddr() {
-        return remoteAddr(request);
-    }
-    @Override public List<Locale> getLocales() {
-        return locales(request);
-    }
-    @Override public boolean isUserInRole(String role) {
-        return request.isUserInRole(role);
-    }
-    @Override public Principal getUserPrincipal() {
-        return request.getUserPrincipal();
-    }
-    @Override public String getRequestUri() {
-        return request.getRequestURI();
-    }
-    @Override public String getSessionId() {
-        return sessionId(request);
+        return id == null ? resultIfNone : id;
     }
 
     private static final String[] IP_ADDR_RELATED_HEADERS = {
@@ -121,4 +78,6 @@ final class DefaultRequestInfo implements RequestInfo {
         }
         return ip == null ? resultIfNone : ip;
     }
+
+    private DefaultRequestInfo() { }
 }
