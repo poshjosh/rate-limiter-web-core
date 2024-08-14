@@ -50,6 +50,10 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         return delegate.tryAcquire(httpServletRequest, permits, timeout, timeUnit);
     }
 
+    @Override public RateLimiterRegistry<HttpServletRequest> deregister(String id) {
+        return delegate.deregister(id);
+    }
+
     @Override public RateLimiterRegistry<HttpServletRequest> register(String id, Rates rates) {
         return delegate.register(id, rates);
     }
