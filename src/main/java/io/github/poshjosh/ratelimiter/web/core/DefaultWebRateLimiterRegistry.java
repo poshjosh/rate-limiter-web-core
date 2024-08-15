@@ -40,6 +40,10 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
                 webRateLimiterContext.withMatcherProvider(matcherProvider));
     }
 
+    @Override public void addListener(Listener listener) {
+        delegate.addListener(listener);
+    }
+
     @Override public boolean isWithinLimit(RequestInfo httpServletRequest) {
         return delegate.isWithinLimit(httpServletRequest);
     }
