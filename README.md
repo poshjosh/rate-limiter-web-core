@@ -16,7 +16,7 @@ public class GreetingResource {
     return ":)";
   }
 
-  @Rate(permits=1, when="jvm.memory.available < 1gb")
+  @Rate(permits=1, when="jvm.memory.available < 1gb & web.request.ip in com.mypackage.Bots.ips()")
   @GetMapping("/greet")
   public String greet(@RequestParam("who") String who) {
     return "Hello " + who;
@@ -67,27 +67,26 @@ Limiters, matchers, caches and listeners, could be configured by implementing an
 exposing a `RateLimiterConfigurer` as shown below:
 
 ```java
-import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-
 @Configuration 
 public class Configurer implements RateLimiterConfigurer {
 
   @Override 
-  public void configure(Registries registries) {
+  public void configureMatchers(Registry<Matcher<RequestInfo>> matcherRegistry) {
 
     // Register request matchers
     // -------------------------
 
     // Identify resources to rate-limit by session id
-    registries.matchers().register("limitBySession", request -> request.getSession().getId());
+    matcherRegistry
+            .register("limitBySession", request -> request.getSession().getId());
 
     // Identify resources to rate-limit by the presence of request parameter "utm_source"
-    registries.matchers()
+    matcherRegistry
             .register("limitByUtmSource", request -> request.getParameter("utm_source"));
 
     // Rate limit users from a specific utm_source e.g facebook
-    registries.matchers().register("limitByUtmSourceIsFacebook",
-            request -> "facebook".equals(request.getParameter("utm_source")));
+    matcherRegistry
+            .register("limitByUtmSourceIsFacebook", request -> "facebook".equals(request.getParameter("utm_source")));
   }
 }
 ```

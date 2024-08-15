@@ -37,7 +37,7 @@ class WebRateLimiterContextBuilder implements WebRateLimiterContext.Builder {
     }
 
     @Override public WebRateLimiterContext.Builder rates(
-            Map<String, Rates> rates) {
+            List<Rates> rates) {
         context.setRates(rates);
         return this;
     }

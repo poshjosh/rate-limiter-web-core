@@ -1,11 +1,10 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
-import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -57,28 +56,18 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
         return delegate.deregister(id);
     }
 
-    @Override public RateLimiterRegistry<RequestInfo> register(String id, Rates rates) {
-        return delegate.register(id, rates);
+    @Override public RateLimiterRegistry<RequestInfo> register(RateSource rateSource) {
+        return delegate.register(rateSource);
     }
 
-    @Override public RateLimiterRegistry<RequestInfo> register(Class<?> source) {
-        return delegate.register(source);
+    @Override public RateLimiter getRateLimiterOrDefault(RequestInfo requestInfo,
+            RateLimiter resultIfNone) {
+        return delegate.getRateLimiterOrDefault(requestInfo, resultIfNone);
     }
 
-    @Override public RateLimiterRegistry<RequestInfo> register(Method source) {
-        return delegate.register(source);
-    }
-
-    @Override public Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz) {
-        return delegate.getClassRateLimiterOptional(clazz);
-    }
-
-    @Override public Optional<RateLimiter> getMethodRateLimiterOptional(Method method) {
-        return delegate.getMethodRateLimiterOptional(method);
-    }
-
-    @Override public Optional<RateLimiter> getRateLimiterOptional(RequestInfo request) {
-        return delegate.getRateLimiterOptional(request);
+    @Override public RateLimiter getRateLimiterOrDefault(RateSource rateSource,
+            RateLimiter resultIfNone) {
+        return delegate.getRateLimiterOrDefault(rateSource, resultIfNone);
     }
 
     @Override public boolean isRegistered(String name) {

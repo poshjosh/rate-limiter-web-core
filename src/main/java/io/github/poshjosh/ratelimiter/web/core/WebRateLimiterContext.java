@@ -78,7 +78,7 @@ public interface WebRateLimiterContext extends RateLimiterContext<RequestInfo> {
 
         @Override Builder classes(Class<?>... classes);
 
-        @Override Builder rates(Map<String, Rates> rates);
+        @Override Builder rates(List<Rates> rates);
 
         @Override Builder properties(RateLimitProperties properties);
 
