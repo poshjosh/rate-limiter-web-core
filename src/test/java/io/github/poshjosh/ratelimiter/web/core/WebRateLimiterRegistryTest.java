@@ -8,10 +8,10 @@ import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Rate(1)
+@Rate("1/s")
 class WebRateLimiterRegistryTest {
 
-    @Rate(1)
+    @Rate("1/s")
     void testMethod() { }
 
     private static Method getMethod() {

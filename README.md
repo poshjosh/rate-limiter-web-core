@@ -6,7 +6,7 @@ Enterprise rate limiter for java web apps, based on
 We believe that rate limiting should be as simple as:
 
 ```java
-@Rate(10) // 10 permits per second for all methods in this class
+@Rate("10/s") // 10 permits per second for all methods in this class
 @RequestMapping("/api/v1")
 public class GreetingResource {
 
@@ -52,7 +52,7 @@ __Annotate the resource you want to rate limit__
 class GreetingResource {
 
   // 2 calls per second, if the header X-Rate-Limited has a value
-  @Rate(2)
+  @Rate("2/s")
   @RateCondition("web.request.header = X-Rate-Limited")
   @GetMapping("/smile")
   String smile() {
@@ -196,7 +196,7 @@ __Example using Springframework__
 class GreetingResource {
 
   // Only 99 calls to this path is allowed per second
-  @Rate(99)
+  @Rate("99/s")
   @GetMapping("/greet")
   String greet() {
     return "Hello World!";
@@ -213,7 +213,7 @@ __Example using JAX-RS__
 class GreetingResource {
 
   // Only 99 calls to this path is allowed per second
-  @Rate(99)
+  @Rate("99/s")
   @GET
   @Path("/greet")
   @Produces("text/plan")

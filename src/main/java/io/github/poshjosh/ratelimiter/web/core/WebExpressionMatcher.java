@@ -131,7 +131,7 @@ final class WebExpressionMatcher
         final Object right = parseRight(expression); // Oh no! we are repeating this
         if (right instanceof Composite) {
             final Composite composite = (Composite)right;
-            if (composite.operator == io.github.poshjosh.ratelimiter.util.Operator.AND) {
+            if (composite.operator == io.github.poshjosh.ratelimiter.model.Operator.AND) {
                 throw Checks.notSupported(this, composite.operator
                         + " for " + WebExpressionKey.USER_ROLE + " values");
             }
@@ -161,9 +161,9 @@ final class WebExpressionMatcher
 
     private Composite toCollection(String rhsText, Function<String, Object> mapper) {
         final boolean orList = isOrList(rhsText);
-        final io.github.poshjosh.ratelimiter.util.Operator operator = orList ?
-                io.github.poshjosh.ratelimiter.util.Operator.OR :
-                io.github.poshjosh.ratelimiter.util.Operator.AND;
+        final io.github.poshjosh.ratelimiter.model.Operator operator = orList ?
+                io.github.poshjosh.ratelimiter.model.Operator.OR :
+                io.github.poshjosh.ratelimiter.model.Operator.AND;
         final String arraySeparatorRegex = orList ? "\\|" : operator.getSymbol();
         final String [] parts = withoutBrackets(rhsText).split(arraySeparatorRegex);
         final Object [] array =  Arrays.stream(parts)
@@ -175,10 +175,10 @@ final class WebExpressionMatcher
     }
 
     private boolean isOrList(String rhsText) {
-        if (rhsText.contains(io.github.poshjosh.ratelimiter.util.Operator.OR.getSymbol())) {
+        if (rhsText.contains(io.github.poshjosh.ratelimiter.model.Operator.OR.getSymbol())) {
             return true;
         }
-        if (rhsText.contains(io.github.poshjosh.ratelimiter.util.Operator.AND.getSymbol())) {
+        if (rhsText.contains(io.github.poshjosh.ratelimiter.model.Operator.AND.getSymbol())) {
             return false;
         }
         throw Checks.notSupported(this, "Right hand side text: " + rhsText);
@@ -199,8 +199,8 @@ final class WebExpressionMatcher
 
     private static final class Composite{
         private final Object [] values;
-        private final io.github.poshjosh.ratelimiter.util.Operator operator;
-        private Composite(Object[] values, io.github.poshjosh.ratelimiter.util.Operator operator) {
+        private final io.github.poshjosh.ratelimiter.model.Operator operator;
+        private Composite(Object[] values, io.github.poshjosh.ratelimiter.model.Operator operator) {
             this.values = Objects.requireNonNull(values);
             this.operator = Objects.requireNonNull(operator);
         }

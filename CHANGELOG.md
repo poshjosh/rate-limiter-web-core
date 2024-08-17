@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method `RateLimiterRegistry#deregister(String id)` and its variants for `Method` and `Class`.
 - Method `RateSource#getRates` to get rates defined at the respective source.
 - Method `RateLimiterRegistry#getMatchContext(String id)`.
+- Field `rate` to the `@Rate` annotation. It is the default. Example use: `@Rate("9/s")`.
 
 ### Changed
 
