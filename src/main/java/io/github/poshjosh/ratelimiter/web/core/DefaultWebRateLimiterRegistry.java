@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.web.core;
 
 import io.github.poshjosh.ratelimiter.*;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
@@ -39,10 +40,6 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
                 webRateLimiterContext.withMatcherProvider(matcherProvider));
     }
 
-    @Override public void addListener(Listener listener) {
-        delegate.addListener(listener);
-    }
-
     @Override public boolean isWithinLimit(RequestInfo httpServletRequest) {
         return delegate.isWithinLimit(httpServletRequest);
     }
@@ -50,6 +47,11 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     @Override public boolean tryAcquire(RequestInfo httpServletRequest, int permits,
             long timeout, TimeUnit timeUnit) {
         return delegate.tryAcquire(httpServletRequest, permits, timeout, timeUnit);
+    }
+
+    @Override public MatchContext<RequestInfo> getMatchContextOrDefault(
+            String id, MatchContext<RequestInfo> resultIfNone) {
+        return delegate.getMatchContextOrDefault(id, resultIfNone);
     }
 
     @Override public RateLimiterRegistry<RequestInfo> deregister(String id) {
