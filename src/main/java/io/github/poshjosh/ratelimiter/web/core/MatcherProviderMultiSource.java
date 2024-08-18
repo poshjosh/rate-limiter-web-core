@@ -53,8 +53,8 @@ final class MatcherProviderMultiSource implements MatcherProvider<RequestInfo> {
         return result;
     }
     @Override
-    public List<Matcher<RequestInfo>> createLimitMatchers(RateConfig rateConfig) {
-        List<Matcher<RequestInfo>> result = delegate.createLimitMatchers(rateConfig);
+    public List<Matcher<RequestInfo>> createSubMatchers(RateConfig rateConfig) {
+        List<Matcher<RequestInfo>> result = delegate.createSubMatchers(rateConfig);
         result.forEach(matcher -> onMatcherCreated.accept(rateConfig.getId(), matcher));
         return result;
     }

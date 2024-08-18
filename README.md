@@ -124,12 +124,12 @@ a method ID, or a string name. When using a string name, it should match one of 
 - __A group__ - The name of a `@RateGroup` annotation.
 - __A class__ - The fully qualified name of a class e.g: `com.example.web.resources.GreetingResource`
 - __A method__ - The identifier of a method eg: `com.example.web.resources.GreetingResource.greet(java.lang.String)`
-- __A property__ - One of the keys in the `Map` returned by `RateLimitProperties#getRateLimitConfigs()`
+- __A property__ - One of the keys in the `Map` returned by `RateLimitProperties#getRates()`
 
 When rate limits are specified via annotations, then the corresponding matcher for the annotated class
 or method is automatically created. However, this automatic creation does not happen when rate limits are 
 specified via properties. This means you need to explicitly register a matcher for each key in the `Map`
-returned by `RateLimitProperties#getRateLimitConfigs()`. 
+returned by `RateLimitProperties#getRates()`. 
 
 The following code will not lead to any rate limiting. Unless, we explicitly register a matcher
 for each key in the returned map.
@@ -140,7 +140,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
   // other code
 
   @Override
-  public Map<String, Rates> getRateLimitConfigs() {
+  public Map<String, Rates> getRates() {
     return Collections.singletonMap("default", Rates.of(Rate.ofMinutes(10)));
   }
 }
@@ -165,7 +165,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties, RateLimiter
     }
 
     @Override
-    public Map<String, Rates> getRateLimitConfigs() {
+    public Map<String, Rates> getRates() {
         return Collections.singletonMap(RateId.of(resource), Rates.of(Rate.ofMinutes(10)));
     }
 }
@@ -245,7 +245,7 @@ public class RateLimitPropertiesImpl implements RateLimitProperties {
     }
 
     @Override 
-    public Map<String, Rates> getRateLimitConfigs() {
+    public Map<String, Rates> getRates() {
         return Collections.singletonMap("limitBySession", Rates.of(getRates()));
     }
 

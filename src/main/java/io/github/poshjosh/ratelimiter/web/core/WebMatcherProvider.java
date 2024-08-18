@@ -33,7 +33,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
         final Matcher<RequestInfo> expressionMatcher =
-                createExpressionMatcher(rates.getRateCondition()).orElse(null);
+                createExpressionMatcher(rates.getCondition()).orElse(null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matchers.matchNone();
         }
