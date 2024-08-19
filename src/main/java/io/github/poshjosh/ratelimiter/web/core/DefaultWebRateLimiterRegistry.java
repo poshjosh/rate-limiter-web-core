@@ -9,6 +9,7 @@ import io.github.poshjosh.ratelimiter.web.core.registry.Registry;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
 
@@ -47,6 +48,14 @@ final class DefaultWebRateLimiterRegistry implements WebRateLimiterRegistry {
     @Override public boolean tryAcquire(RequestInfo httpServletRequest, int permits,
             long timeout, TimeUnit timeUnit) {
         return delegate.tryAcquire(httpServletRequest, permits, timeout, timeUnit);
+    }
+
+    @Override public Set<String> getRateNames() {
+        return delegate.getRateNames();
+    }
+
+    @Override public void visitRates(Consumer<MatchContext<RequestInfo>> visitor) {
+        delegate.visitRates(visitor);
     }
 
     @Override public MatchContext<RequestInfo> getMatchContextOrDefault(
