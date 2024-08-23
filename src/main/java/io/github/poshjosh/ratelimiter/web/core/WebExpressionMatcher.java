@@ -6,7 +6,7 @@ import io.github.poshjosh.ratelimiter.util.StringUtils;
 import java.util.*;
 import java.util.function.Function;
 
-final class WebExpressionMatcher
+public class WebExpressionMatcher
         implements ExpressionMatcher<RequestInfo>, WebExpressionKey,
         ExpressionParser<RequestInfo, Object>, ExpressionResolver<Object> {
 
@@ -16,7 +16,7 @@ final class WebExpressionMatcher
 
     private final ExpressionMatcher<RequestInfo> delegate;
 
-    WebExpressionMatcher() {
+    public WebExpressionMatcher() {
         delegate = ExpressionMatchers.ofParseAhead(
                 this, this, Expressions.of(ATTRIBUTE + " = 0"));
     }
