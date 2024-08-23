@@ -85,22 +85,22 @@ public class WebExpressionMatcher
         }
         final String key = name != null ? left.substring(0, left.indexOf('[')) : left;
         switch(key) {
-            case ATTRIBUTE: return request.getAttribute(name, "");
-            case AUTH_SCHEME: return request.getAuthScheme("");
+            case ATTRIBUTE: return request.getAttribute(name, null);
+            case AUTH_SCHEME: return request.getAuthScheme(null);
             case COOKIE:
-                return request.getCookies().stream()
+                return request.getCookies() == null ? null : request.getCookies().stream()
                     .filter(c -> Objects.equals(name, c.name()))
                     .map(RequestInfo.Cookie::value)
                     .findAny().orElse(null);
             case HEADER: return request.getHeaders(name);
             case PARAMETER: return request.getParameters(name);
             case IP:
-            case REMOTE_ADDRESS: return request.getRemoteAddr("");
+            case REMOTE_ADDRESS: return request.getRemoteAddr(null);
             case LOCALE: return request.getLocales();
             case USER_ROLE: return parseLeftForRole(request, expression);
-            case USER_PRINCIPAL: return request.getUserPrincipal(() -> "").getName();
+            case USER_PRINCIPAL: return request.getUserPrincipal(() -> null).getName();
             case REQUEST_URI: return request.getRequestUri();
-            case SESSION_ID: return request.getSessionId("");
+            case SESSION_ID: return request.getSessionId(null);
             default: throw Checks.notSupported(this, key);
         }
     }

@@ -13,13 +13,13 @@ import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfos;
 import java.util.Collection;
 import java.util.Objects;
 
-final class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
+public class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
 
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
 
-    WebMatcherProvider(
+    public WebMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<RequestInfo> expressionMatcher) {
@@ -53,7 +53,7 @@ final class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
                 && !rateConfig.shouldDelegateToParent();
     }
 
-    private Matcher<RequestInfo> createWebRequestMatcher(RateConfig rateConfig) {
+    protected Matcher<RequestInfo> createWebRequestMatcher(RateConfig rateConfig) {
         final RateSource rateSource = rateConfig.getSource();
         ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
         if (ResourceInfos.none().equals(resourceInfo)) {
