@@ -6,8 +6,6 @@ import io.github.poshjosh.ratelimiter.matcher.Matchers;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
-import io.github.poshjosh.ratelimiter.model.Rates;
-import io.github.poshjosh.ratelimiter.util.*;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfo;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfoProvider;
 import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfos;
@@ -15,13 +13,13 @@ import io.github.poshjosh.ratelimiter.web.core.util.ResourceInfos;
 import java.util.Collection;
 import java.util.Objects;
 
-public class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
+final class WebMatcherProvider extends AbstractWebMatcherProvider {
 
     private final UrlPathHelper urlPathHelper;
     
     private final ResourceInfoProvider resourceInfoProvider;
 
-    public WebMatcherProvider(
+    WebMatcherProvider(
             String applicationPath,
             ResourceInfoProvider resourceInfoProvider,
             ExpressionMatcher<RequestInfo> expressionMatcher) {
@@ -31,30 +29,6 @@ public class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
     }
 
     @Override
-    public Matcher<RequestInfo> createMainMatcher(RateConfig rateConfig) {
-        final Rates rates = rateConfig.getRates();
-        final RateSource source = rateConfig.getSource();
-        final Matcher<RequestInfo> expressionMatcher =
-                createExpressionMatcher(rates.getCondition()).orElse(null);
-        if (isMatchNone(rateConfig, expressionMatcher != null)) {
-            return Matchers.matchNone();
-        }
-        if (!source.isGroupType() && source.isGenericDeclaration()) {
-            Matcher<RequestInfo> webRequestMatcher = createWebRequestMatcher(rateConfig);
-            if (expressionMatcher == null) {
-                return webRequestMatcher;
-            }
-            return webRequestMatcher.and(expressionMatcher);
-        }
-        return expressionMatcher == null ? Matchers.matchNone() : expressionMatcher;
-    }
-
-    @Override
-    protected boolean isMatchNone(RateConfig rateConfig, boolean isExpressionPresent) {
-        return super.isMatchNone(rateConfig, isExpressionPresent)
-                && !rateConfig.shouldDelegateToParent();
-    }
-
     protected Matcher<RequestInfo> createWebRequestMatcher(RateConfig rateConfig) {
         final RateSource rateSource = rateConfig.getSource();
         ResourceInfo resourceInfo = resourceInfoProvider.get(rateSource);
@@ -72,7 +46,7 @@ public class WebMatcherProvider extends AbstractMatcherProvider<RequestInfo> {
         private final UrlPathHelper urlPathHelper;
         private final ResourceInfo resourceInfo;
 
-        public HttpRequestMatcher(
+        private HttpRequestMatcher(
                 RateConfig rateConfig,
                 UrlPathHelper urlPathHelper,
                 ResourceInfo resourceInfo) {
