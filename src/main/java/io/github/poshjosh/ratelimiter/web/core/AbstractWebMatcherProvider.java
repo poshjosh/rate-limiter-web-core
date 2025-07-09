@@ -26,7 +26,7 @@ public abstract class AbstractWebMatcherProvider extends AbstractMatcherProvider
         final Rates rates = rateConfig.getRates();
         final RateSource source = rateConfig.getSource();
         final Matcher<RequestInfo> expressionMatcher =
-                createExpressionMatcher(rates.getCondition()).orElse(null);
+                expressionMatcherOrFallback(rates.getCondition(), null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matchers.matchNone();
         }
